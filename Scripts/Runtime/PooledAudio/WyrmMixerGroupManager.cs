@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Audio;
 
 public class WyrmMixerGroupManager : MonoBehaviour
 {
@@ -14,36 +12,90 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     void Start() => CreatePool();
 
-    public void Play(AudioClip clip, float volume = default, Transform transform = default)
+    void Update()
     {
-        if (available.Count == 0)
+        foreach (var activeSource in active)
         {
-            if (IsOverflowing)
-                return;
-
-            CreatePooledAudioSource();
+            if (!activeSource.IsPlaying)
+                Return(activeSource);
         }
+    }
 
-        var borrowedSource = available.Dequeue();
+    public void Play(AudioClip clip, float volume = default, Transform parentTransform = default)
+    {
+        if (!TryBorrow(out var borrowedSource))
+            return;
+
         borrowedSource.SetClip(clip);
         if (volume != default) borrowedSource.SetVolume(volume);
-        if (transform != default) borrowedSource.transform.SetParent(transform);
+        if (parentTransform != default) borrowedSource.transform.SetParent(parentTransform);
+
         borrowedSource.Play();
+    }
+
+    public void PlayOneShot(AudioClip clip, float volume = default, Transform parentTransform = default)
+    {
+        if (!TryBorrow(out var borrowedSource))
+            return;
+
+        borrowedSource.SetClip(clip);
+        if (volume != default) borrowedSource.SetVolume(volume);
+        if (parentTransform != default) borrowedSource.transform.SetParent(parentTransform);
+
+        borrowedSource.Play();
+
+        ScheduleReturnAsync(borrowedSource, clip).Forget();
     }
 
     public bool TryBorrow(out IPooledAudioSource pooledAudioSource)
     {
         pooledAudioSource = null;
-        if (IsOverflowing)
-            return false;
+
+        if (available.Count == 0)
+        {
+            if (IsOverflowing) return false;
+            CreatePooledAudioSource();
+        }
 
         pooledAudioSource = available.Dequeue();
+        active.Add(pooledAudioSource);
+
+        pooledAudioSource.PlayVersion++;
+
         return true;
     }
 
     public void Return(IPooledAudioSource pooledAudioSource)
     {
+        if (!active.Remove(pooledAudioSource)) return;
+
+        pooledAudioSource.Stop();
+        pooledAudioSource.TrackedTransform = null;
+
+        pooledAudioSource.PlayVersion++;
+
         available.Enqueue(pooledAudioSource);
+    }
+
+    private async UniTaskVoid ScheduleReturnAsync(IPooledAudioSource source, AudioClip clip)
+    {
+        int currentVersion = source.PlayVersion;
+
+        float pitch = Mathf.Abs(source.Pitch);
+        float duration = pitch > 0.01f ? (clip.length / pitch) : clip.length;
+
+        bool isDestroyed = await UniTask.Delay(
+            TimeSpan.FromSeconds(duration),
+            ignoreTimeScale: true,
+            cancellationToken: source.gameObject.GetCancellationTokenOnDestroy()
+        ).SuppressCancellationThrow();
+
+        if (isDestroyed) return;
+
+        if (source.PlayVersion == currentVersion)
+        {
+            Return(source);
+        }
     }
 
     private void CreatePool()
@@ -58,28 +110,25 @@ public class WyrmMixerGroupManager : MonoBehaviour
     {
         GameObject newPooledAudioSourceGO = Instantiate(config.WyrmAudioSourcePrefab, transform);
         if (!newPooledAudioSourceGO.TryGetComponent(out IPooledAudioSource pooledAudioSource))
+        {
             Debug.LogError("Pooled Audio Source Prefab doesn't contain IPooledAudioSource type component");
+            return;
+        }
 
-        available.Append(pooledAudioSource);
+        available.Enqueue(pooledAudioSource);
     }
 
     bool IsOverflowing
     {
         get
         {
-            if (active.Count == config.maxSize)
+            if (active.Count >= config.maxSize)
             {
                 if (config.warnOverflow)
                     Debug.LogWarning("Mixer Group is overflowing, skipping audio play");
-
                 return true;
             }
             return false;
         }
-    }
-
-    private void DestroyPool(AudioMixerGroup mixerGroup)
-    {
-
     }
 }
