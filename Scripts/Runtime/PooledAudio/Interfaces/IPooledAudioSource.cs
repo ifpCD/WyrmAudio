@@ -13,7 +13,7 @@ public interface IPooledAudioSource
     public void Play();
     public void PlayOneShot(AudioClip clip);
 
-    public void Stop();
+    public void Deactivate();
 
     // MonoBehaviour
     public GameObject gameObject { get; }

@@ -27,7 +27,7 @@ public class BasePooledSource : MonoBehaviour, IPooledAudioSource
         ASource.PlayOneShot(clip);
     }
 
-    public virtual void Stop()
+    public virtual void Deactivate()
     {
         TrackedTransform = null;
     }

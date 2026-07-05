@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -11,6 +12,7 @@ public class WyrmAudioManager : MonoBehaviour
     static void Initialize()
     {
         if (instance != null) return;
+        WyrmPool.Dispose();
 
         var go = new GameObject("Wyrm Audio Manager");
 

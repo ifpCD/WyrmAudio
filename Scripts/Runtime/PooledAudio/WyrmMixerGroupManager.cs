@@ -12,20 +12,22 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     private int _totalCreated;
 
-    void Start()
+    public void Initialize(WyrmMixerGroupConfig config)
     {
-        if (config.targetMixerGroup == null || config.WyrmAudioSourcePrefab == null)
+        this.config = config;
+
+        if (this.config.targetMixerGroup == null || this.config.WyrmAudioSourcePrefab == null)
         {
-#if !DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("Incomplete Mixer Group Config");
 #endif
             return;
         }
 
-        _availableSources = new IPooledAudioSource[config.maxSize];
-        _activeSources = new IPooledAudioSource[config.maxSize];
+        _availableSources = new IPooledAudioSource[this.config.maxSize];
+        _activeSources = new IPooledAudioSource[this.config.maxSize];
 
-        for (int i = 0; i < config.initialSize; i++)
+        for (int i = 0; i < this.config.initialSize; i++)
         {
             CreatePooledAudioSource();
         }
@@ -87,7 +89,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         {
             if (_totalCreated >= config.maxSize)
             {
-#if !DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 Debug.LogWarning($"Mixer Group {config.targetMixerGroup.name} is overflowing, skipping audio play.");
 #endif
                 return false;
@@ -129,7 +131,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
         _activeSources[_activeCount] = null;
 
-        source.Stop();
+        source.Deactivate();
 
         _availableSources[_availableCount++] = source;
     }
@@ -141,7 +143,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         GameObject newPooledAudioSourceGO = Instantiate(config.WyrmAudioSourcePrefab, transform);
         if (!newPooledAudioSourceGO.TryGetComponent(out IPooledAudioSource pooledAudioSource))
         {
-#if !DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("Pooled Audio Source Prefab doesn't contain IPooledAudioSource type component");
 #endif
             return;

@@ -3,7 +3,7 @@ using UnityEngine.Audio;
 
 public static class AudioMixerGroupExtensions
 {
-    public static void Play(this AudioMixerGroup mixerGroup, AudioClip clip, float volume = default, Transform transform = default)
+    public static void Play(this AudioMixerGroup mixerGroup, AudioClip clip, float volume = 1f, Transform transform = default)
     {
         WyrmPool.Play(mixerGroup, clip, volume, transform);
     }

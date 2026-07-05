@@ -23,9 +23,9 @@ public class PooledSteamAudioSource : BasePooledSource
         base.PlayOneShot(clip);
     }
 
-    public override void Stop()
+    public override void Deactivate()
     {
         steamSrc.enabled = false;
-        base.Stop();
+        base.Deactivate();
     }
 }

@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.Audio;
 
-public class WyrmMixerGroupConfig
+[CreateAssetMenu(menuName = "Wyrm Audio/Mixer Group Config")]
+public class WyrmMixerGroupConfig : ScriptableObject
 {
     public AudioMixerGroup targetMixerGroup;
     public GameObject WyrmAudioSourcePrefab;

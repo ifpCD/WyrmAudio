@@ -5,12 +5,14 @@ using UnityEngine.Audio;
 [DisallowMultipleComponent]
 public class WyrmPool : MonoBehaviour
 {
-    public static Dictionary<AudioMixerGroup, WyrmMixerGroupManager> pools = new();
-    List<WyrmMixerGroupConfig> configs = new();
+    private static Dictionary<AudioMixerGroup, WyrmMixerGroupManager> pools = new();
 
     void Awake()
     {
-        foreach(var config in configs) CreateMixerGroupManager(config);
+        foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
+        {
+            CreateMixerGroupManager(config);
+        }
     }
 
     void Update()
@@ -20,6 +22,11 @@ public class WyrmPool : MonoBehaviour
             mixerManager.CullSources();
             mixerManager.UpdateChildrenTransforms();
         }
+    }
+
+    public static void Dispose()
+    {
+        pools.Clear();
     }
 
     public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform trackedTransform = null)
@@ -43,7 +50,9 @@ public class WyrmPool : MonoBehaviour
         WyrmMixerManagerGameObject.transform.SetParent(transform);
 
         var mixerManager = WyrmMixerManagerGameObject.AddComponent<WyrmMixerGroupManager>();
-        mixerManager.config = wyrmMixerConfig;
+        mixerManager.Initialize(wyrmMixerConfig);
+
+        pools[wyrmMixerConfig.targetMixerGroup] = mixerManager;
     }
 
     private void DestroyMixerGroupManager(AudioMixerGroup mixerGroup)

@@ -10,10 +10,10 @@ public class DoublePooledSource : BasePooledSource
         base.Play();
     }
 
-    public override void Stop()
+    public override void Deactivate()
     {
         BSource.Stop();
-        base.Stop();
+        base.Deactivate();
     }
 
     public override AudioClip clip
