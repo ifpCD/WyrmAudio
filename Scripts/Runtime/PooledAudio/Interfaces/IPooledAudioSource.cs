@@ -1,8 +1,9 @@
 using UnityEngine;
 
-public interface IPooledAudioSource
+public abstract class IPooledAudioSource : MonoBehaviour
 {
-    public void Play();
-    public void SetClip(AudioClip clip);
-    public void SetVolume(float volume);
+    public abstract int PlayVersion { get; set; }
+    public abstract void Play();
+    public abstract void SetClip(AudioClip clip);
+    public abstract void SetVolume(float volume);
 }

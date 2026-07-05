@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -13,7 +14,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     void Start() => CreatePool();
 
-    public void Play(AudioClip clip, float volume = default)
+    public void Play(AudioClip clip, float volume = default, Transform transform = default)
     {
         if (available.Count == 0)
         {
@@ -25,7 +26,8 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
         var borrowedSource = available.Dequeue();
         borrowedSource.SetClip(clip);
-        borrowedSource.SetVolume(volume);
+        if (volume != default) borrowedSource.SetVolume(volume);
+        if (transform != default) borrowedSource.transform.SetParent(transform);
         borrowedSource.Play();
     }
 

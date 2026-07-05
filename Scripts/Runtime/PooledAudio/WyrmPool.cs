@@ -30,6 +30,11 @@ public class WyrmPool : MonoBehaviour
         pools[mixerGroup].Play(clip, volume);
     }
 
+    public void Play(AudioMixerGroup mixerGroup, AudioClip clip, float volume = default, Transform transform = default)
+    {
+        pools[mixerGroup].Play(clip, volume, transform);
+    }
+
     public bool TryBorrow(AudioMixerGroup mixerGroup, out IPooledAudioSource pooledAudioSource)
     {
         return pools[mixerGroup].TryBorrow(out pooledAudioSource);
@@ -49,7 +54,7 @@ public class WyrmPool : MonoBehaviour
         mixerManager.config = wyrmMixerConfig;
     }
 
-    private void DestroyMixerGroupAudioPool(AudioMixerGroup mixerGroup)
+    private void DestroyMixerGroupManager(AudioMixerGroup mixerGroup)
     {
 
     }

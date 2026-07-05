@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class BasePooledSource : MonoBehaviour, IPooledAudioSource
+public class BasePooledSource : IPooledAudioSource
 {
     void Start()
     {
@@ -11,7 +11,9 @@ public class BasePooledSource : MonoBehaviour, IPooledAudioSource
 
     }
 
-    public void Play() { }
-    public void SetClip(AudioClip clip) { }
-    public void SetVolume(float volume) { }
+    public override int PlayVersion { get; set; } = 0;
+    
+    public override void Play() { }
+    public override void SetClip(AudioClip clip) { }
+    public override void SetVolume(float volume) { }
 }
