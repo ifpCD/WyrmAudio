@@ -10,39 +10,46 @@ public class WyrmMixerGroupManager : MonoBehaviour
     readonly Queue<IPooledAudioSource> available = new();
     readonly HashSet<IPooledAudioSource> active = new();
 
+    readonly List<IPooledAudioSource> toReturn = new();
+
     void Start() => CreatePool();
 
     void Update()
     {
+        toReturn.Clear();
         foreach (var activeSource in active)
         {
-            if (!activeSource.IsPlaying)
-                Return(activeSource);
+            if (!activeSource.IsPlaying && !activeSource.IsOneShot)
+                toReturn.Add(activeSource);
+        }
+
+        for (int i = 0; i < toReturn.Count; i++)
+        {
+            Return(toReturn[i]);
         }
     }
 
-    public void Play(AudioClip clip, float volume = default, Transform parentTransform = default)
+    public void Play(AudioClip clip, float volume = default, Transform trackedTransform = default)
     {
         if (!TryBorrow(out var borrowedSource))
             return;
 
         borrowedSource.SetClip(clip);
         if (volume != default) borrowedSource.SetVolume(volume);
-        if (parentTransform != default) borrowedSource.transform.SetParent(parentTransform);
+        if (trackedTransform != default) borrowedSource.TrackedTransform = trackedTransform;
 
         borrowedSource.Play();
     }
 
-    public void PlayOneShot(AudioClip clip, float volume = default, Transform parentTransform = default)
+    public void PlayOneShot(AudioClip clip, float volume = default, Transform trackedTransform = default)
     {
         if (!TryBorrow(out var borrowedSource))
             return;
 
-        borrowedSource.SetClip(clip);
         if (volume != default) borrowedSource.SetVolume(volume);
-        if (parentTransform != default) borrowedSource.transform.SetParent(parentTransform);
+        if (trackedTransform != default) borrowedSource.TrackedTransform = trackedTransform;
 
-        borrowedSource.Play();
+        borrowedSource.PlayOneShot(clip);
 
         ScheduleReturnAsync(borrowedSource, clip).Forget();
     }
@@ -79,7 +86,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     private async UniTaskVoid ScheduleReturnAsync(IPooledAudioSource source, AudioClip clip)
     {
-        int currentVersion = source.PlayVersion;
+        int preAwaitedVersion = source.PlayVersion;
 
         float pitch = Mathf.Abs(source.Pitch);
         float duration = pitch > 0.01f ? (clip.length / pitch) : clip.length;
@@ -92,7 +99,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
         if (isDestroyed) return;
 
-        if (source.PlayVersion == currentVersion)
+        if (source.PlayVersion == preAwaitedVersion)
         {
             Return(source);
         }

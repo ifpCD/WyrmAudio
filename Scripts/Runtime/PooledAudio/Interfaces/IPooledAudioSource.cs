@@ -5,6 +5,7 @@ public abstract class IPooledAudioSource : MonoBehaviour
     public abstract float Pitch { get; }
     public abstract bool IsPlaying { get; }
     public abstract Transform TrackedTransform { get; set; }
+    public abstract bool IsOneShot { get; set; }
 
     public abstract int PlayVersion { get; set; }
 
