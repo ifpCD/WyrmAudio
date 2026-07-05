@@ -16,7 +16,7 @@ public class WyrmAudioSettings : ScriptableObject
         {
             if (_instance != null) return _instance;
 
-            _instance = Resources.Load<WyrmAudioSettings>("WyrmAudioSettings");
+            _instance = Resources.Load<WyrmAudioSettings>("Wyrm Audio Settings");
             if (_instance != null) return _instance;
 
             _instance = CreateInstance<WyrmAudioSettings>();

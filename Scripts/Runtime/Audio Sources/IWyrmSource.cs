@@ -24,6 +24,7 @@ public interface IWyrmSource
 
     // AudioSource
     public AudioClip clip { get; set; }
+    public bool loop { get; set; }
     public float volume { get; set; }
     public float pitch { get; set; }
 }

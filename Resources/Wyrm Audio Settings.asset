@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6201ed0986ae031429ba43a7509569bf, type: 3}
-  m_Name: WyrmAudioSettings
+  m_Name: Wyrm Audio Settings
   m_EditorClassIdentifier: WyrmAudio::WyrmAudioSettings
   ActiveMixerConfigs:
   - {fileID: 11400000, guid: 146d36f50d63e8f46b8bdc8abbdbc85b, type: 2}

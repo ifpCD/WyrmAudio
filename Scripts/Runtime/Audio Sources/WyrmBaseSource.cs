@@ -49,6 +49,12 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         set => ASource.clip = value;
     }
 
+    public virtual bool loop
+    {
+        get => ASource.loop;
+        set => ASource.loop = value;
+    }
+
     public virtual float volume
     {
         get => ASource.volume;
