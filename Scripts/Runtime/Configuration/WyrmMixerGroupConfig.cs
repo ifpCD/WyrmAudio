@@ -11,4 +11,6 @@ public class WyrmMixerGroupConfig
 
     [Range(2, 1000)]
     public int maxSize = 30;
+
+    public bool isNonSpatial;
 }

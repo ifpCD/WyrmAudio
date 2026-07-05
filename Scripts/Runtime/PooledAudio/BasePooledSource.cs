@@ -7,8 +7,13 @@ public class BasePooledSource : MonoBehaviour, IPooledAudioSource
     public bool IsPlaying => ASource.isPlaying;
     public bool IsOneShot { get; private set; } = default;
 
+    public Transform BaseTransform { get; private set; } = default;
     public Transform TrackedTransform { get; set; } = default;
-    public int PlayVersion { get; set; } = default;
+
+    protected virtual void Awake()
+    {
+        BaseTransform = gameObject.transform;
+    }
 
     public virtual void Play()
     {
@@ -22,7 +27,10 @@ public class BasePooledSource : MonoBehaviour, IPooledAudioSource
         ASource.PlayOneShot(clip);
     }
 
-    public virtual void Stop() => ASource.Stop();
+    public virtual void Stop()
+    {
+        TrackedTransform = null;
+    }
 
     public virtual AudioClip clip
     {

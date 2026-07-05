@@ -44,15 +44,15 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     internal void UpdateChildrenTransforms()
     {
-        for (int index = 0; index < _activeCount; index++)
+        if (config.isNonSpatial) return;
+
+        var sources = _activeSources;
+        for (int i = 0; i < _activeCount; i++)
         {
-            var activeSource = _activeSources[index];
-            if (activeSource.TrackedTransform != null)
-            {
-                activeSource.gameObject.transform.SetPositionAndRotation(
-                    activeSource.TrackedTransform.position,
-                    activeSource.TrackedTransform.rotation);
-            }
+            var source = sources[i];
+            var t = source.TrackedTransform;
+
+            if (t != null) source.BaseTransform.SetPositionAndRotation(t.position, t.rotation);
         }
     }
 
@@ -102,8 +102,6 @@ public class WyrmMixerGroupManager : MonoBehaviour
         // Push to active
         _activeSources[_activeCount++] = pooledAudioSource;
 
-        pooledAudioSource.PlayVersion++;
-
         return true;
     }
 
@@ -132,8 +130,6 @@ public class WyrmMixerGroupManager : MonoBehaviour
         _activeSources[_activeCount] = null;
 
         source.Stop();
-        source.TrackedTransform = null;
-        source.PlayVersion++;
 
         _availableSources[_availableCount++] = source;
     }
