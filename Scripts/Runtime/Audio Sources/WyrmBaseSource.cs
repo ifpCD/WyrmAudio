@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public partial class WyrmBaseSource : MonoBehaviour, IPooledAudioSource
+public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 {
     public AudioSource ASource;
 

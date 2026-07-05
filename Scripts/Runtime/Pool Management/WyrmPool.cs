@@ -44,19 +44,19 @@ public class WyrmPool : MonoBehaviour
         pools[mixerGroup].PlayOneShot(clip, volume, trackedTransform);
     }
 
-    public static bool TryBorrow(AudioMixerGroup mixerGroup, out IPooledAudioSource pooledAudioSource)
+    public static bool TryBorrow(AudioMixerGroup mixerGroup, out IWyrmSource pooledAudioSource)
     {
         return pools[mixerGroup].TryBorrow(out pooledAudioSource);
     }
 
-    public static void Return(AudioMixerGroup mixerGroup, IPooledAudioSource pooledAudioSource)
+    public static void Return(AudioMixerGroup mixerGroup, IWyrmSource pooledAudioSource)
     {
         pools[mixerGroup].Return(pooledAudioSource);
     }
 
     private void CreateMixerGroupManager(WyrmMixerGroupConfig wyrmMixerConfig)
     {
-        GameObject WyrmMixerManagerGameObject = new(wyrmMixerConfig.targetMixerGroup.name);
+        GameObject WyrmMixerManagerGameObject = new($"{wyrmMixerConfig.targetMixerGroup.audioMixer.name} - {wyrmMixerConfig.targetMixerGroup.name}");
         WyrmMixerManagerGameObject.transform.SetParent(transform);
 
         var mixerManager = WyrmMixerManagerGameObject.AddComponent<WyrmMixerGroupManager>();

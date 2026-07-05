@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: WyrmAudioSettings
   m_EditorClassIdentifier: WyrmAudio::WyrmAudioSettings
   ActiveMixerConfigs:
-  - {fileID: 11400000, guid: 8d760670c2101074a9044889915a1f99, type: 2}
+  - {fileID: 11400000, guid: 146d36f50d63e8f46b8bdc8abbdbc85b, type: 2}
+  - {fileID: 11400000, guid: 9746d6e5d83741b42a30084de43ec87c, type: 2}
   roomLayer:
     serializedVersion: 2
     m_Bits: 0

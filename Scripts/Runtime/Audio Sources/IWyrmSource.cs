@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 #pragma warning disable IDE1006 // gameObject MonoBehaviour
 
-public interface IPooledAudioSource
+public interface IWyrmSource
 {
     public bool IsPlaying { get; }
 

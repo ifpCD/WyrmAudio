@@ -4,10 +4,10 @@ public class WyrmMixerGroupManager : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
-    private IPooledAudioSource[] _availableSources;
+    private IWyrmSource[] _availableSources;
     private int _availableCount;
 
-    private IPooledAudioSource[] _activeSources;
+    private IWyrmSource[] _activeSources;
     private int _activeCount;
 
     private int _totalCreated;
@@ -24,8 +24,8 @@ public class WyrmMixerGroupManager : MonoBehaviour
             return;
         }
 
-        _availableSources = new IPooledAudioSource[this.config.maxSize];
-        _activeSources = new IPooledAudioSource[this.config.maxSize];
+        _availableSources = new IWyrmSource[this.config.maxSize];
+        _activeSources = new IWyrmSource[this.config.maxSize];
 
         for (int i = 0; i < this.config.initialSize; i++)
         {
@@ -92,7 +92,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         borrowedSource.PlayOneShot(clip);
     }
 
-    public bool TryBorrow(out IPooledAudioSource pooledAudioSource)
+    public bool TryBorrow(out IWyrmSource pooledAudioSource)
     {
         pooledAudioSource = null;
 
@@ -118,7 +118,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         return true;
     }
 
-    public void Return(IPooledAudioSource pooledAudioSource)
+    public void Return(IWyrmSource pooledAudioSource)
     {
         for (int i = 0; i < _activeCount; i++)
         {
@@ -152,10 +152,10 @@ public class WyrmMixerGroupManager : MonoBehaviour
         if (_totalCreated >= config.maxSize) return;
 
         GameObject newPooledAudioSourceGO = Instantiate(config.WyrmAudioSourcePrefab, transform);
-        if (!newPooledAudioSourceGO.TryGetComponent(out IPooledAudioSource pooledAudioSource))
+        if (!newPooledAudioSourceGO.TryGetComponent(out IWyrmSource pooledAudioSource))
         {
 #if UNITY_EDITOR
-            Debug.LogError("Pooled Audio Source Prefab doesn't contain IPooledAudioSource type component");
+            Debug.LogError("Pooled Audio Source Prefab doesn't contain IWyrmSource type component");
 #endif
             return;
         }

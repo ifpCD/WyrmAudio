@@ -18,12 +18,12 @@ public static class AudioMixerGroupExtensions
         WyrmPool.PlayOneShot(mixerGroup, clip, volume, transform);
     }
 
-    public static bool TryBorrow(this AudioMixerGroup mixerGroup, out IPooledAudioSource pooledAudioSource)
+    public static bool TryBorrow(this AudioMixerGroup mixerGroup, out IWyrmSource pooledAudioSource)
     {
         return WyrmPool.TryBorrow(mixerGroup, out pooledAudioSource);
     }
 
-    public static void Return(this AudioMixerGroup mixerGroup, IPooledAudioSource pooledAudioSource)
+    public static void Return(this AudioMixerGroup mixerGroup, IWyrmSource pooledAudioSource)
     {
         WyrmPool.Return(mixerGroup, pooledAudioSource);
     }

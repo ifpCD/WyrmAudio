@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1277862038185094253}
   - component: {fileID: 275494804511311066}
   m_Layer: 0
-  m_Name: Spatial Pooled Audio Source
+  m_Name: Spatial Source
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
