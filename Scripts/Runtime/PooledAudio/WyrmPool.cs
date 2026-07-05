@@ -2,20 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 
+[DisallowMultipleComponent]
 public class WyrmPool : MonoBehaviour
 {
-    readonly Dictionary<AudioMixerGroup, WyrmMixerGroupManager> pools = new();
-    Dictionary<AudioMixerGroup, WyrmMixerGroupConfig> mixerGroupConfigs;
+    public static Dictionary<AudioMixerGroup, WyrmMixerGroupManager> pools = new();
+    List<WyrmMixerGroupConfig> configs = new();
 
-    private
-
-    void Start()
+    void Awake()
     {
-        DontDestroyOnLoad(this);
-        foreach (var (mixerGroup, wyrmMixerConfig) in mixerGroupConfigs)
-        {
-            CreateMixerGroupManager(mixerGroup, wyrmMixerConfig);
-        }
+        foreach(var config in configs) CreateMixerGroupManager(config);
     }
 
     void Update()
@@ -27,29 +22,24 @@ public class WyrmPool : MonoBehaviour
         }
     }
 
-    public void Play(AudioMixerGroup mixerGroup, AudioClip clip, float volume)
+    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform trackedTransform = null)
     {
-        pools[mixerGroup].Play(clip, volume);
+        pools[mixerGroup].Play(clip, volume, trackedTransform);
     }
 
-    public void Play(AudioMixerGroup mixerGroup, AudioClip clip, float volume = default, Transform transform = default)
-    {
-        pools[mixerGroup].Play(clip, volume, transform);
-    }
-
-    public bool TryBorrow(AudioMixerGroup mixerGroup, out IPooledAudioSource pooledAudioSource)
+    public static bool TryBorrow(AudioMixerGroup mixerGroup, out IPooledAudioSource pooledAudioSource)
     {
         return pools[mixerGroup].TryBorrow(out pooledAudioSource);
     }
 
-    public void Return(AudioMixerGroup mixerGroup, IPooledAudioSource pooledAudioSource)
+    public static void Return(AudioMixerGroup mixerGroup, IPooledAudioSource pooledAudioSource)
     {
         pools[mixerGroup].Return(pooledAudioSource);
     }
 
-    private void CreateMixerGroupManager(AudioMixerGroup mixerGroup, WyrmMixerGroupConfig wyrmMixerConfig)
+    private void CreateMixerGroupManager(WyrmMixerGroupConfig wyrmMixerConfig)
     {
-        GameObject WyrmMixerManagerGameObject = new(mixerGroup.name);
+        GameObject WyrmMixerManagerGameObject = new(wyrmMixerConfig.targetMixerGroup.name);
         WyrmMixerManagerGameObject.transform.SetParent(transform);
 
         var mixerManager = WyrmMixerManagerGameObject.AddComponent<WyrmMixerGroupManager>();

@@ -1,6 +1,11 @@
 {
     "name": "WyrmAudio",
-    "references": ["SteamAudioUnity", "UniTask"],
+    "references": [
+        "SteamAudioUnity",
+        "UniTask",
+        "com.unity.burst",
+        "com.unity.mathematics"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

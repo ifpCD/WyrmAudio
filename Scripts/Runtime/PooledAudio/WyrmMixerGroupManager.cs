@@ -1,12 +1,9 @@
-using System;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class WyrmMixerGroupManager : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
-    // Fixed-length arrays replace dynamic collections
     private IPooledAudioSource[] _availableSources;
     private int _availableCount;
 
@@ -17,7 +14,6 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     void Start()
     {
-        // Pre-allocate arrays to the absolute maximum capacity
         _availableSources = new IPooledAudioSource[config.maxSize];
         _activeSources = new IPooledAudioSource[config.maxSize];
 
@@ -29,21 +25,20 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     public void CullSources()
     {
-        for (int i = _activeCount - 1; i >= 0; i--)
+        for (int index = _activeCount - 1; index >= 0; index--)
         {
-            var activeSource = _activeSources[i];
-            if (!activeSource.IsPlaying && !activeSource.IsOneShot)
+            if (!_activeSources[index].IsPlaying)
             {
-                ReturnActiveSourceAtIndex(i);
+                ReturnActiveSourceAtIndex(index);
             }
         }
     }
 
     public void UpdateChildrenTransforms()
     {
-        for (int i = 0; i < _activeCount; i++)
+        for (int index = 0; index < _activeCount; index++)
         {
-            var activeSource = _activeSources[i];
+            var activeSource = _activeSources[index];
             if (activeSource.TrackedTransform != null)
             {
                 activeSource.gameObject.transform.SetPositionAndRotation(
@@ -53,29 +48,27 @@ public class WyrmMixerGroupManager : MonoBehaviour
         }
     }
 
-    public void Play(AudioClip clip, float volume = default, Transform trackedTransform = default)
+    public void Play(AudioClip clip, float? volume = null, Transform trackedTransform = null)
     {
         if (!TryBorrow(out var borrowedSource))
             return;
 
         borrowedSource.SetClip(clip);
-        if (volume != default) borrowedSource.SetVolume(volume);
-        if (trackedTransform != default) borrowedSource.TrackedTransform = trackedTransform;
+        if (volume.HasValue) borrowedSource.SetVolume(volume.Value);
+        if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
 
         borrowedSource.Play();
     }
 
-    public void PlayOneShot(AudioClip clip, float volume = default, Transform trackedTransform = default)
+    public void PlayOneShot(AudioClip clip, float? volume = null, Transform trackedTransform = null)
     {
         if (!TryBorrow(out var borrowedSource))
             return;
 
-        if (volume != default) borrowedSource.SetVolume(volume);
-        if (trackedTransform != default) borrowedSource.TrackedTransform = trackedTransform;
+        if (volume.HasValue) borrowedSource.SetVolume(volume.Value);
+        if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
 
         borrowedSource.PlayOneShot(clip);
-
-        ScheduleReturnAsync(borrowedSource, clip).Forget();
     }
 
     public bool TryBorrow(out IPooledAudioSource pooledAudioSource)
@@ -126,35 +119,14 @@ public class WyrmMixerGroupManager : MonoBehaviour
         {
             _activeSources[index] = _activeSources[_activeCount];
         }
-        
-        _activeSources[_activeCount] = null; 
+
+        _activeSources[_activeCount] = null;
 
         source.Stop();
         source.TrackedTransform = null;
         source.PlayVersion++;
 
         _availableSources[_availableCount++] = source;
-    }
-
-    private async UniTaskVoid ScheduleReturnAsync(IPooledAudioSource source, AudioClip clip)
-    {
-        int preAwaitedVersion = source.PlayVersion;
-
-        float pitch = Mathf.Abs(source.Pitch);
-        float duration = pitch > 0.01f ? (clip.length / pitch) : clip.length;
-
-        bool isDestroyed = await UniTask.Delay(
-            TimeSpan.FromSeconds(duration),
-            ignoreTimeScale: true,
-            cancellationToken: source.gameObject.GetCancellationTokenOnDestroy()
-        ).SuppressCancellationThrow();
-
-        if (isDestroyed) return;
-
-        if (source.PlayVersion == preAwaitedVersion)
-        {
-            Return(source);
-        }
     }
 
     private void CreatePooledAudioSource()
