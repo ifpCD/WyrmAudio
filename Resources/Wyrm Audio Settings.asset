@@ -16,6 +16,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 146d36f50d63e8f46b8bdc8abbdbc85b, type: 2}
   - {fileID: 11400000, guid: 9746d6e5d83741b42a30084de43ec87c, type: 2}
   - {fileID: 11400000, guid: 785f7b4e86504f746b7e1c205443afbb, type: 2}
+  RegisteredSoundBanks:
+  - {fileID: 11400000, guid: 436f3b1e77cd5d4479feaad333926c62, type: 2}
   roomLayer:
     serializedVersion: 2
     m_Bits: 0

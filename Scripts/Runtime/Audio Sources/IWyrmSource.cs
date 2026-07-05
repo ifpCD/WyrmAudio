@@ -17,7 +17,7 @@ public interface IWyrmSource
     public void SetConfig(WyrmMixerGroupConfig config);
 
     public void Play();
-    public void Play(WyrmAudioClip clip, float? playbackLengthOverride = null);
+    public void Play(WyrmSoundBank clip, float? volume = null, Transform track = null, float? playbackLengthOverride = null);
     public void PlayOneShot(AudioClip clip);
 
     public void Deactivate();

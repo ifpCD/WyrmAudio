@@ -30,9 +30,13 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         ASource.Play();
     }
 
-    public virtual void Play(WyrmAudioClip clip, float? playbackLengthOverride)
+    public virtual void Play(WyrmSoundBank clip, float? volume = null, Transform trackedTransform = null, float? playbackLengthOverride = null)
     {
+        if (volume.HasValue) this.volume = volume.Value;
+        if (trackedTransform != null) TrackedTransform = trackedTransform;
 
+        this.clip = clip.mainBodyClips[0];
+        Play();
     }
 
     public virtual void PlayOneShot(AudioClip clip)

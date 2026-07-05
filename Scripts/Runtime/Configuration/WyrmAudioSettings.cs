@@ -6,6 +6,9 @@ public class WyrmAudioSettings : ScriptableObject
 {
     public List<WyrmMixerGroupConfig> ActiveMixerConfigs = new();
 
+    [HideInInspector]
+    public List<WyrmSoundBank> RegisteredSoundBanks = new();
+
     public LayerMask roomLayer;
 
     static WyrmAudioSettings _instance = null;

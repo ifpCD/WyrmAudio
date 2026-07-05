@@ -81,7 +81,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         borrowedSource.Play();
     }
 
-    public void Play(WyrmAudioClip clip, float? volume = null, Transform trackedTransform = null, float? playbackLengthOverride = null)
+    public void Play(WyrmSoundBank clip, float? volume = null, Transform trackedTransform = null, float? playbackLengthOverride = null)
     {
         if (!TryBorrow(out var borrowedSource))
             return;
@@ -89,7 +89,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         if (volume.HasValue) borrowedSource.volume = volume.Value;
         if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
 
-        borrowedSource.Play(clip, playbackLengthOverride);
+        borrowedSource.Play(clip, volume, trackedTransform, playbackLengthOverride);
     }
 
     public void PlayOneShot(AudioClip clip, float? volume = null, Transform trackedTransform = null)

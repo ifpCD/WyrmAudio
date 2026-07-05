@@ -1,7 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Wyrm Audio/Wyrm Audio Clip")]
-public class WyrmAudioClip : ScriptableObject
+[CreateAssetMenu(menuName = "Wyrm Audio/Wyrm Sound Bank")]
+public class WyrmSoundBank : ScriptableObject
 {
     [Header("Banks")]
     public AudioClip[] mainBodyClips;
