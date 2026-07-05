@@ -27,6 +27,8 @@ public class BasePooledSource : MonoBehaviour, IPooledAudioSource
         ASource.PlayOneShot(clip);
     }
 
+    public virtual void PlayWyrmClip(WyrmAudioClip clip, float? playbackLengthOverride) { }
+
     public virtual void Deactivate()
     {
         TrackedTransform = null;

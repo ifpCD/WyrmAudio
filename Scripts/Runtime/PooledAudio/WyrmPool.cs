@@ -5,7 +5,7 @@ using UnityEngine.Audio;
 [DisallowMultipleComponent]
 public class WyrmPool : MonoBehaviour
 {
-    private static Dictionary<AudioMixerGroup, WyrmMixerGroupManager> pools = new();
+    static readonly Dictionary<AudioMixerGroup, WyrmMixerGroupManager> pools = new();
 
     void Awake()
     {
@@ -17,10 +17,10 @@ public class WyrmPool : MonoBehaviour
 
     void Update()
     {
-        foreach (var (_, mixerManager) in pools)
+        foreach (var (_, manager) in pools)
         {
-            mixerManager.CullSources();
-            mixerManager.UpdateChildrenTransforms();
+            manager.CullSources();
+            manager.UpdateChildrenTransforms();
         }
     }
 
@@ -32,6 +32,11 @@ public class WyrmPool : MonoBehaviour
     public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform trackedTransform = null)
     {
         pools[mixerGroup].Play(clip, volume, trackedTransform);
+    }
+
+    public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform trackedTransform = null)
+    {
+        pools[mixerGroup].PlayOneShot(clip, volume, trackedTransform);
     }
 
     public static bool TryBorrow(AudioMixerGroup mixerGroup, out IPooledAudioSource pooledAudioSource)
