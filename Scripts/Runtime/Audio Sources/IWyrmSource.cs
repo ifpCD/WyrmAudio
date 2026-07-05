@@ -9,6 +9,10 @@ public interface IWyrmSource
     public Transform BaseTransform { get; }
     public Transform TrackedTransform { get; set; }
 
+    public WyrmMixerGroupConfig Config { get; }
+
+    public void SetConfig(WyrmMixerGroupConfig config);
+
     public void Play();
     public void Play(WyrmAudioClip clip, float? playbackLengthOverride = null);
     public void PlayOneShot(AudioClip clip);

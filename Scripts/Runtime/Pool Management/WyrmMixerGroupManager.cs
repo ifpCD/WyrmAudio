@@ -160,6 +160,8 @@ public class WyrmMixerGroupManager : MonoBehaviour
             return;
         }
 
+        pooledAudioSource.SetConfig(config);
+
         _availableSources[_availableCount++] = pooledAudioSource;
         _totalCreated++;
     }

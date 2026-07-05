@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1277862038185094253}
   - component: {fileID: 275494804511311066}
   m_Layer: 0
-  m_Name: Spatial Source
+  m_Name: Baked Spatial Source With Reflections
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -173,9 +173,9 @@ MonoBehaviour:
   transmissionHigh: 1
   maxTransmissionSurfaces: 1
   directMixLevel: 1
-  reflections: 0
+  reflections: 1
   reflectionsType: 1
-  useDistanceCurveForReflections: 0
+  useDistanceCurveForReflections: 1
   currentBakedSource: {fileID: 0}
   reverbTimeLow: 0
   reverbTimeMid: 0

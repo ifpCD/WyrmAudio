@@ -9,6 +9,14 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     public Transform BaseTransform { get; private set; } = default;
     public Transform TrackedTransform { get; set; } = default;
 
+    public WyrmMixerGroupConfig Config { get; private set; }
+
+    public virtual void SetConfig(WyrmMixerGroupConfig config)
+    {
+        Config = config;
+        ASource.outputAudioMixerGroup = Config.targetMixerGroup;
+    }
+
     protected virtual void Awake()
     {
         BaseTransform = gameObject.transform;
