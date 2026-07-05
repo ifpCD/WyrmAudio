@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Audio;
 
 [CreateAssetMenu(menuName = "Wyrm Audio/Wyrm Audio Clip")]
 public class WyrmAudioClip : ScriptableObject
@@ -19,6 +18,22 @@ public class WyrmAudioClip : ScriptableObject
     [Header("Pitch")]
     public bool pitchRandomization;
 
-    [Range(0.01f, 0.07f)]
+    [Range(minPitchDeviation, maxPitchDeviation)]
     public float pitchDeviation;
+
+    const float minPitchDeviation = 0.01f;
+    const float maxPitchDeviation = 0.07f;
+
+    public bool HasStart { get; private set; }
+    public bool HasBody { get; private set; }
+    public bool HasEnd { get; private set; }
+
+    private void OnValidate()
+    {
+        HasStart = startingClips != null && startingClips.Length > 0;
+        HasBody = mainBodyClips != null && mainBodyClips.Length > 0;
+        HasEnd = endingClips != null && endingClips.Length > 0;
+
+        pitchDeviation = Mathf.Clamp(pitchDeviation, minPitchDeviation, maxPitchDeviation);
+    }
 }

@@ -34,6 +34,11 @@ public class WyrmPool : MonoBehaviour
         pools[mixerGroup].Play(clip, volume, trackedTransform);
     }
 
+    public static void Play(AudioMixerGroup mixerGroup, WyrmAudioClip clip, float? volume = null, Transform trackedTransform = null, float? playbackLengthOverride = null)
+    {
+        pools[mixerGroup].Play(clip, volume, trackedTransform, playbackLengthOverride);
+    }
+
     public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform trackedTransform = null)
     {
         pools[mixerGroup].PlayOneShot(clip, volume, trackedTransform);

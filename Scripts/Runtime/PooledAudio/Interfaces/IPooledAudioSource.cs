@@ -5,12 +5,12 @@ using UnityEngine;
 public interface IPooledAudioSource
 {
     public bool IsPlaying { get; }
-    public bool IsOneShot { get; }
 
     public Transform BaseTransform { get; }
     public Transform TrackedTransform { get; set; }
 
     public void Play();
+    public void Play(WyrmAudioClip clip, float? playbackLengthOverride = null);
     public void PlayOneShot(AudioClip clip);
 
     public void Deactivate();

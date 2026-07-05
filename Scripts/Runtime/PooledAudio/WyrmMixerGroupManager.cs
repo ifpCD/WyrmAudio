@@ -70,6 +70,17 @@ public class WyrmMixerGroupManager : MonoBehaviour
         borrowedSource.Play();
     }
 
+    public void Play(WyrmAudioClip clip, float? volume = null, Transform trackedTransform = null, float? playbackLengthOverride = null)
+    {
+        if (!TryBorrow(out var borrowedSource))
+            return;
+
+        if (volume.HasValue) borrowedSource.volume = volume.Value;
+        if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
+
+        borrowedSource.Play(clip, playbackLengthOverride);
+    }
+
     public void PlayOneShot(AudioClip clip, float? volume = null, Transform trackedTransform = null)
     {
         if (!TryBorrow(out var borrowedSource))

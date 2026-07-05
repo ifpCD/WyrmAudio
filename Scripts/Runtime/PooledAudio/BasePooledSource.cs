@@ -1,11 +1,10 @@
 using UnityEngine;
 
-public class BasePooledSource : MonoBehaviour, IPooledAudioSource
+public partial class BasePooledSource : MonoBehaviour, IPooledAudioSource
 {
     public AudioSource ASource;
 
     public bool IsPlaying => ASource.isPlaying;
-    public bool IsOneShot { get; private set; } = default;
 
     public Transform BaseTransform { get; private set; } = default;
     public Transform TrackedTransform { get; set; } = default;
@@ -17,21 +16,23 @@ public class BasePooledSource : MonoBehaviour, IPooledAudioSource
 
     public virtual void Play()
     {
-        IsOneShot = false;
         ASource.Play();
+    }
+
+    public virtual void Play(WyrmAudioClip clip, float? playbackLengthOverride)
+    {
+        
     }
 
     public virtual void PlayOneShot(AudioClip clip)
     {
-        IsOneShot = true;
         ASource.PlayOneShot(clip);
     }
-
-    public virtual void PlayWyrmClip(WyrmAudioClip clip, float? playbackLengthOverride) { }
 
     public virtual void Deactivate()
     {
         TrackedTransform = null;
+        ASource.Stop();
     }
 
     public virtual AudioClip clip

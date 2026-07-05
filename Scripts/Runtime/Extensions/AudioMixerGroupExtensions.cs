@@ -8,6 +8,11 @@ public static class AudioMixerGroupExtensions
         WyrmPool.Play(mixerGroup, clip, volume, transform);
     }
 
+    public static void Play(this AudioMixerGroup mixerGroup, WyrmAudioClip clip, float volume = 1f, Transform transform = default, float? playbackLengthOverride = null)
+    {
+        WyrmPool.Play(mixerGroup, clip, volume, transform, playbackLengthOverride);
+    }
+
     public static void PlayOneShot(this AudioMixerGroup mixerGroup, AudioClip clip, float volume = 1f, Transform transform = default)
     {
         WyrmPool.PlayOneShot(mixerGroup, clip, volume, transform);
