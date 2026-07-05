@@ -20,7 +20,11 @@ public class WyrmPool : MonoBehaviour
 
     void Update()
     {
-
+        foreach (var (_, mixerManager) in pools)
+        {
+            mixerManager.CullSources();
+            mixerManager.UpdateChildrenTransforms();
+        }
     }
 
     public void Play(AudioMixerGroup mixerGroup, AudioClip clip, float volume)

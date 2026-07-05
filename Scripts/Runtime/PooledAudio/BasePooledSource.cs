@@ -1,37 +1,31 @@
 using UnityEngine;
 
-public class BasePooledSource : IPooledAudioSource
+public class BasePooledSource : MonoBehaviour, IPooledAudioSource
 {
     public AudioSource ASource;
 
-    void Update()
-    {
-        if (TrackedTransform != null)
-            gameObject.transform.SetPositionAndRotation(TrackedTransform.position, TrackedTransform.rotation);
-    }
+    public float Pitch => ASource.pitch;
+    public bool IsPlaying => ASource.isPlaying;
+    public bool IsOneShot { get; set; } = false;
+    public Transform TrackedTransform { get; set; }
 
-    public override float Pitch => ASource.pitch;
-    public override bool IsPlaying => ASource.isPlaying;
-    public override bool IsOneShot { get; set; } = false;
-    public override Transform TrackedTransform { get; set; }
+    public int PlayVersion { get; set; } = 0;
 
-    public override int PlayVersion { get; set; } = 0;
-
-    public override void Play()
+    public virtual void Play()
     {
         IsOneShot = true;
         ASource.Play();
     }
 
-    public override void PlayOneShot(AudioClip clip)
+    public virtual void PlayOneShot(AudioClip clip)
     {
         IsOneShot = false;
         ASource.PlayOneShot(clip);
     }
 
-    public override void Stop() => ASource.Stop();
+    public virtual void Stop() => ASource.Stop();
 
-    public override void SetClip(AudioClip clip) => ASource.clip = clip;
-    public override void SetVolume(float volume) => ASource.volume = volume;
-    public override void SetPitch(float pitch) => ASource.pitch = pitch;
+    public virtual void SetClip(AudioClip clip) => ASource.clip = clip;
+    public virtual void SetVolume(float volume) => ASource.volume = volume;
+    public virtual void SetPitch(float pitch) => ASource.pitch = pitch;
 }

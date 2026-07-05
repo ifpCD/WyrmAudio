@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -7,25 +6,50 @@ public class WyrmMixerGroupManager : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
-    readonly Queue<IPooledAudioSource> available = new();
-    readonly HashSet<IPooledAudioSource> active = new();
+    // Fixed-length arrays replace dynamic collections
+    private IPooledAudioSource[] _availableSources;
+    private int _availableCount;
 
-    readonly List<IPooledAudioSource> toReturn = new();
+    private IPooledAudioSource[] _activeSources;
+    private int _activeCount;
 
-    void Start() => CreatePool();
+    private int _totalCreated;
 
-    void Update()
+    void Start()
     {
-        toReturn.Clear();
-        foreach (var activeSource in active)
-        {
-            if (!activeSource.IsPlaying && !activeSource.IsOneShot)
-                toReturn.Add(activeSource);
-        }
+        // Pre-allocate arrays to the absolute maximum capacity
+        _availableSources = new IPooledAudioSource[config.maxSize];
+        _activeSources = new IPooledAudioSource[config.maxSize];
 
-        for (int i = 0; i < toReturn.Count; i++)
+        for (int i = 0; i < config.initialSize; i++)
         {
-            Return(toReturn[i]);
+            CreatePooledAudioSource();
+        }
+    }
+
+    public void CullSources()
+    {
+        for (int i = _activeCount - 1; i >= 0; i--)
+        {
+            var activeSource = _activeSources[i];
+            if (!activeSource.IsPlaying && !activeSource.IsOneShot)
+            {
+                ReturnActiveSourceAtIndex(i);
+            }
+        }
+    }
+
+    public void UpdateChildrenTransforms()
+    {
+        for (int i = 0; i < _activeCount; i++)
+        {
+            var activeSource = _activeSources[i];
+            if (activeSource.TrackedTransform != null)
+            {
+                activeSource.gameObject.transform.SetPositionAndRotation(
+                    activeSource.TrackedTransform.position,
+                    activeSource.TrackedTransform.rotation);
+            }
         }
     }
 
@@ -58,14 +82,23 @@ public class WyrmMixerGroupManager : MonoBehaviour
     {
         pooledAudioSource = null;
 
-        if (available.Count == 0)
+        if (_availableCount == 0)
         {
-            if (IsOverflowing) return false;
+            if (_totalCreated >= config.maxSize)
+            {
+                if (config.warnOverflow)
+                    Debug.LogWarning($"Mixer Group {config.targetMixerGroup?.name} is overflowing, skipping audio play.");
+                return false;
+            }
             CreatePooledAudioSource();
         }
 
-        pooledAudioSource = available.Dequeue();
-        active.Add(pooledAudioSource);
+        // Pop from available
+        pooledAudioSource = _availableSources[--_availableCount];
+        _availableSources[_availableCount] = null;
+
+        // Push to active
+        _activeSources[_activeCount++] = pooledAudioSource;
 
         pooledAudioSource.PlayVersion++;
 
@@ -74,14 +107,33 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     public void Return(IPooledAudioSource pooledAudioSource)
     {
-        if (!active.Remove(pooledAudioSource)) return;
+        for (int i = 0; i < _activeCount; i++)
+        {
+            if (_activeSources[i] == pooledAudioSource)
+            {
+                ReturnActiveSourceAtIndex(i);
+                return;
+            }
+        }
+    }
 
-        pooledAudioSource.Stop();
-        pooledAudioSource.TrackedTransform = null;
+    private void ReturnActiveSourceAtIndex(int index)
+    {
+        var source = _activeSources[index];
 
-        pooledAudioSource.PlayVersion++;
+        _activeCount--;
+        if (index < _activeCount)
+        {
+            _activeSources[index] = _activeSources[_activeCount];
+        }
+        
+        _activeSources[_activeCount] = null; 
 
-        available.Enqueue(pooledAudioSource);
+        source.Stop();
+        source.TrackedTransform = null;
+        source.PlayVersion++;
+
+        _availableSources[_availableCount++] = source;
     }
 
     private async UniTaskVoid ScheduleReturnAsync(IPooledAudioSource source, AudioClip clip)
@@ -105,16 +157,10 @@ public class WyrmMixerGroupManager : MonoBehaviour
         }
     }
 
-    private void CreatePool()
-    {
-        for (int i = 0; i < config.initialSize; i++)
-        {
-            CreatePooledAudioSource();
-        }
-    }
-
     private void CreatePooledAudioSource()
     {
+        if (_totalCreated >= config.maxSize) return;
+
         GameObject newPooledAudioSourceGO = Instantiate(config.WyrmAudioSourcePrefab, transform);
         if (!newPooledAudioSourceGO.TryGetComponent(out IPooledAudioSource pooledAudioSource))
         {
@@ -122,20 +168,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
             return;
         }
 
-        available.Enqueue(pooledAudioSource);
-    }
-
-    bool IsOverflowing
-    {
-        get
-        {
-            if (active.Count >= config.maxSize)
-            {
-                if (config.warnOverflow)
-                    Debug.LogWarning("Mixer Group is overflowing, skipping audio play");
-                return true;
-            }
-            return false;
-        }
+        _availableSources[_availableCount++] = pooledAudioSource;
+        _totalCreated++;
     }
 }

@@ -1,18 +1,19 @@
 using UnityEngine;
+#pragma warning disable IDE1006 // gameObject MonoBehaviour
 
-public abstract class IPooledAudioSource : MonoBehaviour
+public interface IPooledAudioSource
 {
-    public abstract float Pitch { get; }
-    public abstract bool IsPlaying { get; }
-    public abstract Transform TrackedTransform { get; set; }
-    public abstract bool IsOneShot { get; set; }
+    public float Pitch { get; }
+    public bool IsPlaying { get; }
+    public Transform TrackedTransform { get; set; }
+    public bool IsOneShot { get; set; }
+    public int PlayVersion { get; set; }
+    public void Play();
+    public void PlayOneShot(AudioClip clip);
+    public void SetClip(AudioClip clip);
+    public void SetVolume(float volume);
+    public void SetPitch(float pitch);
+    public void Stop();
 
-    public abstract int PlayVersion { get; set; }
-
-    public abstract void Play();
-    public abstract void PlayOneShot(AudioClip clip);
-    public abstract void SetClip(AudioClip clip);
-    public abstract void SetVolume(float volume);
-    public abstract void SetPitch(float pitch);
-    public abstract void Stop();
+    public GameObject gameObject { get; }
 }
