@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DoublePooledSource : BasePooledSource
+public class WyrmDoubleSource : WyrmBaseSource
 {
     public AudioSource BSource;
 

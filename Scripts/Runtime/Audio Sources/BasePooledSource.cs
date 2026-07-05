@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public partial class BasePooledSource : MonoBehaviour, IPooledAudioSource
+public partial class WyrmBaseSource : MonoBehaviour, IPooledAudioSource
 {
     public AudioSource ASource;
 
@@ -21,7 +21,7 @@ public partial class BasePooledSource : MonoBehaviour, IPooledAudioSource
 
     public virtual void Play(WyrmAudioClip clip, float? playbackLengthOverride)
     {
-        
+
     }
 
     public virtual void PlayOneShot(AudioClip clip)

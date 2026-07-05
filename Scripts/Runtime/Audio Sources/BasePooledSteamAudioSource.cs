@@ -1,7 +1,7 @@
 using SteamAudio;
 using UnityEngine;
 
-public class PooledSteamAudioSource : BasePooledSource
+public class WyrmBaseSteamSource : WyrmBaseSource
 {
     SteamAudioSource steamSrc;
 
