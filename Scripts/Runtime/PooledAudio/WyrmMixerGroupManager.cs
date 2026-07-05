@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Audio;
 
-public class WyrmMixerManager : MonoBehaviour
+public class WyrmMixerGroupManager : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
@@ -13,7 +13,7 @@ public class WyrmMixerManager : MonoBehaviour
 
     void Start() => CreatePool();
 
-    public void Play(AudioClip clip, AudioMixerGroup mixer, float volume = default)
+    public void Play(AudioClip clip, float volume = default)
     {
         if (available.Count == 0)
         {

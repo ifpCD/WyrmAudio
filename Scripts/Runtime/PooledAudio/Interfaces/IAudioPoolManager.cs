@@ -1,5 +1,5 @@
 public interface IAudioPoolManager
 {
-    public PooledAudioSource Borrow();
-    public void Return(PooledAudioSource pooledAudioSource);
+    public BasePooledSource Borrow();
+    public void Return(BasePooledSource pooledAudioSource);
 }
