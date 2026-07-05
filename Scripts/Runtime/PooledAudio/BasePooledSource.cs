@@ -4,7 +4,6 @@ public class BasePooledSource : MonoBehaviour, IPooledAudioSource
 {
     public AudioSource ASource;
 
-    public float Pitch => ASource.pitch;
     public bool IsPlaying => ASource.isPlaying;
     public bool IsOneShot { get; private set; } = default;
 
@@ -25,7 +24,21 @@ public class BasePooledSource : MonoBehaviour, IPooledAudioSource
 
     public virtual void Stop() => ASource.Stop();
 
-    public virtual void SetClip(AudioClip clip) => ASource.clip = clip;
-    public virtual void SetVolume(float volume) => ASource.volume = volume;
-    public virtual void SetPitch(float pitch) => ASource.pitch = pitch;
+    public virtual AudioClip clip
+    {
+        get => ASource.clip;
+        set => ASource.clip = value;
+    }
+
+    public virtual float volume
+    {
+        get => ASource.volume;
+        set => ASource.volume = value;
+    }
+
+    public virtual float pitch
+    {
+        get => ASource.pitch;
+        set => ASource.pitch = value;
+    }
 }

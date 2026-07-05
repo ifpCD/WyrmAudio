@@ -4,7 +4,6 @@ using UnityEngine;
 
 public interface IPooledAudioSource
 {
-    public float Pitch { get; }
     public bool IsPlaying { get; }
     public bool IsOneShot { get; }
 
@@ -16,9 +15,11 @@ public interface IPooledAudioSource
 
     public void Stop();
 
-    public void SetClip(AudioClip clip);
-    public void SetVolume(float volume);
-    public void SetPitch(float pitch);
-
+    // MonoBehaviour
     public GameObject gameObject { get; }
+
+    // AudioSource
+    public AudioClip clip { get; set; }
+    public float volume { get; set; }
+    public float pitch { get; set; }
 }

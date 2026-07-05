@@ -9,25 +9,37 @@ public class DoublePooledSource : BasePooledSource
         BSource.Play();
         base.Play();
     }
+
     public override void Stop()
     {
         BSource.Stop();
         base.Stop();
     }
 
-    public override void SetClip(AudioClip clip)
+    public override AudioClip clip
     {
-        BSource.clip = clip;
-        base.SetClip(clip);
+        set
+        {
+            base.clip = value;
+            BSource.clip = value;
+        }
     }
-    public override void SetVolume(float volume)
+
+    public override float volume
     {
-        BSource.volume = volume;
-        base.SetVolume(volume);
+        set
+        {
+            base.volume = value;
+            BSource.volume = value;
+        }
     }
-    public override void SetPitch(float pitch)
+
+    public override float pitch
     {
-        BSource.pitch = pitch;
-        base.SetPitch(pitch);
+        set
+        {
+            base.pitch = value;
+            BSource.pitch = value;
+        }
     }
 }

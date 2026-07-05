@@ -14,6 +14,14 @@ public class WyrmMixerGroupManager : MonoBehaviour
 
     void Start()
     {
+        if (config.targetMixerGroup == null || config.WyrmAudioSourcePrefab == null)
+        {
+#if !DEVELOPMENT_BUILD
+            Debug.LogError("Incomplete Mixer Group Config");
+#endif
+            return;
+        }
+
         _availableSources = new IPooledAudioSource[config.maxSize];
         _activeSources = new IPooledAudioSource[config.maxSize];
 
@@ -23,7 +31,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         }
     }
 
-    public void CullSources()
+    internal void CullSources()
     {
         for (int index = _activeCount - 1; index >= 0; index--)
         {
@@ -34,7 +42,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         }
     }
 
-    public void UpdateChildrenTransforms()
+    internal void UpdateChildrenTransforms()
     {
         for (int index = 0; index < _activeCount; index++)
         {
@@ -53,8 +61,8 @@ public class WyrmMixerGroupManager : MonoBehaviour
         if (!TryBorrow(out var borrowedSource))
             return;
 
-        borrowedSource.SetClip(clip);
-        if (volume.HasValue) borrowedSource.SetVolume(volume.Value);
+        borrowedSource.clip = clip;
+        if (volume.HasValue) borrowedSource.volume = volume.Value;
         if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
 
         borrowedSource.Play();
@@ -65,7 +73,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         if (!TryBorrow(out var borrowedSource))
             return;
 
-        if (volume.HasValue) borrowedSource.SetVolume(volume.Value);
+        if (volume.HasValue) borrowedSource.volume = volume.Value;
         if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
 
         borrowedSource.PlayOneShot(clip);
@@ -79,8 +87,9 @@ public class WyrmMixerGroupManager : MonoBehaviour
         {
             if (_totalCreated >= config.maxSize)
             {
-                if (config.warnOverflow)
-                    Debug.LogWarning($"Mixer Group {config.targetMixerGroup?.name} is overflowing, skipping audio play.");
+#if !DEVELOPMENT_BUILD
+                Debug.LogWarning($"Mixer Group {config.targetMixerGroup.name} is overflowing, skipping audio play.");
+#endif
                 return false;
             }
             CreatePooledAudioSource();
@@ -110,7 +119,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
         }
     }
 
-    private void ReturnActiveSourceAtIndex(int index)
+    void ReturnActiveSourceAtIndex(int index)
     {
         var source = _activeSources[index];
 
@@ -129,14 +138,16 @@ public class WyrmMixerGroupManager : MonoBehaviour
         _availableSources[_availableCount++] = source;
     }
 
-    private void CreatePooledAudioSource()
+    void CreatePooledAudioSource()
     {
         if (_totalCreated >= config.maxSize) return;
 
         GameObject newPooledAudioSourceGO = Instantiate(config.WyrmAudioSourcePrefab, transform);
         if (!newPooledAudioSourceGO.TryGetComponent(out IPooledAudioSource pooledAudioSource))
         {
+#if !DEVELOPMENT_BUILD
             Debug.LogError("Pooled Audio Source Prefab doesn't contain IPooledAudioSource type component");
+#endif
             return;
         }
 
