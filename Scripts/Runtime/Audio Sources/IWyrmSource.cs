@@ -9,6 +9,9 @@ public interface IWyrmSource
     public Transform BaseTransform { get; }
     public Transform TrackedTransform { get; set; }
 
+    public Vector3 CachedPosition { get; set; }
+    public Quaternion CachedRotation { get; set; }
+
     public WyrmMixerGroupConfig Config { get; }
 
     public void SetConfig(WyrmMixerGroupConfig config);

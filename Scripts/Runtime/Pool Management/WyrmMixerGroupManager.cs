@@ -52,9 +52,20 @@ public class WyrmMixerGroupManager : MonoBehaviour
         for (int i = 0; i < _activeCount; i++)
         {
             var source = sources[i];
-            var t = source.TrackedTransform;
+            var trackedTransform = source.TrackedTransform;
 
-            if (t != null) source.BaseTransform.SetPositionAndRotation(t.position, t.rotation);
+            // Todo: maybe stop playing here?
+            if (trackedTransform == null) continue;
+
+            trackedTransform.GetPositionAndRotation(out Vector3 currentPos, out Quaternion currentRot);
+
+            if (source.CachedPosition != currentPos || source.CachedRotation != currentRot)
+            {
+                source.CachedPosition = currentPos;
+                source.CachedRotation = currentRot;
+
+                source.BaseTransform.SetPositionAndRotation(currentPos, currentRot);
+            }
         }
     }
 
