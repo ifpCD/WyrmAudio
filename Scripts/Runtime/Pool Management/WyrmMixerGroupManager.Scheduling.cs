@@ -22,9 +22,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         }
     }
 
-    private Queue<TransformUpdate> _pendingTransformUpdates = new();
-
-    public void QueueTransformUpdate(IWyrmSource source, Transform newTransform)
+    internal void QueueTransformUpdate(IWyrmSource source, Transform newTransform)
     {
         var transformUpdate = new TransformUpdate
         {

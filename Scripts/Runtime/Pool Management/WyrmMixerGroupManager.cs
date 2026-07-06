@@ -20,7 +20,10 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
     public NativeArray<byte> SourceActiveStates;
     public NativeArray<float> SourceMinDistances;
     public NativeArray<float> SourceMaxDistances;
+
     public NativeArray<float> OutputNormalizedRoomMixVolume;
+
+    private Queue<TransformUpdate> _pendingTransformUpdates;
 
     private IWyrmSource[] _availableSources;
     private int _availableCount;
@@ -44,6 +47,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
 
         int max = config.maxSize;
 
+        _pendingTransformUpdates = new(1000); // todo
         _availableSources = new IWyrmSource[max];
         _activeSources = new IWyrmSource[max];
 
@@ -57,8 +61,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         SourceMaxDistances = new(max, Allocator.Persistent);
         OutputNormalizedRoomMixVolume = new(max, Allocator.Persistent);
 
-        for (int i = 0; i < this.config.initialSize; i++)
-            CreatePooledAudioSource();
+        for (int i = 0; i < max; i++) CreatePooledAudioSource();
     }
 
     public void Destroy() => DisposeNative();
@@ -76,34 +79,6 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
     }
 
-    // internal void UpdateChildrenTransforms()
-    // {
-    //     if (config.isNonSpatial) return;
-
-    //     var sources = _activeSources;
-    //     for (int i = 0; i < _activeCount; i++)
-    //     {
-    //         var source = sources[i];
-    //         var trackedTransform = source.TrackedTransform;
-
-    //         if (trackedTransform == null)
-    //         {
-    //             source.TrackedTransform = null;
-    //             continue;
-    //         }
-
-    //         trackedTransform.GetPositionAndRotation(out Vector3 currentPos, out Quaternion currentRot);
-
-    //         if (source.CachedPosition != currentPos || source.CachedRotation != currentRot)
-    //         {
-    //             source.CachedPosition = currentPos;
-    //             source.CachedRotation = currentRot;
-
-    //             source.CachedTransform.SetPositionAndRotation(currentPos, currentRot);
-    //         }
-    //     }
-    // }
-
     void ReturnActiveSourceAtIndex(int index)
     {
         var source = _activeSources[index];
@@ -112,9 +87,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         _activeSources[index] = _activeSources[lastIndex];
 
         if (_activeSources[index] != null)
-        {
             _activeSources[index].ActiveIndex = index;
-        }
 
         _activeSources[lastIndex] = null;
 
@@ -147,7 +120,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
             return;
         }
 
-        pooledAudioSource.Initialize(config);
+        pooledAudioSource.Initialize(this);
 
         _availableSources[_availableCount++] = pooledAudioSource;
         _totalCreated++;

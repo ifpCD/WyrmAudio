@@ -2,13 +2,13 @@ using UnityEngine;
 
 public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 {
-    public AudioSource ASource;
+    public AudioSource ASource { get; set; }
 
     public int ActiveIndex { get; set; }
-    public WyrmMixerGroupManager Manager { get; set; }
+    public WyrmMixerGroupManager Manager { get; private set; }
 
     public Transform CachedTransform { get; private set; } = default;
-    
+
     private Transform _trackedTransform;
     public Transform TrackedTransform
     {
@@ -28,10 +28,10 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public WyrmMixerGroupConfig Config { get; private set; }
 
-    public virtual void Initialize(WyrmMixerGroupConfig config)
+    public virtual void Initialize(WyrmMixerGroupManager manager)
     {
-        Config = config;
-        ASource.outputAudioMixerGroup = Config.targetMixerGroup;
+        Manager = manager;
+        ASource.outputAudioMixerGroup = Manager.config.targetMixerGroup;
     }
 
     protected virtual void Awake()
@@ -39,10 +39,10 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         CachedTransform = transform;
     }
 
-    public virtual void Play(WyrmSoundBank clip, float? volume = null, Transform trackedTransform = null)
+    public virtual void Play(WyrmSoundBank clip, float? volume = null, Transform track = null)
     {
         if (volume.HasValue) this.volume = volume.Value;
-        if (trackedTransform != null) TrackedTransform = trackedTransform;
+        if (track != null) TrackedTransform = track;
 
         this.clip = clip.mainBodyClips[0]; // placeholder until I make DSP filters.
         Play();

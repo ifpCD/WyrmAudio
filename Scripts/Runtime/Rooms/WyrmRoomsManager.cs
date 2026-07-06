@@ -9,5 +9,6 @@ internal class WyrmRoomManager : MonoBehaviour
     public NativeArray<float4x4> RoomWorldToLocal;
     public NativeArray<float3> RoomExtents;
 
-    public int ActiveRoomCount;
+    private WyrmAudioRoom[] _activeRooms;
+    private int _activeCount;
 }

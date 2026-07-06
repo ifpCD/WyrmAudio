@@ -14,12 +14,12 @@ public class WyrmAudioManager : MonoBehaviour
     static void Initialize()
     {
         if (instance != null) return;
-        WyrmPool.Dispose();
+        WyrmAudioPoolsManager.Dispose();
 
         var go = new GameObject("Wyrm Audio Manager");
 
         instance = go.AddComponent<WyrmAudioManager>();
-        go.AddComponent<WyrmPool>();
+        go.AddComponent<WyrmAudioPoolsManager>();
 
         DontDestroyOnLoad(go);
     }

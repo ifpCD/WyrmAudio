@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 
 [DisallowMultipleComponent]
-public class WyrmPool : MonoBehaviour
+public class WyrmAudioPoolsManager : MonoBehaviour
 {
     static readonly Dictionary<AudioMixerGroup, WyrmMixerGroupManager> pools = new();
 

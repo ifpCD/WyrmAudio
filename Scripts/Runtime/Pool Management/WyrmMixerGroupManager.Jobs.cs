@@ -16,6 +16,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
             TrackedPositions[index] = transform.position;
         }
     }
+    
     [BurstCompile]
     public struct ApplySourceTransformsJob : IJobParallelForTransform
     {
