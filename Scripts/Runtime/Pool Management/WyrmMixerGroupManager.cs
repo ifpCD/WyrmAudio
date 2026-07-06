@@ -1,8 +1,25 @@
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Jobs;
 
-public class WyrmMixerGroupManager : MonoBehaviour
+public partial class WyrmMixerGroupManager : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
+
+    public TransformAccessArray SourceTransforms;
+
+    public NativeArray<float3> SourcePositions;
+
+    public NativeArray<float3> TrackedPositions;
+
+    public NativeArray<byte> SourceActiveStates;
+
+    public NativeArray<float> SourceMinDistances;
+
+    public NativeArray<float> SourceMaxDistances;
+
+    public NativeArray<float> OutputNormalizedRoomMixVolume;
 
     private IWyrmSource[] _availableSources;
     private int _availableCount;
@@ -24,13 +41,37 @@ public class WyrmMixerGroupManager : MonoBehaviour
             return;
         }
 
-        _availableSources = new IWyrmSource[this.config.maxSize];
-        _activeSources = new IWyrmSource[this.config.maxSize];
+        int max = config.maxSize;
+
+        _availableSources = new IWyrmSource[max];
+        _activeSources = new IWyrmSource[max];
+
+        SourceTransforms = new(max);
+
+        SourcePositions = new(max, Allocator.Persistent);
+        TrackedPositions = new(max, Allocator.Persistent);
+        SourceActiveStates = new(max, Allocator.Persistent);
+        SourceMinDistances = new(max, Allocator.Persistent);
+        SourceMaxDistances = new(max, Allocator.Persistent);
+        OutputNormalizedRoomMixVolume = new(max, Allocator.Persistent);
 
         for (int i = 0; i < this.config.initialSize; i++)
-        {
             CreatePooledAudioSource();
-        }
+    }
+
+    public void Destroy() => DisposeNative();
+
+    void DisposeNative()
+    {
+        SourcePositions.Dispose();
+        TrackedPositions.Dispose();
+        SourceActiveStates.Dispose();
+        SourceMinDistances.Dispose();
+        SourceMaxDistances.Dispose();
+        OutputNormalizedRoomMixVolume.Dispose();
+
+        if (SourceTransforms.isCreated)
+            SourceTransforms.Dispose();
     }
 
     internal void CullSources()
@@ -54,8 +95,11 @@ public class WyrmMixerGroupManager : MonoBehaviour
             var source = sources[i];
             var trackedTransform = source.TrackedTransform;
 
-            // Todo: maybe stop playing here?
-            if (trackedTransform == null) continue;
+            if (trackedTransform == null)
+            {
+                source.TrackedTransform = null;
+                continue;
+            }
 
             trackedTransform.GetPositionAndRotation(out Vector3 currentPos, out Quaternion currentRot);
 
@@ -64,79 +108,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
                 source.CachedPosition = currentPos;
                 source.CachedRotation = currentRot;
 
-                source.BaseTransform.SetPositionAndRotation(currentPos, currentRot);
-            }
-        }
-    }
-
-    public void Play(AudioClip clip, float? volume = null, Transform trackedTransform = null)
-    {
-        if (!TryBorrow(out var borrowedSource))
-            return;
-
-        borrowedSource.clip = clip;
-        if (volume.HasValue) borrowedSource.volume = volume.Value;
-        if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
-
-        borrowedSource.Play();
-    }
-
-    public void Play(WyrmSoundBank clip, float? volume = null, Transform trackedTransform = null, float? playbackLengthOverride = null)
-    {
-        if (!TryBorrow(out var borrowedSource))
-            return;
-
-        if (volume.HasValue) borrowedSource.volume = volume.Value;
-        if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
-
-        borrowedSource.Play(clip, volume, trackedTransform, playbackLengthOverride);
-    }
-
-    public void PlayOneShot(AudioClip clip, float? volume = null, Transform trackedTransform = null)
-    {
-        if (!TryBorrow(out var borrowedSource))
-            return;
-
-        if (volume.HasValue) borrowedSource.volume = volume.Value;
-        if (trackedTransform != null) borrowedSource.TrackedTransform = trackedTransform;
-
-        borrowedSource.PlayOneShot(clip);
-    }
-
-    public bool TryBorrow(out IWyrmSource pooledAudioSource)
-    {
-        pooledAudioSource = null;
-
-        if (_availableCount == 0)
-        {
-            if (_totalCreated >= config.maxSize)
-            {
-#if UNITY_EDITOR
-                Debug.LogWarning($"Mixer Group {config.targetMixerGroup.name} is overflowing, skipping audio play.");
-#endif
-                return false;
-            }
-            CreatePooledAudioSource();
-        }
-
-        // Pop from available
-        pooledAudioSource = _availableSources[--_availableCount];
-        _availableSources[_availableCount] = null;
-
-        // Push to active
-        _activeSources[_activeCount++] = pooledAudioSource;
-
-        return true;
-    }
-
-    public void Return(IWyrmSource pooledAudioSource)
-    {
-        for (int i = 0; i < _activeCount; i++)
-        {
-            if (_activeSources[i] == pooledAudioSource)
-            {
-                ReturnActiveSourceAtIndex(i);
-                return;
+                source.CachedTransform.SetPositionAndRotation(currentPos, currentRot);
             }
         }
     }
@@ -171,7 +143,7 @@ public class WyrmMixerGroupManager : MonoBehaviour
             return;
         }
 
-        pooledAudioSource.SetConfig(config);
+        pooledAudioSource.Initialize(config);
 
         _availableSources[_availableCount++] = pooledAudioSource;
         _totalCreated++;

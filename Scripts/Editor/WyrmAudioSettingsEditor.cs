@@ -70,16 +70,13 @@ public class WyrmAudioSettingsEditor : Editor
         sb.AppendLine("public static class WyrmMixer");
         sb.AppendLine("{");
 
-        // 1. Group active configs by Mixer Name
         var validConfigs = settings.ActiveMixerConfigs
             .Where(c => c != null && c.targetMixerGroup != null)
             .GroupBy(c => c.targetMixerGroup.audioMixer.name)
             .ToList();
 
-        // Used to build the switch statement mapping later
         var initializationCases = new List<string>();
 
-        // 2. Generate the nested static classes and fields
         foreach (var mixerGroup in validConfigs)
         {
             string mixerClassName = SanitizeIdentifier(mixerGroup.Key);
@@ -93,15 +90,12 @@ public class WyrmAudioSettingsEditor : Editor
                 string rawGroupName = config.targetMixerGroup.name;
                 string fieldName = SanitizeIdentifier(rawGroupName);
                 
-                // Prevent C# errors
                 if (fieldName == mixerClassName) fieldName += "_Group";
                 if (usedNames.Contains(fieldName)) continue; 
                 usedNames.Add(fieldName);
 
-                // Extremely fast, raw static field access
                 sb.AppendLine($"        public static AudioMixerGroup {fieldName};");
 
-                // Store string match for O(1) boot mapping
                 string configId = $"{mixerGroup.Key}/{rawGroupName}";
                 initializationCases.Add($"                case \"{configId}\":");
                 initializationCases.Add($"                    {mixerClassName}.{fieldName} = config.targetMixerGroup;");
@@ -111,7 +105,6 @@ public class WyrmAudioSettingsEditor : Editor
             sb.AppendLine();
         }
 
-        // 3. Generate the boot-time initialization method
         sb.AppendLine("    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]");
         sb.AppendLine("    private static void Initialize()");
         sb.AppendLine("    {");
@@ -196,10 +189,8 @@ public class WyrmAudioSettingsEditor : Editor
             
             string bankName = SanitizeIdentifier(parts.Last());
             
-            // Prevent C# errors if a bank inside a folder matches the parent folder's name exactly
             if (bankName == current.Name) bankName += "_Bank";
 
-            // Enforce uniqueness 
             int dupCount = 1;
             string originalBankName = bankName;
             while (current.Banks.Any(b => b.fieldName == bankName) || current.SubNodes.ContainsKey(bankName))

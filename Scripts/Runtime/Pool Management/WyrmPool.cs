@@ -29,19 +29,19 @@ public class WyrmPool : MonoBehaviour
         pools.Clear();
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform trackedTransform = null)
+    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform track = null)
     {
-        pools[mixerGroup].Play(clip, volume, trackedTransform);
+        pools[mixerGroup].Play(clip, volume, track);
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, WyrmSoundBank clip, float? volume = null, Transform trackedTransform = null, float? playbackLengthOverride = null)
+    public static void Play(AudioMixerGroup mixerGroup, WyrmSoundBank clip, float? volume = null, Transform track = null)
     {
-        pools[mixerGroup].Play(clip, volume, trackedTransform, playbackLengthOverride);
+        pools[mixerGroup].Play(clip, volume, track);
     }
 
-    public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform trackedTransform = null)
+    public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform track = null)
     {
-        pools[mixerGroup].PlayOneShot(clip, volume, trackedTransform);
+        pools[mixerGroup].PlayOneShot(clip, volume, track);
     }
 
     public static bool TryBorrow(AudioMixerGroup mixerGroup, out IWyrmSource pooledAudioSource)

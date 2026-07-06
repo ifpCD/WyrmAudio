@@ -1,10 +1,11 @@
 {
     "name": "WyrmAudio",
+    "rootNamespace": "",
     "references": [
         "SteamAudioUnity",
         "UniTask",
-        "com.unity.burst",
-        "com.unity.mathematics"
+        "Unity.Mathematics",
+        "Unity.Burst"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

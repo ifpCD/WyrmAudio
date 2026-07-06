@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+using Unity.Mathematics;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -7,6 +7,8 @@ public class WyrmAudioManager : MonoBehaviour
     private static WyrmAudioManager instance;
 
     private AudioListener listener;
+
+    public float3 ListenerPosition { get; private set; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Initialize()

@@ -1,7 +1,13 @@
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
-internal class WyrmAudioRoomManager : MonoBehaviour
+internal class WyrmRoomManager : MonoBehaviour
 {
+    public NativeArray<byte> ListenerInRoomState;
     
-    
+    public NativeArray<float4x4> RoomWorldToLocal;
+    public NativeArray<float3> RoomExtents;
+
+    public int ActiveRoomCount;
 }

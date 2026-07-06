@@ -6,7 +6,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public bool IsPlaying => ASource.isPlaying;
 
-    public Transform BaseTransform { get; private set; } = default;
+    public Transform CachedTransform { get; private set; } = default;
     public Transform TrackedTransform { get; set; } = default;
 
     public Vector3 CachedPosition { get; set; }
@@ -14,7 +14,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public WyrmMixerGroupConfig Config { get; private set; }
 
-    public virtual void SetConfig(WyrmMixerGroupConfig config)
+    public virtual void Initialize(WyrmMixerGroupConfig config)
     {
         Config = config;
         ASource.outputAudioMixerGroup = Config.targetMixerGroup;
@@ -22,26 +22,16 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     protected virtual void Awake()
     {
-        BaseTransform = gameObject.transform;
+        CachedTransform = transform;
     }
 
-    public virtual void Play()
-    {
-        ASource.Play();
-    }
-
-    public virtual void Play(WyrmSoundBank clip, float? volume = null, Transform trackedTransform = null, float? playbackLengthOverride = null)
+    public virtual void Play(WyrmSoundBank clip, float? volume = null, Transform trackedTransform = null)
     {
         if (volume.HasValue) this.volume = volume.Value;
         if (trackedTransform != null) TrackedTransform = trackedTransform;
 
-        this.clip = clip.mainBodyClips[0];
+        this.clip = clip.mainBodyClips[0]; // placeholder until I make DSP filters.
         Play();
-    }
-
-    public virtual void PlayOneShot(AudioClip clip)
-    {
-        ASource.PlayOneShot(clip);
     }
 
     public virtual void Deactivate()
@@ -73,4 +63,22 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         get => ASource.pitch;
         set => ASource.pitch = value;
     }
+
+    public virtual float minDistance
+    {
+        get => ASource.minDistance;
+        set => ASource.minDistance = value;
+    }
+
+    public virtual float maxDistance
+    {
+        get => ASource.minDistance;
+        set => ASource.minDistance = value;
+    }
+
+    public virtual void Play() => ASource.Play();
+
+    public virtual void PlayOneShot(AudioClip clip) => ASource.PlayOneShot(clip);
+
+    public virtual void Stop() => ASource.Stop();
 }

@@ -1,12 +1,12 @@
 using System;
 using UnityEngine;
-#pragma warning disable IDE1006 // gameObject MonoBehaviour
+#pragma warning disable IDE1006 // MonoBehaviour and AudioSource
 
 public interface IWyrmSource
 {
     public bool IsPlaying { get; }
 
-    public Transform BaseTransform { get; }
+    public Transform CachedTransform { get; }
     public Transform TrackedTransform { get; set; }
 
     public Vector3 CachedPosition { get; set; }
@@ -14,11 +14,9 @@ public interface IWyrmSource
 
     public WyrmMixerGroupConfig Config { get; }
 
-    public void SetConfig(WyrmMixerGroupConfig config);
+    public void Initialize(WyrmMixerGroupConfig config);
 
-    public void Play();
-    public void Play(WyrmSoundBank clip, float? volume = null, Transform track = null, float? playbackLengthOverride = null);
-    public void PlayOneShot(AudioClip clip);
+    public void Play(WyrmSoundBank clip, float? volume = null, Transform track = null);
 
     public void Deactivate();
 
@@ -30,4 +28,9 @@ public interface IWyrmSource
     public bool loop { get; set; }
     public float volume { get; set; }
     public float pitch { get; set; }
+    public float minDistance { get; set; }
+    public float maxDistance { get; set; }
+    public void Play();
+    public void PlayOneShot(AudioClip clip);
+    public void Stop();
 }
