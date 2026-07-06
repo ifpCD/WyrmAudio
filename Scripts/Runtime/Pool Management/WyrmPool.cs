@@ -20,7 +20,7 @@ public class WyrmPool : MonoBehaviour
         foreach (var (_, manager) in pools)
         {
             manager.CullSources();
-            manager.UpdateChildrenTransforms();
+            manager.UpdateJobs();
         }
     }
 

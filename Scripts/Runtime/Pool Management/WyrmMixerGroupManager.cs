@@ -1,24 +1,25 @@
+using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
+
+
 
 public partial class WyrmMixerGroupManager : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
     public TransformAccessArray SourceTransforms;
+    public TransformAccessArray TrackedTransforms;
 
     public NativeArray<float3> SourcePositions;
-
     public NativeArray<float3> TrackedPositions;
 
     public NativeArray<byte> SourceActiveStates;
-
     public NativeArray<float> SourceMinDistances;
-
     public NativeArray<float> SourceMaxDistances;
-
     public NativeArray<float> OutputNormalizedRoomMixVolume;
 
     private IWyrmSource[] _availableSources;
@@ -47,6 +48,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         _activeSources = new IWyrmSource[max];
 
         SourceTransforms = new(max);
+        TrackedTransforms = new(max);
 
         SourcePositions = new(max, Allocator.Persistent);
         TrackedPositions = new(max, Allocator.Persistent);
@@ -70,61 +72,63 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         SourceMaxDistances.Dispose();
         OutputNormalizedRoomMixVolume.Dispose();
 
-        if (SourceTransforms.isCreated)
-            SourceTransforms.Dispose();
+        if (SourceTransforms.isCreated) SourceTransforms.Dispose();
+        if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
     }
 
-    internal void CullSources()
-    {
-        for (int index = _activeCount - 1; index >= 0; index--)
-        {
-            if (!_activeSources[index].IsPlaying)
-            {
-                ReturnActiveSourceAtIndex(index);
-            }
-        }
-    }
+    // internal void UpdateChildrenTransforms()
+    // {
+    //     if (config.isNonSpatial) return;
 
-    internal void UpdateChildrenTransforms()
-    {
-        if (config.isNonSpatial) return;
+    //     var sources = _activeSources;
+    //     for (int i = 0; i < _activeCount; i++)
+    //     {
+    //         var source = sources[i];
+    //         var trackedTransform = source.TrackedTransform;
 
-        var sources = _activeSources;
-        for (int i = 0; i < _activeCount; i++)
-        {
-            var source = sources[i];
-            var trackedTransform = source.TrackedTransform;
+    //         if (trackedTransform == null)
+    //         {
+    //             source.TrackedTransform = null;
+    //             continue;
+    //         }
 
-            if (trackedTransform == null)
-            {
-                source.TrackedTransform = null;
-                continue;
-            }
+    //         trackedTransform.GetPositionAndRotation(out Vector3 currentPos, out Quaternion currentRot);
 
-            trackedTransform.GetPositionAndRotation(out Vector3 currentPos, out Quaternion currentRot);
+    //         if (source.CachedPosition != currentPos || source.CachedRotation != currentRot)
+    //         {
+    //             source.CachedPosition = currentPos;
+    //             source.CachedRotation = currentRot;
 
-            if (source.CachedPosition != currentPos || source.CachedRotation != currentRot)
-            {
-                source.CachedPosition = currentPos;
-                source.CachedRotation = currentRot;
-
-                source.CachedTransform.SetPositionAndRotation(currentPos, currentRot);
-            }
-        }
-    }
+    //             source.CachedTransform.SetPositionAndRotation(currentPos, currentRot);
+    //         }
+    //     }
+    // }
 
     void ReturnActiveSourceAtIndex(int index)
     {
         var source = _activeSources[index];
+        int lastIndex = _activeCount - 1;
 
-        _activeCount--;
-        if (index < _activeCount)
+        _activeSources[index] = _activeSources[lastIndex];
+
+        if (_activeSources[index] != null)
         {
-            _activeSources[index] = _activeSources[_activeCount];
+            _activeSources[index].ActiveIndex = index;
         }
 
-        _activeSources[_activeCount] = null;
+        _activeSources[lastIndex] = null;
 
+        SourcePositions[index] = SourcePositions[lastIndex];
+        TrackedPositions[index] = TrackedPositions[lastIndex];
+        SourceActiveStates[index] = SourceActiveStates[lastIndex];
+        SourceMinDistances[index] = SourceMinDistances[lastIndex];
+        SourceMaxDistances[index] = SourceMaxDistances[lastIndex];
+        OutputNormalizedRoomMixVolume[index] = OutputNormalizedRoomMixVolume[lastIndex];
+
+        SourceTransforms.RemoveAtSwapBack(index);
+        TrackedTransforms.RemoveAtSwapBack(index);
+
+        _activeCount--;
         source.Deactivate();
 
         _availableSources[_availableCount++] = source;

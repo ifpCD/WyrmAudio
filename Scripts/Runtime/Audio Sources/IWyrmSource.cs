@@ -4,7 +4,10 @@ using UnityEngine;
 
 public interface IWyrmSource
 {
-    public bool IsPlaying { get; }
+    int ActiveIndex { get; set; }
+    WyrmMixerGroupManager Manager { get; set; }
+
+    public bool isPlaying { get; }
 
     public Transform CachedTransform { get; }
     public Transform TrackedTransform { get; set; }

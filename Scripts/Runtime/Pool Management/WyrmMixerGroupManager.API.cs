@@ -12,7 +12,12 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
 
         borrowedSource.clip = clip;
         if (volume.HasValue) borrowedSource.volume = volume.Value;
-        if (track != null) borrowedSource.TrackedTransform = track;
+
+        if (track != null)
+        {
+            borrowedSource.TrackedTransform = track;
+            TrackedTransforms[_activeCount - 1] = track;
+        }
 
         borrowedSource.Play();
     }
@@ -21,6 +26,12 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
     {
         if (!TryBorrow(out var borrowedSource))
             return;
+
+        if (track != null)
+        {
+            borrowedSource.TrackedTransform = track;
+            TrackedTransforms[_activeCount - 1] = track;
+        }
 
         borrowedSource.Play(clip, volume, track);
     }
@@ -31,10 +42,16 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
             return;
 
         if (volume.HasValue) borrowedSource.volume = volume.Value;
-        if (track != null) borrowedSource.TrackedTransform = track;
+
+        if (track != null)
+        {
+            borrowedSource.TrackedTransform = track;
+            TrackedTransforms[_activeCount - 1] = track;
+        }
 
         borrowedSource.PlayOneShot(clip);
     }
+
 
     public bool TryBorrow(out IWyrmSource pooledAudioSource)
     {
@@ -52,12 +69,27 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
             CreatePooledAudioSource();
         }
 
-        // Pop from available
         pooledAudioSource = _availableSources[--_availableCount];
-        _availableSources[_availableCount] = null;
+        int newIndex = _activeCount;
 
-        // Push to active
-        _activeSources[_activeCount++] = pooledAudioSource;
+        pooledAudioSource.Manager = this;
+        pooledAudioSource.ActiveIndex = newIndex;
+        _activeSources[newIndex] = pooledAudioSource;
+
+        // TODO: Cache this once per runtime
+        var t = transform;
+
+        SourceTransforms.Add(pooledAudioSource.CachedTransform);
+        TrackedTransforms.Add(t);
+
+        SourcePositions[newIndex] = pooledAudioSource.CachedPosition;
+        TrackedPositions[newIndex] = t.position;
+        SourceActiveStates[newIndex] = 1;
+        SourceMinDistances[newIndex] = pooledAudioSource.minDistance;
+        SourceMaxDistances[newIndex] = pooledAudioSource.maxDistance;
+        OutputNormalizedRoomMixVolume[newIndex] = 0f;
+
+        _activeCount++;
 
         return true;
     }

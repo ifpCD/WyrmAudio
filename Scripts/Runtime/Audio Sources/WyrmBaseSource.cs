@@ -4,10 +4,24 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 {
     public AudioSource ASource;
 
-    public bool IsPlaying => ASource.isPlaying;
+    public int ActiveIndex { get; set; }
+    public WyrmMixerGroupManager Manager { get; set; }
 
     public Transform CachedTransform { get; private set; } = default;
-    public Transform TrackedTransform { get; set; } = default;
+    
+    private Transform _trackedTransform;
+    public Transform TrackedTransform
+    {
+        get => _trackedTransform;
+        set
+        {
+            _trackedTransform = value;
+            if (Manager != null && isPlaying)
+            {
+                Manager.QueueTransformUpdate(this, value);
+            }
+        }
+    }
 
     public Vector3 CachedPosition { get; set; }
     public Quaternion CachedRotation { get; set; }
@@ -45,6 +59,8 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         get => ASource.clip;
         set => ASource.clip = value;
     }
+
+    public bool isPlaying => ASource.isPlaying;
 
     public virtual bool loop
     {
