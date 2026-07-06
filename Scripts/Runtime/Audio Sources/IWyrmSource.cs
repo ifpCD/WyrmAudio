@@ -4,24 +4,21 @@ using UnityEngine;
 
 public interface IWyrmSource
 {
-    AudioSource ASource { get; set; }
-
-    int ActiveIndex { get; set; }
-    WyrmMixerGroupManager Manager { get; }
-
-    bool isPlaying { get; }
-
-    Transform CachedTransform { get; }
-    Transform TrackedTransform { get; set; }
-
-    Vector3 CachedPosition { get; set; }
-    Quaternion CachedRotation { get; set; }
-
     WyrmMixerGroupConfig Config { get; }
 
     void Initialize(WyrmMixerGroupManager manager);
 
+    Transform TrackedTransform { get; set; }
+
     void Play(WyrmSoundBank clip, float? volume = null, Transform track = null);
+
+    int ActiveIndex { get; set; }
+    WyrmMixerGroupManager Manager { get; }
+
+    Transform CachedTransform { get; }
+
+    public Vector3 CachedPosition { get; set; }
+    public Quaternion CachedRotation { get; set; }
 
     void Deactivate();
 
@@ -29,6 +26,7 @@ public interface IWyrmSource
     GameObject gameObject { get; }
 
     // AudioSource
+    AudioSource ASource { get; set; }
     AudioClip clip { get; set; }
     bool loop { get; set; }
     float volume { get; set; }
@@ -38,4 +36,5 @@ public interface IWyrmSource
     void Play();
     void PlayOneShot(AudioClip clip);
     void Stop();
+    bool isPlaying { get; }
 }

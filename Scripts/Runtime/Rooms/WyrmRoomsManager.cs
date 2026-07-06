@@ -1,14 +1,10 @@
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Burst;
+using Unity.Jobs;
 using UnityEngine;
 
-internal class WyrmRoomManager : MonoBehaviour
+public partial class WyrmRoomManager : MonoBehaviour
 {
-    public NativeArray<byte> ListenerInRoomState;
-    
-    public NativeArray<float4x4> RoomWorldToLocal;
-    public NativeArray<float3> RoomExtents;
 
-    private WyrmAudioRoom[] _activeRooms;
-    private int _activeCount;
 }

@@ -9,7 +9,9 @@ public class WyrmAudioSettings : ScriptableObject
     [HideInInspector]
     public List<WyrmSoundBank> RegisteredSoundBanks = new();
 
-    public LayerMask roomLayer;
+
+    [Header("Audio Rooms")]
+    public int maxActiveRooms = 1024;
 
     static WyrmAudioSettings _instance = null;
 

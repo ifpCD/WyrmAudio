@@ -26,9 +26,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         public void Execute(int index, TransformAccess transform)
         {
             float3 targetPos = TrackedPositions[index];
-
             transform.position = targetPos;
-
             SourcePositions[index] = targetPos;
         }
     }

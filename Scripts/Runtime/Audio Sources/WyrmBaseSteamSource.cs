@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class WyrmBaseSteamSource : WyrmBaseSource
 {
-    public SteamAudioSource SteamSrc { get; private set; }
+    public SteamAudioSource SteamSrc { get; set; }
 
     protected override void Awake()
     {
@@ -13,13 +13,13 @@ public class WyrmBaseSteamSource : WyrmBaseSource
 
     public override void Play()
     {
-        // SteamSrc.enabled = true;
+        SteamSrc.enabled = true;
         base.Play();
     }
 
     public override void PlayOneShot(AudioClip clip)
     {
-        // SteamSrc.enabled = true;
+        SteamSrc.enabled = true;
         base.PlayOneShot(clip);
     }
 

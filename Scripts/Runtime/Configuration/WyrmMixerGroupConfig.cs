@@ -9,10 +9,10 @@ public class WyrmMixerGroupConfig : ScriptableObject
     public GameObject WyrmAudioSourcePrefab;
 
     [Header("Pooling")]
-    [Range(1, 500)]
+    [Range(1, 50000)]
     public int initialSize = 5;
 
-    [Range(2, 1000)]
+    [Range(2, 50000)]
     public int maxSize = 10;
 
     [Header("Settings")]

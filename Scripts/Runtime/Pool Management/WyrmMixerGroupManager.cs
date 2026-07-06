@@ -1,27 +1,27 @@
 using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
-
-
 
 public partial class WyrmMixerGroupManager : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
-    public TransformAccessArray SourceTransforms;
-    public TransformAccessArray TrackedTransforms;
+    internal TransformAccessArray SourceTransforms;
 
-    public NativeArray<float3> SourcePositions;
-    public NativeArray<float3> TrackedPositions;
+    internal TransformAccessArray TrackedTransforms;
 
-    public NativeArray<byte> SourceActiveStates;
-    public NativeArray<float> SourceMinDistances;
-    public NativeArray<float> SourceMaxDistances;
+    internal NativeArray<float3> SourcePositions;
+    internal NativeArray<float3> TrackedPositions;
+    internal NativeArray<float3> PropagationPositions;
 
-    public NativeArray<float> OutputNormalizedRoomMixVolume;
+    internal NativeArray<byte> SourceActiveStates;
+    internal NativeArray<float> SourceMinDistances;
+    internal NativeArray<float> SourceMaxDistances;
+
+    // Room mixing
+    internal NativeArray<float> OutputNormalizedRoomMixVolume;
 
     private Queue<TransformUpdate> _pendingTransformUpdates;
 
@@ -56,9 +56,12 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
 
         SourcePositions = new(max, Allocator.Persistent);
         TrackedPositions = new(max, Allocator.Persistent);
+        PropagationPositions = new(max, Allocator.Persistent);
+
         SourceActiveStates = new(max, Allocator.Persistent);
         SourceMinDistances = new(max, Allocator.Persistent);
         SourceMaxDistances = new(max, Allocator.Persistent);
+
         OutputNormalizedRoomMixVolume = new(max, Allocator.Persistent);
 
         for (int i = 0; i < max; i++) CreatePooledAudioSource();
@@ -70,6 +73,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
     {
         SourcePositions.Dispose();
         TrackedPositions.Dispose();
+        PropagationPositions.Dispose();
         SourceActiveStates.Dispose();
         SourceMinDistances.Dispose();
         SourceMaxDistances.Dispose();
@@ -93,9 +97,12 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
 
         SourcePositions[index] = SourcePositions[lastIndex];
         TrackedPositions[index] = TrackedPositions[lastIndex];
+        PropagationPositions[index] = TrackedPositions[lastIndex];
+
         SourceActiveStates[index] = SourceActiveStates[lastIndex];
         SourceMinDistances[index] = SourceMinDistances[lastIndex];
         SourceMaxDistances[index] = SourceMaxDistances[lastIndex];
+
         OutputNormalizedRoomMixVolume[index] = OutputNormalizedRoomMixVolume[lastIndex];
 
         SourceTransforms.RemoveAtSwapBack(index);

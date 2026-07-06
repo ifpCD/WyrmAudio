@@ -13,6 +13,12 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         borrowedSource.clip = clip;
         if (volume.HasValue) borrowedSource.volume = volume.Value;
 
+        if (track != null)
+        {
+            borrowedSource.TrackedTransform = track;
+            TrackedTransforms[_activeCount - 1] = track;
+        }
+
         borrowedSource.Play();
     }
 
@@ -20,6 +26,12 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
     {
         if (!TryBorrow(out var borrowedSource))
             return;
+
+        if (track != null)
+        {
+            borrowedSource.TrackedTransform = track;
+            TrackedTransforms[_activeCount - 1] = track;
+        }
 
         borrowedSource.Play(clip, volume, track);
     }
@@ -31,6 +43,11 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
 
         if (volume.HasValue) borrowedSource.volume = volume.Value;
 
+        if (track != null)
+        {
+            borrowedSource.TrackedTransform = track;
+            TrackedTransforms[_activeCount - 1] = track;
+        }
         borrowedSource.PlayOneShot(clip);
     }
 

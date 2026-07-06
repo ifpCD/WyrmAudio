@@ -2,6 +2,7 @@ using UnityEngine;
 
 public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 {
+    [field: SerializeField]
     public AudioSource ASource { get; set; }
 
     public int ActiveIndex { get; set; }
