@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: WyrmAudio::WyrmMixerGroupConfig
   targetMixerGroup: {fileID: 2554023163134964317, guid: 7a090cce9ab939a48bd396c11905c17c, type: 2}
   WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: acf1df49f2f58a940986265d4f08ec94, type: 3}
-  initialSize: 2
+  initialSize: 5
   maxSize: 5
   isNonSpatial: 0
   isRoomMixed: 0

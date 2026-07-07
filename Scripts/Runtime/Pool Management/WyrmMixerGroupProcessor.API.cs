@@ -11,24 +11,16 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
             return;
 
-        borrowedSource.clip = bank.GetBodyClip(); // more compplex work here in future
-        if (volume.HasValue) borrowedSource.volume = volume.Value;
-
-        borrowedSource.TrackedTransform = track;
-        borrowedSource.Play();
+        borrowedSource.Play(bank, track, volume);
     }
-    
+
     public void Play(AudioClip clip, Transform track = null, float? volume = null)
     {
         bool isTracking = track != null;
         if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
             return;
 
-        borrowedSource.clip = clip;
-        if (volume.HasValue) borrowedSource.volume = volume.Value;
-
-        borrowedSource.TrackedTransform = track;
-        borrowedSource.Play();
+        borrowedSource.Play(clip, track, volume);
     }
 
     public void PlayOneShot(AudioClip clip, Transform track = null, float? volume = null)

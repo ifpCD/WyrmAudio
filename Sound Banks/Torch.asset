@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a26f8af3c790a9144bc497c1e475cf27, type: 3}
   m_Name: Torch
   m_EditorClassIdentifier: WyrmAudio::WyrmSoundBank
+  startingClips: []
   mainBodyClips:
   - {fileID: 8300000, guid: 8befa637eed09ff40b7bf0249136c80d, type: 3}
-  startingClips: []
   endingClips: []
   loop: 0
   fadeIn: 0
   fadeOut: 0
-  pitchRandomization: 0
-  pitchDeviation: 0.01
+  pitchRandomization: 1
+  pitchDeviation: 0.07

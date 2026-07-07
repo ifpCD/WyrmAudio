@@ -11,8 +11,8 @@ public interface IWyrmSource
     Transform TrackedTransform { get; set; }
 
     // future
-    void Play(AudioClip clip, float? volume = null, Transform track = null);
-    void Play(WyrmSoundBank clip, float? volume = null, Transform track = null);
+    void Play(AudioClip clip, Transform track = null, float? volume = null);
+    void Play(WyrmSoundBank clip, Transform track = null, float? volume = null);
 
     void Return();
 

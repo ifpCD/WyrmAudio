@@ -18,11 +18,11 @@ public class WyrmSoundBank : ScriptableObject
     [Header("Pitch")]
     public bool pitchRandomization;
 
-    [Range(minPitchDeviation, maxPitchDeviation)]
+    [Range(MIN_PITCH_DEVIATION_RANGE, MAX_PITCH_DEVIATION_RANGE)]
     public float pitchDeviation;
 
-    const float minPitchDeviation = 0.01f;
-    const float maxPitchDeviation = 0.07f;
+    const float MIN_PITCH_DEVIATION_RANGE = 0.01f;
+    const float MAX_PITCH_DEVIATION_RANGE = 0.5f;
 
     public bool HasStart => startingClips != null && startingClips.Length > 0;
     public bool HasBody  => mainBodyClips != null && mainBodyClips.Length > 0;
@@ -41,7 +41,7 @@ public class WyrmSoundBank : ScriptableObject
 
     private void OnValidate()
     {
-        pitchDeviation = Mathf.Clamp(pitchDeviation, minPitchDeviation, maxPitchDeviation);
+        pitchDeviation = Mathf.Clamp(pitchDeviation, MIN_PITCH_DEVIATION_RANGE, MAX_PITCH_DEVIATION_RANGE);
 
         _startBag.SetSource(startingClips);
         _bodyBag.SetSource(mainBodyClips);

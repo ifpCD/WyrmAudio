@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3316674477214084957}
   - component: {fileID: 6615845327962746880}
   - component: {fileID: -3521000247303220482}
-  - component: {fileID: -9032153998753606879}
+  - component: {fileID: 6488752852829952413}
   m_Layer: 0
   m_Name: Client Footstep Source
   m_TagString: Untagged
@@ -54,7 +54,7 @@ AudioSource:
   Spatialize: 1
   SpatializePostEffects: 0
   Priority: 128
-  DopplerLevel: 1
+  DopplerLevel: 0
   MinDistance: 1
   MaxDistance: 500
   Pan2D: 0
@@ -91,7 +91,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0.5
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -121,7 +121,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
+      value: 0
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -173,7 +173,7 @@ MonoBehaviour:
   transmissionHigh: 1
   maxTransmissionSurfaces: 1
   directMixLevel: 1
-  reflections: 1
+  reflections: 0
   reflectionsType: 0
   useDistanceCurveForReflections: 0
   currentBakedSource: {fileID: 0}
@@ -184,8 +184,8 @@ MonoBehaviour:
   hybridReverbEQMid: 1
   hybridReverbEQHigh: 1
   hybridReverbDelay: 0
-  applyHRTFToReflections: 0
-  reflectionsMixLevel: 1
+  applyHRTFToReflections: 1
+  reflectionsMixLevel: 4.08
   pathing: 0
   pathingProbeBatch: {fileID: 0}
   pathValidation: 1
@@ -214,7 +214,7 @@ MonoBehaviour:
   applyHRTFToPathing: 0
   pathingMixLevel: 1
   normalizePathingEQ: 0
---- !u!114 &-9032153998753606879
+--- !u!114 &6488752852829952413
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

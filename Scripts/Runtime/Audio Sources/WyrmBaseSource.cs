@@ -42,7 +42,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         CachedTransform = transform;
     }
 
-    public virtual void Play(AudioClip clip, float? volume = null, Transform track = null)
+    public virtual void Play(AudioClip clip, Transform track = null, float? volume = null)
     {
         if (volume.HasValue) this.volume = volume.Value;
         if (track != null) TrackedTransform = track;
@@ -51,10 +51,11 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         Play();
     }
 
-    public virtual void Play(WyrmSoundBank bank, float? volume = null, Transform track = null)
+    public virtual void Play(WyrmSoundBank bank, Transform track = null, float? volume = null)
     {
         if (volume.HasValue) this.volume = volume.Value;
         if (track != null) TrackedTransform = track;
+        if(bank.pitchRandomization) ASource.pitch = Random.Range(1f - bank.pitchDeviation, 1f + bank.pitchDeviation);
 
         clip = bank.GetBodyClip();
         Play();
@@ -65,6 +66,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     public virtual void Deactivate()
     {
         ASource.Stop();
+        _trackedTransform = null;
     }
 
     public virtual AudioClip clip
