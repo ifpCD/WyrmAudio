@@ -5,7 +5,8 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     [field: SerializeField]
     public AudioSource ASource { get; set; }
 
-    public int ActiveIndex { get; set; }
+    public bool IsBorrowed { get; set; } = false;
+    public int ActiveIndex { get; set; } = -1;
     public WyrmMixerGroupProcessor Manager { get; private set; }
 
     public Transform CachedTransform { get; private set; } = default;
@@ -16,11 +17,11 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         get => _trackedTransform;
         set
         {
+            if (_trackedTransform == value) return;
             _trackedTransform = value;
-            if (Manager != null && isPlaying)
-            {
-                Manager.QueueTransformUpdate(this, value);
-            }
+
+            if (ActiveIndex >= 0)
+                Manager.UpdateTrackedTransform(ActiveIndex, _trackedTransform);
         }
     }
 
@@ -60,7 +61,6 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public virtual void Deactivate()
     {
-        TrackedTransform = null;
         ASource.Stop();
     }
 

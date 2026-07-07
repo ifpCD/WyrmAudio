@@ -4,8 +4,8 @@ using UnityEngine;
 public class WyrmSoundBank : ScriptableObject
 {
     [Header("Banks")]
-    public AudioClip[] mainBodyClips;
     public AudioClip[] startingClips;
+    public AudioClip[] mainBodyClips;
     public AudioClip[] endingClips;
 
     [Header("Playback")]

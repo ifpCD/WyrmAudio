@@ -8,6 +8,8 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
+    private Transform _cachedTransform;
+
     internal TransformAccessArray SourceTransforms;
 
     internal TransformAccessArray TrackedTransforms;
@@ -21,10 +23,7 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
     internal NativeArray<float> SourceMinDistances;
     internal NativeArray<float> SourceMaxDistances;
 
-    // Room mixing
     internal NativeArray<float> OutputNormalizedRoomMixVolume;
-
-    private Queue<TransformUpdate> _pendingTransformUpdates;
 
     private IWyrmSource[] _availableSources;
     private int _availableCount;
@@ -48,7 +47,6 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 
         int max = config.maxSize;
 
-        _pendingTransformUpdates = new(1000); // todo
         _availableSources = new IWyrmSource[max];
         _activeSources = new IWyrmSource[max];
 
@@ -60,13 +58,18 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         PropagationPositions = new(max, Allocator.Persistent);
 
         SourceActiveStates = new(max, Allocator.Persistent);
-        
+
         SourceMinDistances = new(max, Allocator.Persistent);
         SourceMaxDistances = new(max, Allocator.Persistent);
 
         OutputNormalizedRoomMixVolume = new(max, Allocator.Persistent);
 
         for (int i = 0; i < max; i++) CreatePooledAudioSource();
+    }
+
+    void Awake()
+    {
+        _cachedTransform = transform;
     }
 
     void OnDestroy()
@@ -117,8 +120,10 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         TrackedTransforms.RemoveAtSwapBack(index);
 
         _activeCount--;
+        source.ActiveIndex = -1;
         source.Deactivate();
-
+        source.IsBorrowed = false;
+        
         _availableSources[_availableCount++] = source;
     }
 

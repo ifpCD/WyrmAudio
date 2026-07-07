@@ -7,24 +7,20 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
     public void Play(AudioClip clip, float? volume = null, Transform track = null)
     {
-        if (!TryBorrow(out var borrowedSource))
+        if (!TryReserve(out var borrowedSource))
             return;
 
         borrowedSource.clip = clip;
         if (volume.HasValue) borrowedSource.volume = volume.Value;
 
-        if (track != null)
-        {
-            borrowedSource.TrackedTransform = track;
-            TrackedTransforms[_activeCount - 1] = track;
-        }
+        if (track != null) borrowedSource.TrackedTransform = track;
 
         borrowedSource.Play();
     }
 
     public void PlayOneShot(AudioClip clip, float? volume = null, Transform track = null)
     {
-        if (!TryBorrow(out var borrowedSource))
+        if (!TryReserve(out var borrowedSource))
             return;
 
         if (volume.HasValue) borrowedSource.volume = volume.Value;
@@ -37,8 +33,16 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         borrowedSource.PlayOneShot(clip);
     }
 
-
     public bool TryBorrow(out IWyrmSource pooledAudioSource)
+    {
+        bool successful = TryReserve(out pooledAudioSource);
+        if (successful)
+            pooledAudioSource.IsBorrowed = true;
+
+        return true;
+    }
+
+    bool TryReserve(out IWyrmSource pooledAudioSource)
     {
         pooledAudioSource = null;
 
@@ -60,14 +64,11 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         pooledAudioSource.ActiveIndex = newIndex;
         _activeSources[newIndex] = pooledAudioSource;
 
-        // TODO: Cache this once per runtime
-        var t = transform;
-
         SourceTransforms.Add(pooledAudioSource.CachedTransform);
-        TrackedTransforms.Add(t);
+        TrackedTransforms.Add(_cachedTransform);
 
         SourcePositions[newIndex] = pooledAudioSource.CachedPosition;
-        TrackedPositions[newIndex] = t.position;
+        TrackedPositions[newIndex] = _cachedTransform.position;
         SourceActiveStates[newIndex] = 1;
         SourceMinDistances[newIndex] = pooledAudioSource.minDistance;
         SourceMaxDistances[newIndex] = pooledAudioSource.maxDistance;
@@ -78,7 +79,7 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         return true;
     }
 
-    public void Return(IWyrmSource pooledAudioSource)
+    internal void Return(IWyrmSource pooledAudioSource)
     {
         for (int i = 0; i < _activeCount; i++)
         {

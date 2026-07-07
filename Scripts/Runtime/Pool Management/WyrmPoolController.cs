@@ -3,13 +3,10 @@ using UnityEngine;
 using UnityEngine.Audio;
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(100)]
 public class WyrmPoolController : MonoBehaviour
 {
     static readonly Dictionary<AudioMixerGroup, WyrmMixerGroupProcessor> processors = new();
-
-    public static float DspDeltaTime { get; private set; }
-    private static double _lastDspTime;
-    private static bool _dspInitialized;
 
     void Awake()
     {
@@ -19,30 +16,12 @@ public class WyrmPoolController : MonoBehaviour
         }
     }
 
-    void Update()
-    {
-        double currentDspTime = AudioSettings.dspTime;
-        if (!_dspInitialized)
-        {
-            _lastDspTime = currentDspTime;
-            _dspInitialized = true;
-        }
-
-        DspDeltaTime = (float)(currentDspTime - _lastDspTime);
-        _lastDspTime = currentDspTime;
-
-        foreach (var (_, manager) in processors)
-        {
-            manager.CullSources();
-            manager.UpdateJobs();
-        }
-    }
-
     void LateUpdate()
     {
         foreach (var (_, manager) in processors)
         {
-            manager.LateUpdateComplete();
+            manager.CullSources();
+            manager.LateUpdateJobs();
         }
     }
 

@@ -5,48 +5,36 @@ using UnityEngine.Jobs;
 
 public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
-    private struct TransformUpdate
+    internal void UpdateTrackedTransform(int index, Transform track)
     {
-        public IWyrmSource Source;
-        public Transform NewTransform;
+        // safety bounds check
+        if (index < 0 || index >= TrackedTransforms.length) return;
+
+        // fallbkac to the processor's transform.
+        TrackedTransforms[index] = track != null ? track : _cachedTransform;
     }
 
-    internal void QueueTransformUpdate(IWyrmSource source, Transform newTransform)
-    {
-        var transformUpdate = new TransformUpdate
-        {
-            Source = source,
-            NewTransform = newTransform
-        };
-        _pendingTransformUpdates.Enqueue(transformUpdate);
-    }
+    bool _hasFocus = true;
+
+    void OnApplicationFocus(bool hasFocus) => _hasFocus = hasFocus;
 
     internal void CullSources()
     {
+        if (!_hasFocus) return;
 
         for (int index = _activeCount - 1; index >= 0; index--)
         {
-            if (!_activeSources[index].isPlaying)
+            if (!_activeSources[index].IsBorrowed && !_activeSources[index].isPlaying)
             {
                 ReturnActiveSourceAtIndex(index);
             }
         }
     }
 
-
-
-    internal void UpdateJobs()
+    internal void LateUpdateJobs()
     {
-        while (_pendingTransformUpdates.Count > 0)
-        {
-            var request = _pendingTransformUpdates.Dequeue();
-
-            if (request.Source.isPlaying && _activeSources[request.Source.ActiveIndex] == request.Source)
-            {
-                TrackedTransforms[request.Source.ActiveIndex] = request.NewTransform;
-            }
-        }
-
+        if (_activeCount == 0) return;
+        
         var gatherJob = new GatherTrackedPositionsJob
         {
             TrackedPositions = TrackedPositions
