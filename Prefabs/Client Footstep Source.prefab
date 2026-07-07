@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 3316674477214084957}
   - component: {fileID: 6615845327962746880}
-  - component: {fileID: 1277862038185094253}
-  - component: {fileID: 275494804511311066}
+  - component: {fileID: -3521000247303220482}
+  - component: {fileID: -9032153998753606879}
   m_Layer: 0
   m_Name: Client Footstep Source
   m_TagString: Untagged
@@ -131,19 +131,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1277862038185094253
+--- !u!114 &-3521000247303220482
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6930284038885535627}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 59c3684b22f00604a97bb68037fcf4cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SteamAudioUnity::SteamAudio.SteamAudioSource
-  directBinaural: 0
+  directBinaural: 1
   interpolation: 1
   perspectiveCorrection: 0
   distanceAttenuation: 0
@@ -161,9 +161,9 @@ MonoBehaviour:
   directivityValue: 1
   occlusion: 0
   occlusionInput: 0
-  occlusionType: 1
-  occlusionRadius: 1.65
-  occlusionSamples: 2
+  occlusionType: 0
+  occlusionRadius: 1
+  occlusionSamples: 16
   occlusionValue: 1
   transmission: 0
   transmissionType: 0
@@ -173,7 +173,7 @@ MonoBehaviour:
   transmissionHigh: 1
   maxTransmissionSurfaces: 1
   directMixLevel: 1
-  reflections: 0
+  reflections: 1
   reflectionsType: 0
   useDistanceCurveForReflections: 0
   currentBakedSource: {fileID: 0}
@@ -184,8 +184,8 @@ MonoBehaviour:
   hybridReverbEQMid: 1
   hybridReverbEQHigh: 1
   hybridReverbDelay: 0
-  applyHRTFToReflections: 1
-  reflectionsMixLevel: 3
+  applyHRTFToReflections: 0
+  reflectionsMixLevel: 1
   pathing: 0
   pathingProbeBatch: {fileID: 0}
   pathValidation: 1
@@ -214,7 +214,7 @@ MonoBehaviour:
   applyHRTFToPathing: 0
   pathingMixLevel: 1
   normalizePathingEQ: 0
---- !u!114 &275494804511311066
+--- !u!114 &-9032153998753606879
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -225,6 +225,6 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 70a582d83a5ba644e9a1794f3a494cf1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: WyrmAudio::PooledSteamAudioSource
+  m_EditorClassIdentifier: WyrmAudio::WyrmBaseSteamSource
   <ASource>k__BackingField: {fileID: 6615845327962746880}
-  <SteamSource>k__BackingField: {fileID: 1277862038185094253}
+  <SteamSource>k__BackingField: {fileID: -3521000247303220482}

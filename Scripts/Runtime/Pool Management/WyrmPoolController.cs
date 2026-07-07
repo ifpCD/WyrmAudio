@@ -6,6 +6,7 @@ using UnityEngine.Audio;
 [DefaultExecutionOrder(100)]
 public class WyrmPoolController : MonoBehaviour
 {
+    // todo
     static readonly Dictionary<AudioMixerGroup, WyrmMixerGroupProcessor> processors = new();
 
     void Awake()
@@ -37,14 +38,24 @@ public class WyrmPoolController : MonoBehaviour
         processors.Clear();
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform track = null)
+    public static void Play(AudioMixerGroup mixerGroup, WyrmSoundBank bank, Transform track = null, float? volume = null)
     {
-        processors[mixerGroup].Play(clip, volume, track);
+        processors[mixerGroup].Play(bank, track, volume);
     }
 
-    public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, float? volume = null, Transform track = null)
+    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, Transform track = null, float? volume = null)
     {
-        processors[mixerGroup].PlayOneShot(clip, volume, track);
+        processors[mixerGroup].Play(clip, track, volume);
+    }
+
+    public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, Transform track = null, float? volume = null)
+    {
+        processors[mixerGroup].PlayOneShot(clip, track, volume);
+    }
+
+    public static void Play(AudioMixerGroup mixerGroup, WyrmSoundBank bank, Vector3 position, float? volume = null)
+    {
+        processors[mixerGroup].Play(bank, position, volume);
     }
 
     public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, Vector3 position, float? volume = null)
@@ -67,19 +78,16 @@ public class WyrmPoolController : MonoBehaviour
         processors[mixerGroup].Return(pooledAudioSource);
     }
 
-    private void CreateMixerGroupManager(WyrmMixerGroupConfig wyrmMixerConfig)
+    private void CreateMixerGroupManager(WyrmMixerGroupConfig config)
     {
-        GameObject WyrmMixerManagerGameObject = new($"{wyrmMixerConfig.targetMixerGroup.audioMixer.name} - {wyrmMixerConfig.targetMixerGroup.name}");
-        WyrmMixerManagerGameObject.transform.SetParent(transform);
+        string mixerName = $"{config.targetMixerGroup.audioMixer.name} - {config.targetMixerGroup.name}";
+        GameObject mixerManagerObject = new(mixerName);
 
-        var mixerManager = WyrmMixerManagerGameObject.AddComponent<WyrmMixerGroupProcessor>();
-        mixerManager.Initialize(wyrmMixerConfig);
+        mixerManagerObject.transform.SetParent(transform);
 
-        processors[wyrmMixerConfig.targetMixerGroup] = mixerManager;
-    }
+        var mixerManager = mixerManagerObject.AddComponent<WyrmMixerGroupProcessor>();
+        mixerManager.Initialize(config);
 
-    private void DestroyMixerGroupManager(AudioMixerGroup mixerGroup)
-    {
-
+        processors[config.targetMixerGroup] = mixerManager;
     }
 }

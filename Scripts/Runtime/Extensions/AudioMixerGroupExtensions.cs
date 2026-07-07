@@ -3,29 +3,29 @@ using UnityEngine.Audio;
 
 public static class AudioMixerGroupExtensions
 {
-    public static void Play(this AudioMixerGroup mixerGroup, AudioClip clip, float volume = 1f, Transform track = default)
+    public static void Play(this AudioMixerGroup mixerGroup, WyrmSoundBank bank, Transform track = default, float volume = 1f)
     {
-        WyrmPoolController.Play(mixerGroup, clip, volume, track);
+        WyrmPoolController.Play(mixerGroup, bank, track, volume);
     }
 
-    public static void Play(this AudioMixerGroup mixerGroup, WyrmSoundBank bank, float volume = 1f, Transform track = default)
+    public static void Play(this AudioMixerGroup mixerGroup, AudioClip clip, Transform track = default, float volume = 1f)
     {
-        WyrmPoolController.Play(mixerGroup, bank.mainBodyClips[0], volume, track);
+        WyrmPoolController.Play(mixerGroup, clip, track, volume);
     }
 
-    public static void PlayOneShot(this AudioMixerGroup mixerGroup, AudioClip clip, float volume = 1f, Transform track = default)
+    public static void PlayOneShot(this AudioMixerGroup mixerGroup, AudioClip clip, Transform track = default, float volume = 1f)
     {
-        WyrmPoolController.PlayOneShot(mixerGroup, clip, volume, track);
+        WyrmPoolController.PlayOneShot(mixerGroup, clip, track, volume);
+    }
+
+    public static void Play(this AudioMixerGroup mixerGroup, WyrmSoundBank bank, Vector3 place, float volume = 1f)
+    {
+        WyrmPoolController.Play(mixerGroup, bank, place, volume);
     }
 
     public static void Play(this AudioMixerGroup mixerGroup, AudioClip clip, Vector3 place, float volume = 1f)
     {
         WyrmPoolController.Play(mixerGroup, clip, place, volume);
-    }
-
-    public static void Play(this AudioMixerGroup mixerGroup, WyrmSoundBank bank, Vector3 place, float volume = 1f)
-    {
-        WyrmPoolController.Play(mixerGroup, bank.mainBodyClips[0], place, volume);
     }
 
     public static void PlayOneShot(this AudioMixerGroup mixerGroup, AudioClip clip, Vector3 place, float volume = 1f)

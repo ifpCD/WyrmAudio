@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[DisallowMultipleComponent]
 public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 {
     [field: SerializeField]

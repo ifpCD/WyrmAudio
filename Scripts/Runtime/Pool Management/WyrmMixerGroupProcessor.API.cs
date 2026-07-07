@@ -5,7 +5,20 @@ using UnityEngine.Jobs;
 
 public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
-    public void Play(AudioClip clip, float? volume = null, Transform track = null)
+    public void Play(WyrmSoundBank bank, Transform track = null, float? volume = null)
+    {
+        bool isTracking = track != null;
+        if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
+            return;
+
+        borrowedSource.clip = bank.GetBodyClip(); // more compplex work here in future
+        if (volume.HasValue) borrowedSource.volume = volume.Value;
+
+        borrowedSource.TrackedTransform = track;
+        borrowedSource.Play();
+    }
+    
+    public void Play(AudioClip clip, Transform track = null, float? volume = null)
     {
         bool isTracking = track != null;
         if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
@@ -18,7 +31,7 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         borrowedSource.Play();
     }
 
-    public void PlayOneShot(AudioClip clip, float? volume = null, Transform track = null)
+    public void PlayOneShot(AudioClip clip, Transform track = null, float? volume = null)
     {
         bool isTracking = track != null;
         if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
@@ -28,6 +41,18 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 
         borrowedSource.TrackedTransform = track;
         borrowedSource.PlayOneShot(clip);
+    }
+
+    public void Play(WyrmSoundBank bank, Vector3 position, float? volume = null)
+    {
+        if (!TryReserve(out var borrowedSource, isTracking: false, position))
+            return;
+
+        borrowedSource.clip = bank.GetBodyClip();
+        if (volume.HasValue) borrowedSource.volume = volume.Value;
+
+        borrowedSource.TrackedTransform = null;
+        borrowedSource.Play();
     }
 
     public void Play(AudioClip clip, Vector3 position, float? volume = null)
