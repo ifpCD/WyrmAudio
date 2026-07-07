@@ -47,6 +47,16 @@ public class WyrmPoolController : MonoBehaviour
         processors[mixerGroup].PlayOneShot(clip, volume, track);
     }
 
+    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, Vector3 position, float? volume = null)
+    {
+        processors[mixerGroup].Play(clip, position, volume);
+    }
+
+    public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, Vector3 position, float? volume = null)
+    {
+        processors[mixerGroup].PlayOneShot(clip, position, volume);
+    }
+
     public static bool TryBorrow(AudioMixerGroup mixerGroup, out IWyrmSource pooledAudioSource)
     {
         return processors[mixerGroup].TryBorrow(out pooledAudioSource);

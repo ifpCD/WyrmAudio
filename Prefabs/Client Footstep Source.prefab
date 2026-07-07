@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1277862038185094253}
   - component: {fileID: 275494804511311066}
   m_Layer: 0
-  m_Name: Baked Spatial Source With Reflections
+  m_Name: Client Footstep Source
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -91,7 +91,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
+      value: 0.5
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -106,7 +106,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -143,10 +143,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59c3684b22f00604a97bb68037fcf4cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SteamAudioUnity::SteamAudio.SteamAudioSource
-  directBinaural: 1
+  directBinaural: 0
   interpolation: 1
   perspectiveCorrection: 0
-  distanceAttenuation: 1
+  distanceAttenuation: 0
   distanceAttenuationInput: 0
   distanceAttenuationValue: 1
   airAbsorption: 0
@@ -159,23 +159,23 @@ MonoBehaviour:
   dipoleWeight: 0
   dipolePower: 0
   directivityValue: 1
-  occlusion: 1
+  occlusion: 0
   occlusionInput: 0
   occlusionType: 1
   occlusionRadius: 1.65
   occlusionSamples: 2
   occlusionValue: 1
-  transmission: 1
+  transmission: 0
   transmissionType: 0
   transmissionInput: 0
   transmissionLow: 1
   transmissionMid: 1
   transmissionHigh: 1
-  maxTransmissionSurfaces: 2
+  maxTransmissionSurfaces: 1
   directMixLevel: 1
-  reflections: 1
-  reflectionsType: 1
-  useDistanceCurveForReflections: 1
+  reflections: 0
+  reflectionsType: 0
+  useDistanceCurveForReflections: 0
   currentBakedSource: {fileID: 0}
   reverbTimeLow: 0
   reverbTimeMid: 0
@@ -184,8 +184,8 @@ MonoBehaviour:
   hybridReverbEQMid: 1
   hybridReverbEQHigh: 1
   hybridReverbDelay: 0
-  applyHRTFToReflections: 0
-  reflectionsMixLevel: 1
+  applyHRTFToReflections: 1
+  reflectionsMixLevel: 3
   pathing: 0
   pathingProbeBatch: {fileID: 0}
   pathValidation: 1

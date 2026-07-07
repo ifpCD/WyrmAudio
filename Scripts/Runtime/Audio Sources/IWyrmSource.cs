@@ -14,6 +14,8 @@ public interface IWyrmSource
     void Play(AudioClip clip, float? volume = null, Transform track = null);
     void Play(WyrmSoundBank clip, float? volume = null, Transform track = null);
 
+    void Return();
+
     bool IsBorrowed { get; set; }
     int ActiveIndex { get; set; }
     WyrmMixerGroupProcessor Manager { get; }

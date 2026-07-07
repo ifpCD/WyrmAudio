@@ -11,8 +11,9 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
     private Transform _cachedTransform;
 
     internal TransformAccessArray SourceTransforms;
-
     internal TransformAccessArray TrackedTransforms;
+
+    internal NativeArray<byte> IsTracking;
 
     internal NativeArray<float3> SourcePositions;
     internal NativeArray<float3> TrackedPositions;
@@ -53,6 +54,8 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         SourceTransforms = new(max);
         TrackedTransforms = new(max);
 
+        IsTracking = new(max, Allocator.Persistent);
+
         SourcePositions = new(max, Allocator.Persistent);
         TrackedPositions = new(max, Allocator.Persistent);
         PropagationPositions = new(max, Allocator.Persistent);
@@ -82,6 +85,8 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         if (SourceTransforms.isCreated) SourceTransforms.Dispose();
         if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
 
+        if (IsTracking.IsCreated) IsTracking.Dispose();
+
         if (SourcePositions.IsCreated) SourcePositions.Dispose();
         if (TrackedPositions.IsCreated) TrackedPositions.Dispose();
         if (PropagationPositions.IsCreated) PropagationPositions.Dispose();
@@ -106,24 +111,28 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 
         _activeSources[lastIndex] = null;
 
+        SourceTransforms.RemoveAtSwapBack(index);
+        TrackedTransforms.RemoveAtSwapBack(index);
+
         SourcePositions[index] = SourcePositions[lastIndex];
         TrackedPositions[index] = TrackedPositions[lastIndex];
+
+        IsTracking[index] = IsTracking[lastIndex];
+
         PropagationPositions[index] = TrackedPositions[lastIndex];
 
         SourceActiveStates[index] = SourceActiveStates[lastIndex];
+
         SourceMinDistances[index] = SourceMinDistances[lastIndex];
         SourceMaxDistances[index] = SourceMaxDistances[lastIndex];
-
+        
         OutputNormalizedRoomMixVolume[index] = OutputNormalizedRoomMixVolume[lastIndex];
-
-        SourceTransforms.RemoveAtSwapBack(index);
-        TrackedTransforms.RemoveAtSwapBack(index);
 
         _activeCount--;
         source.ActiveIndex = -1;
         source.Deactivate();
         source.IsBorrowed = false;
-        
+
         _availableSources[_availableCount++] = source;
     }
 

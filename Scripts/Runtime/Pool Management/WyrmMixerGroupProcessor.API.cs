@@ -7,42 +7,62 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
     public void Play(AudioClip clip, float? volume = null, Transform track = null)
     {
-        if (!TryReserve(out var borrowedSource))
+        bool isTracking = track != null;
+        if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
             return;
 
         borrowedSource.clip = clip;
         if (volume.HasValue) borrowedSource.volume = volume.Value;
 
-        if (track != null) borrowedSource.TrackedTransform = track;
-
+        borrowedSource.TrackedTransform = track;
         borrowedSource.Play();
     }
 
     public void PlayOneShot(AudioClip clip, float? volume = null, Transform track = null)
     {
-        if (!TryReserve(out var borrowedSource))
+        bool isTracking = track != null;
+        if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
             return;
 
         if (volume.HasValue) borrowedSource.volume = volume.Value;
 
-        if (track != null)
-        {
-            borrowedSource.TrackedTransform = track;
-            TrackedTransforms[_activeCount - 1] = track;
-        }
+        borrowedSource.TrackedTransform = track;
+        borrowedSource.PlayOneShot(clip);
+    }
+
+    public void Play(AudioClip clip, Vector3 position, float? volume = null)
+    {
+        if (!TryReserve(out var borrowedSource, isTracking: false, position))
+            return;
+
+        borrowedSource.clip = clip;
+        if (volume.HasValue) borrowedSource.volume = volume.Value;
+
+        borrowedSource.TrackedTransform = null;
+        borrowedSource.Play();
+    }
+
+    public void PlayOneShot(AudioClip clip, Vector3 position, float? volume = null)
+    {
+        if (!TryReserve(out var borrowedSource, isTracking: false, position))
+            return;
+
+        if (volume.HasValue) borrowedSource.volume = volume.Value;
+
+        borrowedSource.TrackedTransform = null;
         borrowedSource.PlayOneShot(clip);
     }
 
     public bool TryBorrow(out IWyrmSource pooledAudioSource)
     {
-        bool successful = TryReserve(out pooledAudioSource);
+        bool successful = TryReserve(out pooledAudioSource, isTracking: true);
         if (successful)
             pooledAudioSource.IsBorrowed = true;
 
-        return true;
+        return successful;
     }
 
-    bool TryReserve(out IWyrmSource pooledAudioSource)
+    bool TryReserve(out IWyrmSource pooledAudioSource, bool isTracking = true, Vector3 staticPosition = default)
     {
         pooledAudioSource = null;
 
@@ -67,17 +87,29 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         SourceTransforms.Add(pooledAudioSource.CachedTransform);
         TrackedTransforms.Add(_cachedTransform);
 
-        SourcePositions[newIndex] = pooledAudioSource.CachedPosition;
-        TrackedPositions[newIndex] = _cachedTransform.position;
+        if (!isTracking)
+        {
+            IsTracking[newIndex] = 0;
+            pooledAudioSource.CachedTransform.position = staticPosition;
+            TrackedPositions[newIndex] = staticPosition;
+            SourcePositions[newIndex] = staticPosition;
+        }
+        else
+        {
+            IsTracking[newIndex] = 1;
+            SourcePositions[newIndex] = pooledAudioSource.CachedPosition;
+            TrackedPositions[newIndex] = _cachedTransform.position;
+        }
+
         SourceActiveStates[newIndex] = 1;
         SourceMinDistances[newIndex] = pooledAudioSource.minDistance;
         SourceMaxDistances[newIndex] = pooledAudioSource.maxDistance;
         OutputNormalizedRoomMixVolume[newIndex] = 0f;
 
         _activeCount++;
-
         return true;
     }
+
 
     internal void Return(IWyrmSource pooledAudioSource)
     {

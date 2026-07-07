@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Jobs;
@@ -24,25 +26,29 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 
         for (int index = _activeCount - 1; index >= 0; index--)
         {
-            if (!_activeSources[index].IsBorrowed && !_activeSources[index].isPlaying)
-            {
-                ReturnActiveSourceAtIndex(index);
-            }
+            var source = _activeSources[index];
+
+            if (source.IsBorrowed || source.isPlaying)
+                continue;
+
+            ReturnActiveSourceAtIndex(index);
         }
     }
 
     internal void LateUpdateJobs()
     {
         if (_activeCount == 0) return;
-        
+
         var gatherJob = new GatherTrackedPositionsJob
         {
+            IsTracking = IsTracking,
             TrackedPositions = TrackedPositions
         };
         JobHandle gatherHandle = gatherJob.Schedule(TrackedTransforms);
 
         var applyTransformsJob = new ApplySourceTransformsJob
         {
+            IsTracking = IsTracking,
             TrackedPositions = TrackedPositions,
             SourcePositions = SourcePositions
         };

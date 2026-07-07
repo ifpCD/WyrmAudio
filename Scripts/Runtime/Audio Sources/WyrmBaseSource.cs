@@ -55,9 +55,11 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         if (volume.HasValue) this.volume = volume.Value;
         if (track != null) TrackedTransform = track;
 
-        this.clip = bank.mainBodyClips[0];
+        clip = bank.GetBodyClip();
         Play();
     }
+
+    public void Return() => Manager.Return(this);
 
     public virtual void Deactivate()
     {

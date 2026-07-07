@@ -10,25 +10,33 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
     [BurstCompile]
     private struct GatherTrackedPositionsJob : IJobParallelForTransform
     {
+        [ReadOnly] public NativeArray<byte> IsTracking;
         [WriteOnly] public NativeArray<float3> TrackedPositions;
 
         public void Execute(int index, TransformAccess transform)
         {
-            TrackedPositions[index] = transform.position;
+            if (IsTracking[index] == 1)
+            {
+                TrackedPositions[index] = transform.position;
+            }
         }
     }
 
     [BurstCompile]
     private struct ApplySourceTransformsJob : IJobParallelForTransform
     {
+        [ReadOnly] public NativeArray<byte> IsTracking;
         [ReadOnly] public NativeArray<float3> TrackedPositions;
         [WriteOnly] public NativeArray<float3> SourcePositions;
 
         public void Execute(int index, TransformAccess transform)
         {
-            float3 targetPos = TrackedPositions[index];
-            transform.position = targetPos;
-            SourcePositions[index] = targetPos;
+            if (IsTracking[index] == 1)
+            {
+                float3 targetPos = TrackedPositions[index];
+                transform.position = targetPos;
+                SourcePositions[index] = targetPos;
+            }
         }
     }
 }
