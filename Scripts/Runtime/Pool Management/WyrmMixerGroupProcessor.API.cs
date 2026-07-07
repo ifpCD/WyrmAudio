@@ -3,7 +3,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-public partial class WyrmMixerGroupManager : MonoBehaviour
+public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
     public void Play(AudioClip clip, float? volume = null, Transform track = null)
     {
@@ -20,20 +20,6 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         }
 
         borrowedSource.Play();
-    }
-
-    public void Play(WyrmSoundBank clip, float? volume = null, Transform track = null)
-    {
-        if (!TryBorrow(out var borrowedSource))
-            return;
-
-        if (track != null)
-        {
-            borrowedSource.TrackedTransform = track;
-            TrackedTransforms[_activeCount - 1] = track;
-        }
-
-        borrowedSource.Play(clip, volume, track);
     }
 
     public void PlayOneShot(AudioClip clip, float? volume = null, Transform track = null)

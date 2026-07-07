@@ -6,14 +6,16 @@ public interface IWyrmSource
 {
     WyrmMixerGroupConfig Config { get; }
 
-    void Initialize(WyrmMixerGroupManager manager);
+    void Initialize(WyrmMixerGroupProcessor manager);
 
     Transform TrackedTransform { get; set; }
 
+    // future
+    void Play(AudioClip clip, float? volume = null, Transform track = null);
     void Play(WyrmSoundBank clip, float? volume = null, Transform track = null);
 
     int ActiveIndex { get; set; }
-    WyrmMixerGroupManager Manager { get; }
+    WyrmMixerGroupProcessor Manager { get; }
 
     Transform CachedTransform { get; }
 

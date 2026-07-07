@@ -1,13 +1,14 @@
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-public partial class WyrmMixerGroupManager : MonoBehaviour
+public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
     [BurstCompile]
-    public struct GatherTrackedPositionsJob : IJobParallelForTransform
+    private struct GatherTrackedPositionsJob : IJobParallelForTransform
     {
         [WriteOnly] public NativeArray<float3> TrackedPositions;
 
@@ -16,9 +17,9 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
             TrackedPositions[index] = transform.position;
         }
     }
-    
+
     [BurstCompile]
-    public struct ApplySourceTransformsJob : IJobParallelForTransform
+    private struct ApplySourceTransformsJob : IJobParallelForTransform
     {
         [ReadOnly] public NativeArray<float3> TrackedPositions;
         [WriteOnly] public NativeArray<float3> SourcePositions;

@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-public partial class WyrmMixerGroupManager : MonoBehaviour
+public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
@@ -17,6 +17,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
     internal NativeArray<float3> PropagationPositions;
 
     internal NativeArray<byte> SourceActiveStates;
+
     internal NativeArray<float> SourceMinDistances;
     internal NativeArray<float> SourceMaxDistances;
 
@@ -59,6 +60,7 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         PropagationPositions = new(max, Allocator.Persistent);
 
         SourceActiveStates = new(max, Allocator.Persistent);
+        
         SourceMinDistances = new(max, Allocator.Persistent);
         SourceMaxDistances = new(max, Allocator.Persistent);
 
@@ -67,20 +69,26 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         for (int i = 0; i < max; i++) CreatePooledAudioSource();
     }
 
-    public void Destroy() => DisposeNative();
+    void OnDestroy()
+    {
+        DisposeNative();
+    }
 
     void DisposeNative()
     {
-        SourcePositions.Dispose();
-        TrackedPositions.Dispose();
-        PropagationPositions.Dispose();
-        SourceActiveStates.Dispose();
-        SourceMinDistances.Dispose();
-        SourceMaxDistances.Dispose();
-        OutputNormalizedRoomMixVolume.Dispose();
-
         if (SourceTransforms.isCreated) SourceTransforms.Dispose();
         if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
+
+        if (SourcePositions.IsCreated) SourcePositions.Dispose();
+        if (TrackedPositions.IsCreated) TrackedPositions.Dispose();
+        if (PropagationPositions.IsCreated) PropagationPositions.Dispose();
+
+        if (SourceActiveStates.IsCreated) SourceActiveStates.Dispose();
+
+        if (SourceMinDistances.IsCreated) SourceMinDistances.Dispose();
+        if (SourceMaxDistances.IsCreated) SourceMaxDistances.Dispose();
+
+        if (OutputNormalizedRoomMixVolume.IsCreated) OutputNormalizedRoomMixVolume.Dispose();
     }
 
     void ReturnActiveSourceAtIndex(int index)

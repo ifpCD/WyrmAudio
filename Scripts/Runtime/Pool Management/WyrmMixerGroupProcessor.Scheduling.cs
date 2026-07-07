@@ -3,23 +3,12 @@ using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-public partial class WyrmMixerGroupManager : MonoBehaviour
+public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
     private struct TransformUpdate
     {
         public IWyrmSource Source;
         public Transform NewTransform;
-    }
-
-    internal void CullSources()
-    {
-        for (int index = _activeCount - 1; index >= 0; index--)
-        {
-            if (!_activeSources[index].isPlaying)
-            {
-                ReturnActiveSourceAtIndex(index);
-            }
-        }
     }
 
     internal void QueueTransformUpdate(IWyrmSource source, Transform newTransform)
@@ -31,6 +20,20 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
         };
         _pendingTransformUpdates.Enqueue(transformUpdate);
     }
+
+    internal void CullSources()
+    {
+
+        for (int index = _activeCount - 1; index >= 0; index--)
+        {
+            if (!_activeSources[index].isPlaying)
+            {
+                ReturnActiveSourceAtIndex(index);
+            }
+        }
+    }
+
+
 
     internal void UpdateJobs()
     {
@@ -55,7 +58,6 @@ public partial class WyrmMixerGroupManager : MonoBehaviour
             TrackedPositions = TrackedPositions,
             SourcePositions = SourcePositions
         };
-
         JobHandle applyHandle = applyTransformsJob.Schedule(SourceTransforms, dependsOn: gatherHandle);
 
         applyHandle.Complete();

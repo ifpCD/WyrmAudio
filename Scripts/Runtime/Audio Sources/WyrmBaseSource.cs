@@ -6,7 +6,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     public AudioSource ASource { get; set; }
 
     public int ActiveIndex { get; set; }
-    public WyrmMixerGroupManager Manager { get; private set; }
+    public WyrmMixerGroupProcessor Manager { get; private set; }
 
     public Transform CachedTransform { get; private set; } = default;
 
@@ -29,7 +29,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public WyrmMixerGroupConfig Config { get; private set; }
 
-    public virtual void Initialize(WyrmMixerGroupManager manager)
+    public virtual void Initialize(WyrmMixerGroupProcessor manager)
     {
         Manager = manager;
         ASource.outputAudioMixerGroup = Manager.config.targetMixerGroup;
@@ -40,12 +40,21 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         CachedTransform = transform;
     }
 
-    public virtual void Play(WyrmSoundBank clip, float? volume = null, Transform track = null)
+    public virtual void Play(AudioClip clip, float? volume = null, Transform track = null)
     {
         if (volume.HasValue) this.volume = volume.Value;
         if (track != null) TrackedTransform = track;
 
-        this.clip = clip.mainBodyClips[0]; // placeholder until I make DSP filters.
+        this.clip = clip;
+        Play();
+    }
+
+    public virtual void Play(WyrmSoundBank bank, float? volume = null, Transform track = null)
+    {
+        if (volume.HasValue) this.volume = volume.Value;
+        if (track != null) TrackedTransform = track;
+
+        this.clip = bank.mainBodyClips[0];
         Play();
     }
 
