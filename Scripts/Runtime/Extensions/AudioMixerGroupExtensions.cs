@@ -3,7 +3,7 @@ using UnityEngine.Audio;
 
 public static class AudioMixerGroupExtensions
 {
-    public static void Play(this AudioMixerGroup mixerGroup, WyrmSoundBank bank, Transform track = default, float volume = 1f)
+    public static void Play(this AudioMixerGroup mixerGroup, WyrmLoopableBank bank, Transform track = default, float volume = 1f)
     {
         WyrmPoolController.Play(mixerGroup, bank, track, volume);
     }
@@ -18,7 +18,7 @@ public static class AudioMixerGroupExtensions
         WyrmPoolController.PlayOneShot(mixerGroup, clip, track, volume);
     }
 
-    public static void Play(this AudioMixerGroup mixerGroup, WyrmSoundBank bank, Vector3 place, float volume = 1f)
+    public static void Play(this AudioMixerGroup mixerGroup, WyrmLoopableBank bank, Vector3 place, float volume = 1f)
     {
         WyrmPoolController.Play(mixerGroup, bank, place, volume);
     }

@@ -162,7 +162,7 @@ public class WyrmAudioSettingsEditor : Editor
         for (int i = 0; i < guids.Length; i++)
         {
             string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-            var bank = AssetDatabase.LoadAssetAtPath<WyrmSoundBank>(path);
+            var bank = AssetDatabase.LoadAssetAtPath<WyrmLoopableBank>(path);
             if (bank == null) continue;
             
             settings.RegisteredSoundBanks.Add(bank);

@@ -1,7 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Wyrm Audio/Wyrm Sound Bank")]
-public class WyrmSoundBank : ScriptableObject
+[CreateAssetMenu(menuName = "Wyrm Audio/Wyrm Loopable Bank")]
+public class WyrmLoopableBank : ScriptableObject, IWyrmBank
 {
     [Header("Banks")]
     public AudioClip[] startingClips;
@@ -9,28 +9,28 @@ public class WyrmSoundBank : ScriptableObject
     public AudioClip[] endingClips;
 
     [Header("Playback")]
-    public bool loop;
+    [field: SerializeField] public bool Loop { get; }
 
     [Header("Fading")]
-    public bool fadeIn;
-    public bool fadeOut;
+    [field: SerializeField] public bool FadeIn { get; }
+    [field: SerializeField] public bool FadeOut { get; }
 
     [Header("Pitch")]
-    public bool pitchRandomization;
+    [field: SerializeField] public bool PitchRandomization { get; }
 
     [Range(MIN_PITCH_DEVIATION_RANGE, MAX_PITCH_DEVIATION_RANGE)]
-    public float pitchDeviation;
+    [field: SerializeField] public float PitchDeviation { get; private set; }
 
     const float MIN_PITCH_DEVIATION_RANGE = 0.01f;
     const float MAX_PITCH_DEVIATION_RANGE = 0.5f;
 
     public bool HasStart => startingClips != null && startingClips.Length > 0;
-    public bool HasBody  => mainBodyClips != null && mainBodyClips.Length > 0;
-    public bool HasEnd   => endingClips != null && endingClips.Length > 0;
+    public bool HasBody => mainBodyClips != null && mainBodyClips.Length > 0;
+    public bool HasEnd => endingClips != null && endingClips.Length > 0;
 
     private readonly ShuffleBag<AudioClip> _startBag = new();
-    private readonly ShuffleBag<AudioClip> _bodyBag  = new();
-    private readonly ShuffleBag<AudioClip> _endBag   = new();
+    private readonly ShuffleBag<AudioClip> _bodyBag = new();
+    private readonly ShuffleBag<AudioClip> _endBag = new();
 
     private void OnEnable()
     {
@@ -41,7 +41,7 @@ public class WyrmSoundBank : ScriptableObject
 
     private void OnValidate()
     {
-        pitchDeviation = Mathf.Clamp(pitchDeviation, MIN_PITCH_DEVIATION_RANGE, MAX_PITCH_DEVIATION_RANGE);
+        PitchDeviation = Mathf.Clamp(PitchDeviation, MIN_PITCH_DEVIATION_RANGE, MAX_PITCH_DEVIATION_RANGE);
 
         _startBag.SetSource(startingClips);
         _bodyBag.SetSource(mainBodyClips);
@@ -49,6 +49,6 @@ public class WyrmSoundBank : ScriptableObject
     }
 
     public AudioClip GetStartClip() => _startBag.Next();
-    public AudioClip GetBodyClip()  => _bodyBag.Next();
-    public AudioClip GetEndClip()   => _endBag.Next();
+    public AudioClip GetBodyClip() => _bodyBag.Next();
+    public AudioClip GetEndClip() => _endBag.Next();
 }

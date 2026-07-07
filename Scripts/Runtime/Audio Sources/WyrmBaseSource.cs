@@ -51,11 +51,11 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         Play();
     }
 
-    public virtual void Play(WyrmSoundBank bank, Transform track = null, float? volume = null)
+    public virtual void Play(WyrmLoopableBank bank, Transform track = null, float? volume = null)
     {
         if (volume.HasValue) this.volume = volume.Value;
         if (track != null) TrackedTransform = track;
-        if(bank.pitchRandomization) ASource.pitch = Random.Range(1f - bank.pitchDeviation, 1f + bank.pitchDeviation);
+        if(bank.PitchRandomization) ASource.pitch = Random.Range(1f - bank.PitchDeviation, 1f + bank.PitchDeviation);
 
         clip = bank.GetBodyClip();
         Play();

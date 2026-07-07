@@ -12,7 +12,7 @@ public interface IWyrmSource
 
     // future
     void Play(AudioClip clip, Transform track = null, float? volume = null);
-    void Play(WyrmSoundBank clip, Transform track = null, float? volume = null);
+    void Play(WyrmLoopableBank clip, Transform track = null, float? volume = null);
 
     void Return();
 

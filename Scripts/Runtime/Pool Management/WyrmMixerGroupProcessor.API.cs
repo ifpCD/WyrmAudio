@@ -5,7 +5,7 @@ using UnityEngine.Jobs;
 
 public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
-    public void Play(WyrmSoundBank bank, Transform track = null, float? volume = null)
+    public void Play(WyrmLoopableBank bank, Transform track = null, float? volume = null)
     {
         bool isTracking = track != null;
         if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
@@ -35,7 +35,7 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         borrowedSource.PlayOneShot(clip);
     }
 
-    public void Play(WyrmSoundBank bank, Vector3 position, float? volume = null)
+    public void Play(WyrmLoopableBank bank, Vector3 position, float? volume = null)
     {
         if (!TryReserve(out var borrowedSource, isTracking: false, position))
             return;

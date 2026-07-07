@@ -38,7 +38,7 @@ public class WyrmPoolController : MonoBehaviour
         processors.Clear();
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, WyrmSoundBank bank, Transform track = null, float? volume = null)
+    public static void Play(AudioMixerGroup mixerGroup, WyrmLoopableBank bank, Transform track = null, float? volume = null)
     {
         processors[mixerGroup].Play(bank, track, volume);
     }
@@ -53,7 +53,7 @@ public class WyrmPoolController : MonoBehaviour
         processors[mixerGroup].PlayOneShot(clip, track, volume);
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, WyrmSoundBank bank, Vector3 position, float? volume = null)
+    public static void Play(AudioMixerGroup mixerGroup, WyrmLoopableBank bank, Vector3 position, float? volume = null)
     {
         processors[mixerGroup].Play(bank, position, volume);
     }
