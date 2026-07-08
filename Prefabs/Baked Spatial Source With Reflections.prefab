@@ -138,7 +138,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6930284038885535627}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 59c3684b22f00604a97bb68037fcf4cd, type: 3}
   m_Name: 
@@ -227,4 +227,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: WyrmAudio::PooledSteamAudioSource
   <ASource>k__BackingField: {fileID: 6615845327962746880}
+  volumeTransitionTime: 0.05
   <SteamSource>k__BackingField: {fileID: 1277862038185094253}

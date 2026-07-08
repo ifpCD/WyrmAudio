@@ -41,12 +41,17 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     {
         CachedTransform = transform;
         CalculateVolumeAlpha();
+        _clip = ASource.clip;
+        _loop = ASource.loop;
+        _volume = ASource.volume;
+        _pitch = ASource.pitch;
+        _minDistance = ASource.minDistance;
+        _maxDistance = ASource.maxDistance;
     }
 
     private void OnValidate()
     {
         volumeTransitionTime = Mathf.Max(0f, volumeTransitionTime);
-        if (Application.isPlaying) CalculateVolumeAlpha();
     }
 
     public virtual void Play(AudioClip clip, Transform track = null, float? volume = null)
@@ -82,56 +87,132 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public virtual void Deactivate()
     {
-        ASource.Stop();
+        // ASource.Stop();
         _trackedTransform = null;
 
         // Reset tracking volumes on pool return
         TargetVolume = 1f;
         _currentVolume = 1f;
+
+        loop = false;
+        pitch = 1f;
+        clip = null;
     }
 
-    public virtual AudioClip clip
+    private AudioClip _clip;
+    private bool _loop;
+    private float _volume;
+    private float _pitch;
+    private float _minDistance;
+    private float _maxDistance;
+
+    public AudioClip clip
     {
-        get => ASource.clip;
-        set => ASource.clip = value;
+        get => _clip;
+        set
+        {
+            if (_clip == value) return;
+
+            _clip = value;
+            ASource.clip = value;
+        }
     }
 
     public bool isPlaying => ASource.isPlaying;
 
-    public virtual bool loop
+    public bool loop
     {
-        get => ASource.loop;
-        set => ASource.loop = value;
+        get => _loop;
+        set
+        {
+            if (_loop == value) return;
+
+            _loop = value;
+            ASource.loop = value;
+        }
     }
 
-    public virtual float volume
+    public float volume
     {
-        get => ASource.volume;
-        set => ASource.volume = value;
+        get => _volume;
+        set
+        {
+            if (_volume == value) return;
+
+            _volume = value;
+            ASource.volume = value;
+        }
     }
 
-    public virtual float pitch
+    public float pitch
     {
-        get => ASource.pitch;
-        set => ASource.pitch = value;
+        get => _pitch;
+        set
+        {
+            if (_pitch == value) return;
+
+            _pitch = value;
+            ASource.pitch = value;
+        }
     }
 
-    public virtual float minDistance
+    public float minDistance
     {
-        get => ASource.minDistance;
-        set => ASource.minDistance = value;
+        get => _minDistance;
+        set
+        {
+            if (_minDistance == value) return;
+
+            _minDistance = value;
+            ASource.minDistance = value;
+        }
     }
 
-    public virtual float maxDistance
+    public float maxDistance
     {
-        // Bugfix: You were setting/getting `minDistance` here!
-        get => ASource.maxDistance;
-        set => ASource.maxDistance = value;
+        get => _maxDistance;
+        set
+        {
+            if (_maxDistance == value) return;
+
+            _maxDistance = value;
+            ASource.maxDistance = value;
+        }
     }
 
-    public virtual void Play() => ASource.Play();
+    public virtual void Play()
+    {
+        if (ASource.loop)
+        {
+            Manager.PlaybackEndTimes[ActiveIndex] = double.MaxValue;
+        }
+        else
+        {
+            float activePitch = Mathf.Abs(ASource.pitch);
+            float realDuration = activePitch > 0f ? ASource.clip.length / activePitch : float.MaxValue;
+            Manager.PlaybackEndTimes[ActiveIndex] = AudioSettings.dspTime + realDuration;
+        }
 
-    public virtual void PlayOneShot(AudioClip clip) => ASource.PlayOneShot(clip);
+        ASource.Play();
+    }
 
-    public virtual void Stop() => ASource.Stop();
+    public virtual void PlayOneShot(AudioClip clip)
+    {
+        double newEndTime = AudioSettings.dspTime + clip.length;
+
+        if (newEndTime > Manager.PlaybackEndTimes[ActiveIndex])
+        {
+            Manager.PlaybackEndTimes[ActiveIndex] = newEndTime;
+        }
+
+        ASource.PlayOneShot(clip);
+    }
+
+    public virtual void PlayOneShot(AbstractWyrmBank clip) => PlayOneShot(clip.GetBodyClip());
+
+    public virtual void Stop()
+    {
+        Manager.PlaybackEndTimes[ActiveIndex] = -1;
+        ASource.Stop();
+    }
 }

@@ -67,11 +67,9 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         }
         else
         {
-            float delta = target - current;
-
             for (int frameOffset = 0; frameOffset < data.Length; frameOffset += channels)
             {
-                current += delta * _volumeAlpha;
+                current += (target - current) * _volumeAlpha;
 
                 for (int channelIndex = 0; channelIndex < channels; channelIndex++)
                 {

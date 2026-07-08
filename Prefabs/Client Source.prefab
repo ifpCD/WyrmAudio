@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -3521000247303220482}
   - component: {fileID: 6488752852829952413}
   m_Layer: 0
-  m_Name: Client Footstep Source
+  m_Name: Client Source
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -91,7 +91,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
+      value: 0.2
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -227,4 +227,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: WyrmAudio::WyrmBaseSteamSource
   <ASource>k__BackingField: {fileID: 6615845327962746880}
+  volumeTransitionTime: 0.05
   <SteamSource>k__BackingField: {fileID: -3521000247303220482}

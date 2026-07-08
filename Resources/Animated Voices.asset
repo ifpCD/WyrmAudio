@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cca8a755192b00046b15d2a7693d4862, type: 3}
-  m_Name: Objects Non-Spatial
+  m_Name: Animated Voices
   m_EditorClassIdentifier: WyrmAudio::WyrmMixerGroupConfig
-  targetMixerGroup: {fileID: 2554023163134964317, guid: 7a090cce9ab939a48bd396c11905c17c, type: 2}
-  WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: acf1df49f2f58a940986265d4f08ec94, type: 3}
+  targetMixerGroup: {fileID: 2762709079168119665, guid: 15f45132eb5dc5a42aa13b9ca8940ef1, type: 2}
+  WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: 9885eeb8f9d2e6042b2d9e0408a7c91b, type: 3}
   initialSize: 5
   maxSize: 50
   isNonSpatial: 0

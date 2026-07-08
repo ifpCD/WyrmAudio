@@ -45,7 +45,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 0
+  m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -143,3 +143,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: WyrmAudio::WyrmBaseSource
   <ASource>k__BackingField: {fileID: 6615845327962746880}
+  volumeTransitionTime: 0.05

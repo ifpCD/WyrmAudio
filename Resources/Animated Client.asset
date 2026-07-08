@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cca8a755192b00046b15d2a7693d4862, type: 3}
-  m_Name: Animated Client Footsteps
+  m_Name: Animated Client
   m_EditorClassIdentifier: WyrmAudio::WyrmMixerGroupConfig
   targetMixerGroup: {fileID: 8102086905867876666, guid: 15f45132eb5dc5a42aa13b9ca8940ef1, type: 2}
-  WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: 17eba25f76451d640b9181b3fc7eccff, type: 3}
+  WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: 9885eeb8f9d2e6042b2d9e0408a7c91b, type: 3}
   initialSize: 5
   maxSize: 5
   isNonSpatial: 0

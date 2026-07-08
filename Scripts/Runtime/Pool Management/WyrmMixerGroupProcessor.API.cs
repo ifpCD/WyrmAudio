@@ -23,18 +23,6 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         borrowedSource.Play(clip, track, volume);
     }
 
-    public void PlayOneShot(AudioClip clip, Transform track = null, float? volume = null)
-    {
-        bool isTracking = track != null;
-        if (!TryReserve(out var borrowedSource, isTracking, isTracking ? default : _cachedTransform.position))
-            return;
-
-        if (volume.HasValue) borrowedSource.volume = volume.Value;
-
-        borrowedSource.TrackedTransform = track;
-        borrowedSource.PlayOneShot(clip);
-    }
-
     public void Play(AbstractWyrmBank bank, Vector3 position, float? volume = null)
     {
         if (!TryReserve(out var borrowedSource, isTracking: false, position))
@@ -53,28 +41,16 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
             return;
 
         borrowedSource.clip = clip;
-        if (volume.HasValue) borrowedSource.volume = volume.Value;
-
         borrowedSource.TrackedTransform = null;
+        if (volume.HasValue) borrowedSource.TargetVolume = volume.Value;
+        
         borrowedSource.Play();
-    }
-
-    public void PlayOneShot(AudioClip clip, Vector3 position, float? volume = null)
-    {
-        if (!TryReserve(out var borrowedSource, isTracking: false, position))
-            return;
-
-        if (volume.HasValue) borrowedSource.volume = volume.Value;
-
-        borrowedSource.TrackedTransform = null;
-        borrowedSource.PlayOneShot(clip);
     }
 
     public bool TryBorrow(out IWyrmSource pooledAudioSource)
     {
         bool successful = TryReserve(out pooledAudioSource, isTracking: true);
-        if (successful)
-            pooledAudioSource.IsBorrowed = true;
+        if (successful) pooledAudioSource.IsBorrowed = true;
 
         return successful;
     }
@@ -82,6 +58,7 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
     bool TryReserve(out IWyrmSource pooledAudioSource, bool isTracking = true, Vector3 staticPosition = default)
     {
         pooledAudioSource = null;
+        if (IsDisposed) return false;
 
         if (_availableCount == 0)
         {

@@ -43,6 +43,7 @@ public interface IWyrmSource
     float maxDistance { get; set; }
     void Play();
     void PlayOneShot(AudioClip clip);
+    void PlayOneShot(AbstractWyrmBank clip);
     void Stop();
     bool isPlaying { get; }
 }

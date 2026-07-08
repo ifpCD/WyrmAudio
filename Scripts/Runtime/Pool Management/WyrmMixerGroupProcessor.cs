@@ -8,7 +8,11 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 {
     public WyrmMixerGroupConfig config;
 
+    internal bool IsDisposed { get; private set; }
+
     private Transform _cachedTransform;
+
+    internal double[] PlaybackEndTimes;
 
     internal TransformAccessArray SourceTransforms;
     internal TransformAccessArray TrackedTransforms;
@@ -51,6 +55,8 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
         _availableSources = new IWyrmSource[max];
         _activeSources = new IWyrmSource[max];
 
+        PlaybackEndTimes = new double[max];
+
         SourceTransforms = new(max);
         TrackedTransforms = new(max);
 
@@ -77,6 +83,7 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 
     void OnDestroy()
     {
+        IsDisposed = true;
         DisposeNative();
     }
 
@@ -101,6 +108,8 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 
     void ReturnActiveSourceAtIndex(int index)
     {
+        if (IsDisposed) return;
+
         var source = _activeSources[index];
         int lastIndex = _activeCount - 1;
 
@@ -125,12 +134,12 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 
         SourceMinDistances[index] = SourceMinDistances[lastIndex];
         SourceMaxDistances[index] = SourceMaxDistances[lastIndex];
-        
+
         OutputNormalizedRoomMixVolume[index] = OutputNormalizedRoomMixVolume[lastIndex];
 
+        source.Deactivate();
         _activeCount--;
         source.ActiveIndex = -1;
-        source.Deactivate();
         source.IsBorrowed = false;
 
         _availableSources[_availableCount++] = source;

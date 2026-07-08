@@ -21,6 +21,8 @@ public class WyrmPoolController : MonoBehaviour
     {
         foreach (var (_, manager) in processors)
         {
+            if (manager.IsDisposed) continue;
+            
             manager.CullSources();
             manager.LateUpdateJobs();
         }
@@ -48,11 +50,6 @@ public class WyrmPoolController : MonoBehaviour
         processors[mixerGroup].Play(clip, track, volume);
     }
 
-    public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, Transform track = null, float? volume = null)
-    {
-        processors[mixerGroup].PlayOneShot(clip, track, volume);
-    }
-
     public static void Play(AudioMixerGroup mixerGroup, AbstractWyrmBank bank, Vector3 position, float? volume = null)
     {
         processors[mixerGroup].Play(bank, position, volume);
@@ -61,11 +58,6 @@ public class WyrmPoolController : MonoBehaviour
     public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, Vector3 position, float? volume = null)
     {
         processors[mixerGroup].Play(clip, position, volume);
-    }
-
-    public static void PlayOneShot(AudioMixerGroup mixerGroup, AudioClip clip, Vector3 position, float? volume = null)
-    {
-        processors[mixerGroup].PlayOneShot(clip, position, volume);
     }
 
     public static bool TryBorrow(AudioMixerGroup mixerGroup, out IWyrmSource pooledAudioSource)

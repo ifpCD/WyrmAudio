@@ -13,21 +13,21 @@ public class WyrmBaseSteamSource : WyrmBaseSource
         base.Awake();
     }
 
-    // public override void Play()
-    // {
-    //     // SteamSource.enabled = true;
-    //     base.Play();
-    // }
+    public override void Play()
+    {
+        SteamSource.enabled = true;
+        base.Play();
+    }
 
-    // public override void PlayOneShot(AudioClip clip)
-    // {
-    //     // SteamSource.enabled = true;
-    //     base.PlayOneShot(clip);
-    // }
+    public override void PlayOneShot(AudioClip clip)
+    {
+        SteamSource.enabled = true;
+        base.PlayOneShot(clip);
+    }
 
-    // public override void Deactivate()
-    // {
-    //     // SteamSource.enabled = false;
-    //     base.Deactivate();
-    // }
+    public override void Deactivate()
+    {
+        base.Deactivate();
+        SteamSource.enabled = false;
+    }
 }

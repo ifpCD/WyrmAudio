@@ -24,8 +24,11 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
     {
         if (!_hasFocus) return;
 
+        double currentTime = AudioSettings.dspTime;
         for (int index = _activeCount - 1; index >= 0; index--)
         {
+            if (currentTime < PlaybackEndTimes[index]) continue;
+
             var source = _activeSources[index];
 
             if (source.IsBorrowed || source.isPlaying)
