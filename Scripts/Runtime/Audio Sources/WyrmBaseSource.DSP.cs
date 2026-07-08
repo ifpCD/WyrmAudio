@@ -13,12 +13,6 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         set => _targetVolume = Mathf.Clamp01(value);
     }
 
-    public float CurrentVolume
-    {
-        get => _currentVolume;
-        private set => _currentVolume = value;
-    }
-
     [SerializeField] private float volumeTransitionTime = 0.05f;
 
     public float VolumeTransitionTime
@@ -44,7 +38,6 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         }
     }
 
-
     void OnAudioFilterRead(float[] data, int channels)
     {
         float target = _targetVolume;
@@ -52,15 +45,20 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
         const float epsilonSquared = 1e-8f;
 
+        // if we are close enough, snap
         float diff = target - current;
         if (diff * diff < epsilonSquared)
-        {
             current = target;
-        }
 
         if (current == target)
         {
             if (current == 1f) return;
+
+            if (current == 0f)
+            {
+                Array.Clear(data, 0, data.Length);
+                return;
+            }
 
             for (int frameOffset = 0; frameOffset < data.Length; frameOffset++)
             {

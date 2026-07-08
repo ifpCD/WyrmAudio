@@ -1,4 +1,3 @@
-using Unity.Burst;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -52,7 +51,12 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public virtual void Play(AudioClip clip, Transform track = null, float? volume = null)
     {
-        if (volume.HasValue) this.volume = volume.Value;
+        if (volume.HasValue)
+        {
+            TargetVolume = volume.Value;
+            _currentVolume = volume.Value;
+        }
+
         if (track != null) TrackedTransform = track;
 
         this.clip = clip;
@@ -61,15 +65,18 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public virtual void Play(AbstractWyrmBank bank, Transform track = null, float? volume = null)
     {
-        if (volume.HasValue) this.volume = volume.Value;
+        if (volume.HasValue)
+        {
+            TargetVolume = volume.Value;
+            _currentVolume = volume.Value;
+        }
+
         if (track != null) TrackedTransform = track;
-        if (bank.PitchRandomization) ASource.pitch = GetRandomPitch(bank);
+        if (bank.PitchRandomization) ASource.pitch = 1f.WithVariation(bank.PitchDeviation);
 
         clip = bank.GetBodyClip();
         Play();
     }
-
-    private float GetRandomPitch(AbstractWyrmBank bank) => Random.Range(1f - bank.PitchDeviation, 1f + bank.PitchDeviation);
 
     public void Return() => Manager.Return(this);
 
@@ -80,7 +87,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
         // Reset tracking volumes on pool return
         TargetVolume = 1f;
-        CurrentVolume = 1f;
+        _currentVolume = 1f;
     }
 
     public virtual AudioClip clip

@@ -28,8 +28,6 @@ public interface IWyrmSource
 
     public float TargetVolume { get; set; }
 
-    public float CurrentVolume { get; }
-
     void Deactivate();
 
     // MonoBehaviour
