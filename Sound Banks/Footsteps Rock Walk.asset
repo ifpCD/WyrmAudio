@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a26f8af3c790a9144bc497c1e475cf27, type: 3}
   m_Name: Footsteps Rock Walk
   m_EditorClassIdentifier: WyrmAudio::WyrmSoundBank
+  startingClips: []
   mainBodyClips:
   - {fileID: 8300000, guid: b3912c74ca310d4409867539c0a1f097, type: 3}
   - {fileID: 8300000, guid: 50d434bcca3fca94599d5da07222fa8a, type: 3}
@@ -22,10 +23,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 97d1dfe112bec784c80aed80040275b7, type: 3}
   - {fileID: 8300000, guid: d3a8bb41149bcb34ba59e376d5a0cf63, type: 3}
   - {fileID: 8300000, guid: 2aab87911c4ca3e4e957db143e89d232, type: 3}
-  startingClips: []
   endingClips: []
-  loop: 0
-  fadeIn: 0
-  fadeOut: 0
-  pitchRandomization: 0
-  pitchDeviation: 0.01
+  <Loop>k__BackingField: 0
+  <FadeIn>k__BackingField: 0
+  <FadeOut>k__BackingField: 0
+  <PitchRandomization>k__BackingField: 1
+  <PitchDeviation>k__BackingField: 0.05

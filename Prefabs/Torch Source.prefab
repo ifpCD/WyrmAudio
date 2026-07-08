@@ -163,7 +163,7 @@ MonoBehaviour:
   occlusionInput: 0
   occlusionType: 1
   occlusionRadius: 1.65
-  occlusionSamples: 6
+  occlusionSamples: 128
   occlusionValue: 1
   transmission: 1
   transmissionType: 1

@@ -7,7 +7,7 @@ public class WyrmAudioSettings : ScriptableObject
     public List<WyrmMixerGroupConfig> ActiveMixerConfigs = new();
 
     [HideInInspector]
-    public List<WyrmLoopableBank> RegisteredSoundBanks = new();
+    public List<AbstractWyrmBank> RegisteredSoundBanks = new();
 
 
     [Header("Audio Rooms")]
@@ -21,11 +21,11 @@ public class WyrmAudioSettings : ScriptableObject
         {
             if (_instance != null) return _instance;
 
-            _instance = Resources.Load<WyrmAudioSettings>("Wyrm Audio Settings");
+            _instance = Resources.Load<WyrmAudioSettings>("WyrmAudioSettings");
             if (_instance != null) return _instance;
 
             _instance = CreateInstance<WyrmAudioSettings>();
-            _instance.name = "Wyrm Audio Settings";
+            _instance.name = "WyrmAudioSettings";
 
 #if WYRMAUDIO_DEVELOPMENT
             AssetDatabase.CreateAsset(_instance, "Assets/Plugins/WyrmAudio/Resources/WyrmAudioSettings.asset");

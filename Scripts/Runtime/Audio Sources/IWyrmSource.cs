@@ -12,7 +12,7 @@ public interface IWyrmSource
 
     // future
     void Play(AudioClip clip, Transform track = null, float? volume = null);
-    void Play(WyrmLoopableBank clip, Transform track = null, float? volume = null);
+    void Play(AbstractWyrmBank clip, Transform track = null, float? volume = null);
 
     void Return();
 
@@ -24,6 +24,11 @@ public interface IWyrmSource
 
     public Vector3 CachedPosition { get; set; }
     public Quaternion CachedRotation { get; set; }
+
+
+    public float TargetVolume { get; set; }
+
+    public float CurrentVolume { get; }
 
     void Deactivate();
 

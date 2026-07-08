@@ -1,8 +1,7 @@
 using UnityEngine;
 
-public class WyrmAudioRoom : MonoBehaviour, IWyrmRoom
+[ExecuteAlways]
+[RequireComponent(typeof(BoxCollider))]
+public partial class WyrmRoom : MonoBehaviour
 {
-    public int RoomID { get; }
-    
-    public BoxCollider boxCollider;
 }

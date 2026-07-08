@@ -1,3 +1,4 @@
+using Unity.Burst;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -40,6 +41,13 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     protected virtual void Awake()
     {
         CachedTransform = transform;
+        CalculateVolumeAlpha();
+    }
+
+    private void OnValidate()
+    {
+        volumeTransitionTime = Mathf.Max(0f, volumeTransitionTime);
+        if (Application.isPlaying) CalculateVolumeAlpha();
     }
 
     public virtual void Play(AudioClip clip, Transform track = null, float? volume = null)
@@ -51,15 +59,17 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         Play();
     }
 
-    public virtual void Play(WyrmLoopableBank bank, Transform track = null, float? volume = null)
+    public virtual void Play(AbstractWyrmBank bank, Transform track = null, float? volume = null)
     {
         if (volume.HasValue) this.volume = volume.Value;
         if (track != null) TrackedTransform = track;
-        if(bank.PitchRandomization) ASource.pitch = Random.Range(1f - bank.PitchDeviation, 1f + bank.PitchDeviation);
+        if (bank.PitchRandomization) ASource.pitch = GetRandomPitch(bank);
 
         clip = bank.GetBodyClip();
         Play();
     }
+
+    private float GetRandomPitch(AbstractWyrmBank bank) => Random.Range(1f - bank.PitchDeviation, 1f + bank.PitchDeviation);
 
     public void Return() => Manager.Return(this);
 
@@ -67,6 +77,10 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     {
         ASource.Stop();
         _trackedTransform = null;
+
+        // Reset tracking volumes on pool return
+        TargetVolume = 1f;
+        CurrentVolume = 1f;
     }
 
     public virtual AudioClip clip
@@ -103,8 +117,9 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public virtual float maxDistance
     {
-        get => ASource.minDistance;
-        set => ASource.minDistance = value;
+        // Bugfix: You were setting/getting `minDistance` here!
+        get => ASource.maxDistance;
+        set => ASource.maxDistance = value;
     }
 
     public virtual void Play() => ASource.Play();
