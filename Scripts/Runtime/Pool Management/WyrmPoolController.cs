@@ -7,11 +7,10 @@ using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Jobs;
 
-[DisallowMultipleComponent]
-[DefaultExecutionOrder(100)]
 public partial class WyrmPoolController : MonoBehaviour
 {
-    private static WyrmPoolController instance;
+    internal static WyrmPoolController Instance { get; private set; }
+
     private static readonly Dictionary<AudioMixerGroup, WyrmMixerPool> pools = new();
 
     public Transform CachedTransform { get; private set; }
@@ -29,17 +28,26 @@ public partial class WyrmPoolController : MonoBehaviour
     internal TransformAccessArray TrackedTransforms;
 
     internal NativeArray<byte> IsTracking;
+    internal NativeArray<int> SourceRoomIdentifiers;
     internal NativeArray<float3> SourcePositions;
     internal NativeArray<float3> TrackedPositions;
-    internal NativeArray<float3> PropagationPositions;
     internal NativeArray<byte> SourceActiveStates;
     internal NativeArray<float> SourceMinDistances;
     internal NativeArray<float> SourceMaxDistances;
-    internal NativeArray<float> OutputNormalizedRoomMixVolume;
+    internal NativeArray<byte> SourceUsePropagation;
+
+    public NativeArray<float3> PropagationDirections;
+    public NativeArray<float> PropagationDistances;
+    public NativeArray<float3> PropagationPathEQs;
+
+    // Occlusion Buffers
+    public NativeArray<RaycastCommand> OcclusionCommands;
+    public NativeArray<RaycastHit> OcclusionHits;
+    public NativeArray<float> SourceOcclusions;
 
     void Awake()
     {
-        instance = this;
+        Instance = this;
         CachedTransform = transform;
 
         int totalMaxSize = 0;
@@ -55,13 +63,21 @@ public partial class WyrmPoolController : MonoBehaviour
         TrackedTransforms = new TransformAccessArray(totalMaxSize);
 
         IsTracking = new NativeArray<byte>(totalMaxSize, Allocator.Persistent);
+        SourceRoomIdentifiers = new NativeArray<int>(totalMaxSize, Allocator.Persistent);
         SourcePositions = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
         TrackedPositions = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
-        PropagationPositions = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
         SourceActiveStates = new NativeArray<byte>(totalMaxSize, Allocator.Persistent);
         SourceMinDistances = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
         SourceMaxDistances = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
-        OutputNormalizedRoomMixVolume = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
+        SourceUsePropagation = new NativeArray<byte>(totalMaxSize, Allocator.Persistent);
+
+        PropagationDirections = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
+        PropagationDistances = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
+        PropagationPathEQs = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
+
+        OcclusionCommands = new NativeArray<RaycastCommand>(totalMaxSize, Allocator.Persistent);
+        OcclusionHits = new NativeArray<RaycastHit>(totalMaxSize, Allocator.Persistent);
+        SourceOcclusions = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
 
         foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
         {
@@ -69,42 +85,46 @@ public partial class WyrmPoolController : MonoBehaviour
         }
     }
 
-    public static void Dispose()
-    {
-        if (instance != null) Destroy(instance.gameObject);
-        pools.Clear();
-    }
-
     void OnDestroy()
     {
+        pools.Clear();
+        Instance = null;
         IsDisposed = true;
+
         if (SourceTransforms.isCreated) SourceTransforms.Dispose();
         if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
         if (IsTracking.IsCreated) IsTracking.Dispose();
+        if (SourceRoomIdentifiers.IsCreated) SourceRoomIdentifiers.Dispose();
         if (SourcePositions.IsCreated) SourcePositions.Dispose();
         if (TrackedPositions.IsCreated) TrackedPositions.Dispose();
-        if (PropagationPositions.IsCreated) PropagationPositions.Dispose();
         if (SourceActiveStates.IsCreated) SourceActiveStates.Dispose();
         if (SourceMinDistances.IsCreated) SourceMinDistances.Dispose();
         if (SourceMaxDistances.IsCreated) SourceMaxDistances.Dispose();
-        if (OutputNormalizedRoomMixVolume.IsCreated) OutputNormalizedRoomMixVolume.Dispose();
+        if (SourceUsePropagation.IsCreated) SourceUsePropagation.Dispose();
+        if (PropagationDirections.IsCreated) PropagationDirections.Dispose();
+        if (PropagationDistances.IsCreated) PropagationDistances.Dispose();
+        if (PropagationPathEQs.IsCreated) PropagationPathEQs.Dispose();
+        
+        if (OcclusionCommands.IsCreated) OcclusionCommands.Dispose();
+        if (OcclusionHits.IsCreated) OcclusionHits.Dispose();
+        if (SourceOcclusions.IsCreated) SourceOcclusions.Dispose();
     }
 
     public static void UpdateTrackedTransform(int activeIndex, Transform track)
     {
-        if (instance == null || activeIndex < 0 || activeIndex >= instance.ActiveCount) return;
-        instance.TrackedTransforms[activeIndex] = track != null ? track : instance.CachedTransform;
+        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount) return;
+        Instance.TrackedTransforms[activeIndex] = track != null ? track : Instance.CachedTransform;
     }
 
     public static void SetPlaybackEndTime(int activeIndex, double endTime)
     {
-        if (instance == null || activeIndex < 0 || activeIndex >= instance.ActiveCount) return;
-        instance.PlaybackEndTimes[activeIndex] = endTime + 0.1; // give the source some rest time before being redeployed
+        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount) return;
+        Instance.PlaybackEndTimes[activeIndex] = endTime + 0.1;
     }
 
     public static double GetPlaybackEndTime(int activeIndex)
     {
-        if (instance == null || activeIndex < 0 || activeIndex >= instance.ActiveCount) return -1;
-        return instance.PlaybackEndTimes[activeIndex];
+        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount) return -1;
+        return Instance.PlaybackEndTimes[activeIndex];
     }
 }

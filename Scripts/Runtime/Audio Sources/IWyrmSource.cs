@@ -4,6 +4,7 @@ using UnityEngine;
 
 public interface IWyrmSource
 {
+    bool PropagationEnabled { get; set; }
     WyrmMixerGroupConfig Config { get; }
 
     void Initialize(WyrmMixerPool pool);

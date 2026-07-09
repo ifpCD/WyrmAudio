@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Animated Footsteps
   m_EditorClassIdentifier: WyrmAudio::WyrmMixerGroupConfig
   targetMixerGroup: {fileID: 2762709079168119665, guid: 15f45132eb5dc5a42aa13b9ca8940ef1, type: 2}
-  WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: 9885eeb8f9d2e6042b2d9e0408a7c91b, type: 3}
+  WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: 40733ae7076df1740aadb24045ba2f49, type: 3}
   initialSize: 5
-  maxSize: 50
+  maxSize: 5
   isNonSpatial: 0
   isRoomMixed: 0

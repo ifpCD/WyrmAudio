@@ -174,7 +174,7 @@ MonoBehaviour:
   maxTransmissionSurfaces: 1
   directMixLevel: 1
   reflections: 0
-  reflectionsType: 1
+  reflectionsType: 0
   useDistanceCurveForReflections: 0
   currentBakedSource: {fileID: 0}
   reverbTimeLow: 0
@@ -227,4 +227,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: WyrmAudio::PooledSteamAudioSource
   <ASource>k__BackingField: {fileID: 6615845327962746880}
+  volumeTransitionTime: 0.05
   <SteamSource>k__BackingField: {fileID: 1277862038185094253}

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Objects Baked Spatial With Reflections
   m_EditorClassIdentifier: WyrmAudio::WyrmMixerGroupConfig
   targetMixerGroup: {fileID: -7963590031516329934, guid: 7a090cce9ab939a48bd396c11905c17c, type: 2}
-  WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: 599cdfee76b11854ea3ad6581824294a, type: 3}
-  initialSize: 5
+  WyrmAudioSourcePrefab: {fileID: 6930284038885535627, guid: 9885eeb8f9d2e6042b2d9e0408a7c91b, type: 3}
+  initialSize: 50
   maxSize: 50
   isNonSpatial: 0
   isRoomMixed: 0

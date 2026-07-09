@@ -1,24 +1,24 @@
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 public class WyrmAudioManager : MonoBehaviour
 {
-    private static WyrmAudioManager instance;
+    private static WyrmAudioManager Instance;
 
     private AudioListener listener;
 
-    public float3 ListenerPosition { get; private set; }
+
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Initialize()
     {
-        if (instance != null) return;
-        WyrmPoolController.Dispose();
+        if (Instance != null) return;
 
         var go = new GameObject("Wyrm Audio Manager");
-
-        instance = go.AddComponent<WyrmAudioManager>();
+        Instance = go.AddComponent<WyrmAudioManager>();
+        go.AddComponent<WyrmRoomManager>();
         go.AddComponent<WyrmPoolController>();
 
         DontDestroyOnLoad(go);
@@ -27,11 +27,10 @@ public class WyrmAudioManager : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InitializeListener()
     {
-        if (instance.listener != null) return;
-
-        instance.listener = FindAnyObjectByType<AudioListener>();
+        if (Instance.listener != null) return;
+        Instance.listener = FindAnyObjectByType<AudioListener>();
     }
 
-    public static void NotifyListenerChangeTo(AudioListener listener) => instance.listener = listener;
-    public static AudioListener GetAudioListener() => instance.listener;
+    public static void NotifyListenerChangeTo(AudioListener listener) => Instance.listener = listener;
+    public static AudioListener GetAudioListener() => Instance.listener;
 }

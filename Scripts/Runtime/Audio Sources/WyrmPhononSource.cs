@@ -4,11 +4,10 @@ using Unity.Mathematics;
 
 public partial class WyrmPhononSource : WyrmBaseSource
 {
-    public bool Reverb = false;
-    public bool Ambisonics = false;
+    public bool Reflections = false;
+    public bool Pathing = false;
 
-    // steam audio native wrapper
-    private Source _phononSource;
+    public Source PhononSource { get; private set; }
     private int _pluginHandle = -1;
 
     private float _cachedOcclusion = -1f;
@@ -18,18 +17,19 @@ public partial class WyrmPhononSource : WyrmBaseSource
     {
         base.Initialize(pool);
 
-        if (SteamAudioManager.Simulator != null && (Reverb || Ambisonics))
+        if (SteamAudioManager.Simulator != null && (Reflections || Pathing))
         {
             var simSettings = SteamAudioManager.GetSimulationSettings(false);
 
             simSettings.flags = 0;
-            if (Reverb) simSettings.flags |= SimulationFlags.Reflections;
-            if (Ambisonics) simSettings.flags |= SimulationFlags.Pathing;
+            if (Reflections) simSettings.flags |= SimulationFlags.Reflections;
+            if (Pathing) simSettings.flags |= SimulationFlags.Pathing;
 
-            _phononSource = new Source(SteamAudioManager.Simulator, simSettings);
-            _phononSource.AddToSimulator(SteamAudioManager.Simulator);
+            PhononSource = new Source(SteamAudioManager.Simulator, simSettings);
 
-            _pluginHandle = API.iplUnityAddSource(_phononSource.Get());
+            PhononSource.AddToSimulator(SteamAudioManager.Simulator);
+            _pluginHandle = API.iplUnityAddSource(PhononSource.Get());
+
         }
 
         ASource.SetSpatializerFloat(DISTANCE_ATTENUATION, 1f);
@@ -39,17 +39,17 @@ public partial class WyrmPhononSource : WyrmBaseSource
         ASource.SetSpatializerFloat(OCCLUSION, 1f);
         ASource.SetSpatializerFloat(TRANSMISSION, 1f);
 
-        ASource.SetSpatializerFloat(REFLECTIONS, Reverb ? 1f : 0f);
-        ASource.SetSpatializerFloat(PATHING, Ambisonics ? 1f : 0f);
+        ASource.SetSpatializerFloat(REFLECTIONS, Reflections ? 1f : 0f);
+        ASource.SetSpatializerFloat(PATHING, 1f);
 
         ASource.SetSpatializerFloat(HRTF_INTERPOLATION, 1f); // 1 = bilinear
 
         ASource.SetSpatializerFloat(USER_DEFINED_DIRECTIVITY, 1f);
         ASource.SetSpatializerFloat(FREQUENCY_DEPENDENT_TRANSMISSION, 1f);
 
-        ASource.SetSpatializerFloat(TRANSMISSION_LOW, 0.2f);
-        ASource.SetSpatializerFloat(TRANSMISSION_MID, 0.2f);
-        ASource.SetSpatializerFloat(TRANSMISSION_HIGH, 0.2f);
+        ASource.SetSpatializerFloat(TRANSMISSION_LOW, 0f);
+        ASource.SetSpatializerFloat(TRANSMISSION_MID, 0f);
+        ASource.SetSpatializerFloat(TRANSMISSION_HIGH, 0f);
 
         ASource.SetSpatializerFloat(DIRECT_BINAURAL, 1f); // HRTF
         ASource.SetSpatializerFloat(PLUGIN_SOURCE_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
@@ -59,7 +59,7 @@ public partial class WyrmPhononSource : WyrmBaseSource
     public override void Deactivate()
     {
         base.Deactivate();
-        SetOcclusionAndTransmission(1f, 1f, 1f, 1f);
+        SetOcclusionLevel(1f);
     }
 
     private void OnDestroy()
@@ -67,19 +67,19 @@ public partial class WyrmPhononSource : WyrmBaseSource
         if (_pluginHandle != -1)
             API.iplUnityRemoveSource(_pluginHandle);
 
-        if (_phononSource != null)
+        if (PhononSource != null)
         {
             if (SteamAudioManager.Simulator != null)
-                _phononSource.RemoveFromSimulator(SteamAudioManager.Simulator);
+                PhononSource.RemoveFromSimulator(SteamAudioManager.Simulator);
 
-            _phononSource.Release();
-            _phononSource = null;
+            PhononSource.Release();
+            PhononSource = null;
         }
     }
 
     public void UpdatePhononSimulatorPosition(float3 worldPos, float3 forward, float3 up, float3 right)
     {
-        if (_phononSource == null) return;
+        if (PhononSource == null) return;
 
         SimulationInputs inputs = new();
 
@@ -89,24 +89,17 @@ public partial class WyrmPhononSource : WyrmBaseSource
         inputs.source.right = Common.ConvertVector(right);
 
         inputs.flags = 0;
-        if (Reverb) inputs.flags |= SimulationFlags.Reflections;
-        if (Ambisonics) inputs.flags |= SimulationFlags.Pathing;
+        if (Reflections) inputs.flags |= SimulationFlags.Reflections;
 
-        _phononSource.SetInputs(inputs.flags, inputs);
+        PhononSource.SetInputs(inputs.flags, inputs);
     }
 
-    public void SetOcclusionAndTransmission(float occlusion, float transLow, float transMid, float transHigh)
+    public void SetOcclusionLevel(float occlusion)
     {
         if (Mathf.Abs(_cachedOcclusion - occlusion) > 0.01f)
         {
             ASource.SetSpatializerFloat(OCCLUSION_VALUE, occlusion);
             _cachedOcclusion = occlusion;
-        }
-
-        if (Mathf.Abs(_cachedTransMid - transMid) > 0.01f)
-        {
-
-            _cachedTransMid = transMid;
         }
     }
 }

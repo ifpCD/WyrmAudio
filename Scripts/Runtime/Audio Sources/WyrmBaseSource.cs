@@ -29,6 +29,8 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     public Vector3 CachedPosition { get; set; }
     public Quaternion CachedRotation { get; set; }
 
+    public bool PropagationEnabled { get; set; } = false;
+
     public WyrmMixerGroupConfig Config { get; private set; }
 
     public virtual void Initialize(WyrmMixerPool pool)

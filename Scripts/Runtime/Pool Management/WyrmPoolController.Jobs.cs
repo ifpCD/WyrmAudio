@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using NUnit.Framework.Constraints;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -15,6 +15,7 @@ public partial class WyrmPoolController : MonoBehaviour
         [ReadOnly] public NativeArray<byte> IsTracking;
         [WriteOnly] public NativeArray<float3> TrackedPositions;
 
+        // index is AudioSource
         public void Execute(int index, TransformAccess transform)
         {
             if (IsTracking[index] == 1) TrackedPositions[index] = transform.position;
@@ -28,6 +29,7 @@ public partial class WyrmPoolController : MonoBehaviour
         [ReadOnly] public NativeArray<float3> TrackedPositions;
         [WriteOnly] public NativeArray<float3> SourcePositions;
 
+        // index is AudioSource
         public void Execute(int index, TransformAccess transform)
         {
             if (IsTracking[index] == 1)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
@@ -34,11 +35,16 @@ public partial class WyrmPoolController : MonoBehaviour
             TrackedPositions[index] = trackTransform != null ? trackTransform.position : CachedTransform.position;
         }
 
+        SourceRoomIdentifiers[index] = -1; // populated in LateUpdate
+
         SourceActiveStates[index] = 1;
+
         SourceMinDistances[index] = source.minDistance;
         SourceMaxDistances[index] = source.maxDistance;
-        OutputNormalizedRoomMixVolume[index] = 0f;
+
         PlaybackEndTimes[index] = double.MaxValue;
+
+        SourceUsePropagation[index] = Convert.ToByte(source.PropagationEnabled);
 
         ActiveCount++;
     }
@@ -60,13 +66,23 @@ public partial class WyrmPoolController : MonoBehaviour
 
             SourcePositions[index] = SourcePositions[lastIndex];
             TrackedPositions[index] = TrackedPositions[lastIndex];
+
             IsTracking[index] = IsTracking[lastIndex];
-            PropagationPositions[index] = PropagationPositions[lastIndex];
+
+            SourceRoomIdentifiers[index] = SourceRoomIdentifiers[lastIndex];
+
             SourceActiveStates[index] = SourceActiveStates[lastIndex];
+
             SourceMinDistances[index] = SourceMinDistances[lastIndex];
             SourceMaxDistances[index] = SourceMaxDistances[lastIndex];
-            OutputNormalizedRoomMixVolume[index] = OutputNormalizedRoomMixVolume[lastIndex];
+
             PlaybackEndTimes[index] = PlaybackEndTimes[lastIndex];
+
+            SourceUsePropagation[index] = SourceUsePropagation[lastIndex];
+
+            PropagationDirections[index] = PropagationDirections[lastIndex];
+            PropagationDistances[index] = PropagationDistances[lastIndex];
+            PropagationPathEQs[index] = PropagationPathEQs[lastIndex];
         }
 
         ActiveSources[lastIndex] = null;

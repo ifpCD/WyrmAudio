@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// Helper class to quickly set up rooms in the editor
 public partial class WyrmRoom : MonoBehaviour
 {
 #if UNITY_EDITOR
@@ -7,8 +8,6 @@ public partial class WyrmRoom : MonoBehaviour
     [field: SerializeField] public Transform BottomLeft { get; private set; }
     [field: SerializeField] public Transform TopRight { get; private set; }
     [SerializeField] private float volumePadding = 0.01f;
-
-    private BoxCollider boxCollider;
 
     private Vector3 lastBottomLeftPos;
     private Vector3 lastTopRightPos;
@@ -18,8 +17,8 @@ public partial class WyrmRoom : MonoBehaviour
 
     private void OnEnable()
     {
-        boxCollider = GetComponent<BoxCollider>();
-        boxCollider.isTrigger = true;
+        BoxCollider = GetComponent<BoxCollider>();
+        BoxCollider.isTrigger = true;
 
         UpdateCollider();
     }
@@ -48,7 +47,7 @@ public partial class WyrmRoom : MonoBehaviour
 
     public void UpdateCollider()
     {
-        if (!BottomLeft || !TopRight || boxCollider == null)
+        if (!BottomLeft || !TopRight || BoxCollider == null)
             return;
 
         Vector3 a = transform.InverseTransformPoint(BottomLeft.position);
@@ -57,8 +56,8 @@ public partial class WyrmRoom : MonoBehaviour
         Vector3 min = Vector3.Min(a, b) - Vector3.one * volumePadding;
         Vector3 max = Vector3.Max(a, b) + Vector3.one * volumePadding;
 
-        boxCollider.center = (min + max) * 0.5f;
-        boxCollider.size = max - min;
+        BoxCollider.center = (min + max) * 0.5f;
+        BoxCollider.size = max - min;
     }
 
     public void RecenterPivotToCorners()
@@ -84,8 +83,8 @@ public partial class WyrmRoom : MonoBehaviour
         if (!BottomLeft || !TopRight)
             return;
 
-        if (boxCollider == null)
-            boxCollider = GetComponent<BoxCollider>();
+        if (BoxCollider == null)
+            BoxCollider = GetComponent<BoxCollider>();
 
         var t = transform;
         Gizmos.matrix = t.localToWorldMatrix;
@@ -93,10 +92,10 @@ public partial class WyrmRoom : MonoBehaviour
         Vector3 center;
         Vector3 size;
 
-        if (boxCollider != null)
+        if (BoxCollider != null)
         {
-            center = boxCollider.center;
-            size = boxCollider.size;
+            center = BoxCollider.center;
+            size = BoxCollider.size;
         }
         else
         {

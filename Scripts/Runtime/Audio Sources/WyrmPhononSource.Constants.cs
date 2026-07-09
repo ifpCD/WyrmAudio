@@ -24,4 +24,7 @@ public partial class WyrmPhononSource : WyrmBaseSource
     private const int DIRECT_BINAURAL                  = 30;
     private const int PLUGIN_SOURCE_HANDLE             = 31;
     private const int PERSPECTIVE_CORRECTION           = 32;
+
+    private const float TRUE                           = 1f;
+    private const float FALSE                          = 0f;
 }
