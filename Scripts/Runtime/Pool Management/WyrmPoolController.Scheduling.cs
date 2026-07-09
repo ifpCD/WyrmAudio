@@ -43,5 +43,23 @@ public partial class WyrmPoolController : MonoBehaviour
         JobHandle applyHandle = applyTransformsJob.Schedule(SourceTransforms, gatherHandle);
 
         applyHandle.Complete();
+
+        for (int i = 0; i < ActiveCount; i++)
+        {
+            var source = ActiveSources[i];
+
+            if (source is WyrmPhononSource phononSource)
+            {
+                float3 pos = SourcePositions[i];
+
+                float3 fwd = source.CachedTransform.forward;
+                float3 up = source.CachedTransform.up;
+                float3 right = source.CachedTransform.right;
+
+                phononSource.UpdatePhononSimulatorPosition(pos, fwd, up, right);
+
+                // phononSource.SetOcclusionAndTransmission()
+            }
+        }
     }
 }

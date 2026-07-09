@@ -38,7 +38,9 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         }
     }
 
-    void OnAudioFilterRead(float[] data, int channels)
+    void OnAudioFilterRead(float[] data, int channels) => ApplyVolumeDSP(data, channels);
+
+    protected void ApplyVolumeDSP(float[] data, int channels)
     {
         float target = _targetVolume;
         float current = _currentVolume;

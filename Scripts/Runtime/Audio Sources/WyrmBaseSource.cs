@@ -87,12 +87,12 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public virtual void Deactivate()
     {
-        _trackedTransform = null;
-        TargetVolume = 1f;
-        _currentVolume = 1f;
-        loop = false;
-        pitch = 1f;
-        clip = null;
+        // _trackedTransform = null;
+        // TargetVolume = 1f;
+        // _currentVolume = 1f;
+        // loop = false;
+        // pitch = 1f;
+        // clip = null;
     }
 
     public bool isPlaying => ASource.isPlaying;

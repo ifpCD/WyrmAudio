@@ -99,7 +99,7 @@ public partial class WyrmPoolController : MonoBehaviour
     public static void SetPlaybackEndTime(int activeIndex, double endTime)
     {
         if (instance == null || activeIndex < 0 || activeIndex >= instance.ActiveCount) return;
-        instance.PlaybackEndTimes[activeIndex] = endTime;
+        instance.PlaybackEndTimes[activeIndex] = endTime + 0.1; // give the source some rest time before being redeployed
     }
 
     public static double GetPlaybackEndTime(int activeIndex)
