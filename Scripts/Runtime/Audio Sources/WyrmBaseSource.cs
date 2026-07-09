@@ -8,7 +8,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public bool IsBorrowed { get; set; } = false;
     public int ActiveIndex { get; set; } = -1;
-    public WyrmMixerGroupProcessor Manager { get; private set; }
+    public WyrmMixerPool Pool { get; private set; }
 
     public Transform CachedTransform { get; private set; } = default;
 
@@ -22,7 +22,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
             _trackedTransform = value;
 
             if (ActiveIndex >= 0)
-                Manager.UpdateTrackedTransform(ActiveIndex, _trackedTransform);
+                WyrmPoolController.UpdateTrackedTransform(ActiveIndex, _trackedTransform);
         }
     }
 
@@ -31,10 +31,10 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public WyrmMixerGroupConfig Config { get; private set; }
 
-    public virtual void Initialize(WyrmMixerGroupProcessor manager)
+    public virtual void Initialize(WyrmMixerPool pool)
     {
-        Manager = manager;
-        ASource.outputAudioMixerGroup = Manager.config.targetMixerGroup;
+        Pool = pool;
+        ASource.outputAudioMixerGroup = Pool.Config.targetMixerGroup;
     }
 
     protected virtual void Awake()
@@ -83,17 +83,13 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         Play();
     }
 
-    public void Return() => Manager.Return(this);
+    public void Return() => Pool.ReturnToAvailable(this);
 
     public virtual void Deactivate()
     {
-        // ASource.Stop();
         _trackedTransform = null;
-
-        // Reset tracking volumes on pool return
         TargetVolume = 1f;
         _currentVolume = 1f;
-
         loop = false;
         pitch = 1f;
         clip = null;
@@ -105,13 +101,13 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     {
         if (ASource.loop)
         {
-            Manager.PlaybackEndTimes[ActiveIndex] = double.MaxValue;
+            WyrmPoolController.SetPlaybackEndTime(ActiveIndex, double.MaxValue);
         }
         else
         {
             float activePitch = Mathf.Abs(ASource.pitch);
             float realDuration = activePitch > 0f ? ASource.clip.length / activePitch : float.MaxValue;
-            Manager.PlaybackEndTimes[ActiveIndex] = AudioSettings.dspTime + realDuration;
+            WyrmPoolController.SetPlaybackEndTime(ActiveIndex, AudioSettings.dspTime + realDuration);
         }
 
         ASource.Play();
@@ -121,9 +117,9 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     {
         double newEndTime = AudioSettings.dspTime + clip.length;
 
-        if (newEndTime > Manager.PlaybackEndTimes[ActiveIndex])
+        if (newEndTime > WyrmPoolController.GetPlaybackEndTime(ActiveIndex))
         {
-            Manager.PlaybackEndTimes[ActiveIndex] = newEndTime;
+            WyrmPoolController.SetPlaybackEndTime(ActiveIndex, newEndTime);
         }
 
         ASource.PlayOneShot(clip);
@@ -133,7 +129,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public virtual void Stop()
     {
-        Manager.PlaybackEndTimes[ActiveIndex] = -1;
+        WyrmPoolController.SetPlaybackEndTime(ActiveIndex, -1);
         ASource.Stop();
     }
 }

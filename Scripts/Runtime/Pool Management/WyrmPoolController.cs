@@ -1,85 +1,110 @@
 using System.Collections.Generic;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.Jobs;
 
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(100)]
-public class WyrmPoolController : MonoBehaviour
+public partial class WyrmPoolController : MonoBehaviour
 {
-    // todo
-    static readonly Dictionary<AudioMixerGroup, WyrmMixerGroupProcessor> processors = new();
+    private static WyrmPoolController instance;
+    private static readonly Dictionary<AudioMixerGroup, WyrmMixerPool> pools = new();
+
+    public Transform CachedTransform { get; private set; }
+    public bool IsDisposed { get; private set; }
+
+    private bool _hasFocus = true;
+    void OnApplicationFocus(bool hasFocus) => _hasFocus = hasFocus;
+
+    // Global contiguous Job states
+    public IWyrmSource[] ActiveSources;
+    public int ActiveCount;
+    public double[] PlaybackEndTimes;
+
+    internal TransformAccessArray SourceTransforms;
+    internal TransformAccessArray TrackedTransforms;
+
+    internal NativeArray<byte> IsTracking;
+    internal NativeArray<float3> SourcePositions;
+    internal NativeArray<float3> TrackedPositions;
+    internal NativeArray<float3> PropagationPositions;
+    internal NativeArray<byte> SourceActiveStates;
+    internal NativeArray<float> SourceMinDistances;
+    internal NativeArray<float> SourceMaxDistances;
+    internal NativeArray<float> OutputNormalizedRoomMixVolume;
 
     void Awake()
     {
+        instance = this;
+        CachedTransform = transform;
+
+        int totalMaxSize = 0;
         foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
         {
-            CreateMixerGroupManager(config);
+            totalMaxSize += config.maxSize;
         }
-    }
 
-    void LateUpdate()
-    {
-        foreach (var (_, manager) in processors)
+        ActiveSources = new IWyrmSource[totalMaxSize];
+        PlaybackEndTimes = new double[totalMaxSize];
+
+        SourceTransforms = new TransformAccessArray(totalMaxSize);
+        TrackedTransforms = new TransformAccessArray(totalMaxSize);
+
+        IsTracking = new NativeArray<byte>(totalMaxSize, Allocator.Persistent);
+        SourcePositions = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
+        TrackedPositions = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
+        PropagationPositions = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
+        SourceActiveStates = new NativeArray<byte>(totalMaxSize, Allocator.Persistent);
+        SourceMinDistances = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
+        SourceMaxDistances = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
+        OutputNormalizedRoomMixVolume = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
+
+        foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
         {
-            if (manager.IsDisposed) continue;
-            
-            manager.CullSources();
-            manager.LateUpdateJobs();
+            pools[config.targetMixerGroup] = new WyrmMixerPool(config, this);
         }
     }
 
     public static void Dispose()
     {
-        foreach (var pool in processors.Values)
-        {
-            if (pool != null && pool.gameObject != null)
-            {
-                Destroy(pool.gameObject);
-            }
-        }
-        processors.Clear();
+        if (instance != null) Destroy(instance.gameObject);
+        pools.Clear();
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, AbstractWyrmBank bank, Transform track = null, float? volume = null)
+    void OnDestroy()
     {
-        processors[mixerGroup].Play(bank, track, volume);
+        IsDisposed = true;
+        if (SourceTransforms.isCreated) SourceTransforms.Dispose();
+        if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
+        if (IsTracking.IsCreated) IsTracking.Dispose();
+        if (SourcePositions.IsCreated) SourcePositions.Dispose();
+        if (TrackedPositions.IsCreated) TrackedPositions.Dispose();
+        if (PropagationPositions.IsCreated) PropagationPositions.Dispose();
+        if (SourceActiveStates.IsCreated) SourceActiveStates.Dispose();
+        if (SourceMinDistances.IsCreated) SourceMinDistances.Dispose();
+        if (SourceMaxDistances.IsCreated) SourceMaxDistances.Dispose();
+        if (OutputNormalizedRoomMixVolume.IsCreated) OutputNormalizedRoomMixVolume.Dispose();
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, Transform track = null, float? volume = null)
+    public static void UpdateTrackedTransform(int activeIndex, Transform track)
     {
-        processors[mixerGroup].Play(clip, track, volume);
+        if (instance == null || activeIndex < 0 || activeIndex >= instance.ActiveCount) return;
+        instance.TrackedTransforms[activeIndex] = track != null ? track : instance.CachedTransform;
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, AbstractWyrmBank bank, Vector3 position, float? volume = null)
+    public static void SetPlaybackEndTime(int activeIndex, double endTime)
     {
-        processors[mixerGroup].Play(bank, position, volume);
+        if (instance == null || activeIndex < 0 || activeIndex >= instance.ActiveCount) return;
+        instance.PlaybackEndTimes[activeIndex] = endTime;
     }
 
-    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, Vector3 position, float? volume = null)
+    public static double GetPlaybackEndTime(int activeIndex)
     {
-        processors[mixerGroup].Play(clip, position, volume);
-    }
-
-    public static bool TryBorrow(AudioMixerGroup mixerGroup, out IWyrmSource pooledAudioSource)
-    {
-        return processors[mixerGroup].TryBorrow(out pooledAudioSource);
-    }
-
-    public static void Return(AudioMixerGroup mixerGroup, IWyrmSource pooledAudioSource)
-    {
-        processors[mixerGroup].Return(pooledAudioSource);
-    }
-
-    private void CreateMixerGroupManager(WyrmMixerGroupConfig config)
-    {
-        string mixerName = $"{config.targetMixerGroup.audioMixer.name} - {config.targetMixerGroup.name}";
-        GameObject mixerManagerObject = new(mixerName);
-
-        mixerManagerObject.transform.SetParent(transform);
-
-        var mixerManager = mixerManagerObject.AddComponent<WyrmMixerGroupProcessor>();
-        mixerManager.Initialize(config);
-
-        processors[config.targetMixerGroup] = mixerManager;
+        if (instance == null || activeIndex < 0 || activeIndex >= instance.ActiveCount) return -1;
+        return instance.PlaybackEndTimes[activeIndex];
     }
 }

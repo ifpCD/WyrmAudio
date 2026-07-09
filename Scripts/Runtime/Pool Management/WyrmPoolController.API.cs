@@ -1,0 +1,19 @@
+using System.Collections.Generic;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Audio;
+using UnityEngine.Jobs;
+
+
+public partial class WyrmPoolController : MonoBehaviour
+{
+    public static void Play(AudioMixerGroup mixerGroup, AbstractWyrmBank bank, Transform track = null, float? volume = null) => pools[mixerGroup].Play(bank, track, volume);
+    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, Transform track = null, float? volume = null) => pools[mixerGroup].Play(clip, track, volume);
+    public static void Play(AudioMixerGroup mixerGroup, AbstractWyrmBank bank, Vector3 position, float? volume = null) => pools[mixerGroup].Play(bank, position, volume);
+    public static void Play(AudioMixerGroup mixerGroup, AudioClip clip, Vector3 position, float? volume = null) => pools[mixerGroup].Play(clip, position, volume);
+    public static bool TryBorrow(AudioMixerGroup mixerGroup, out IWyrmSource pooledSource) => pools[mixerGroup].TryBorrow(out pooledSource);
+    public static void Return(AudioMixerGroup mixerGroup, IWyrmSource pooledSource) => pools[mixerGroup].ReturnToAvailable(pooledSource);
+}

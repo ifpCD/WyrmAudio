@@ -1,11 +1,13 @@
+using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Jobs;
 
-public partial class WyrmMixerGroupProcessor : MonoBehaviour
+public partial class WyrmPoolController : MonoBehaviour
 {
     [BurstCompile]
     private struct GatherTrackedPositionsJob : IJobParallelForTransform
@@ -15,10 +17,7 @@ public partial class WyrmMixerGroupProcessor : MonoBehaviour
 
         public void Execute(int index, TransformAccess transform)
         {
-            if (IsTracking[index] == 1)
-            {
-                TrackedPositions[index] = transform.position;
-            }
+            if (IsTracking[index] == 1) TrackedPositions[index] = transform.position;
         }
     }
 

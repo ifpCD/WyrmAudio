@@ -6,11 +6,10 @@ public interface IWyrmSource
 {
     WyrmMixerGroupConfig Config { get; }
 
-    void Initialize(WyrmMixerGroupProcessor manager);
+    void Initialize(WyrmMixerPool pool);
 
     Transform TrackedTransform { get; set; }
 
-    // future
     void Play(AudioClip clip, Transform track = null, float? volume = null);
     void Play(AbstractWyrmBank clip, Transform track = null, float? volume = null);
 
@@ -18,15 +17,14 @@ public interface IWyrmSource
 
     bool IsBorrowed { get; set; }
     int ActiveIndex { get; set; }
-    WyrmMixerGroupProcessor Manager { get; }
+    WyrmMixerPool Pool { get; }
 
     Transform CachedTransform { get; }
 
-    public Vector3 CachedPosition { get; set; }
-    public Quaternion CachedRotation { get; set; }
+    Vector3 CachedPosition { get; set; }
+    Quaternion CachedRotation { get; set; }
 
-
-    public float TargetVolume { get; set; }
+    float TargetVolume { get; set; }
 
     void Deactivate();
 
