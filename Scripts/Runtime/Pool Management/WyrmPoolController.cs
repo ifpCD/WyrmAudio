@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
@@ -45,6 +46,10 @@ public partial class WyrmPoolController : MonoBehaviour
     public NativeArray<RaycastHit> OcclusionHits;
     public NativeArray<float> SourceOcclusions;
 
+    // Under your global contiguous Job states:
+    internal NativeArray<IntPtr> SourceHandles;
+    public NativeArray<float> PropagationSHCoeffs;
+
     void Awake()
     {
         Instance = this;
@@ -79,6 +84,9 @@ public partial class WyrmPoolController : MonoBehaviour
         OcclusionHits = new NativeArray<RaycastHit>(totalMaxSize, Allocator.Persistent);
         SourceOcclusions = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
 
+        SourceHandles = new NativeArray<IntPtr>(totalMaxSize, Allocator.Persistent);
+        PropagationSHCoeffs = new NativeArray<float>(totalMaxSize * 16, Allocator.Persistent); // 16 covers up to 3rd Order
+
         foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
         {
             pools[config.targetMixerGroup] = new WyrmMixerPool(config, this);
@@ -104,10 +112,13 @@ public partial class WyrmPoolController : MonoBehaviour
         if (PropagationDirections.IsCreated) PropagationDirections.Dispose();
         if (PropagationDistances.IsCreated) PropagationDistances.Dispose();
         if (PropagationPathEQs.IsCreated) PropagationPathEQs.Dispose();
-        
+
         if (OcclusionCommands.IsCreated) OcclusionCommands.Dispose();
         if (OcclusionHits.IsCreated) OcclusionHits.Dispose();
         if (SourceOcclusions.IsCreated) SourceOcclusions.Dispose();
+
+        if (SourceHandles.IsCreated) SourceHandles.Dispose();
+        if (PropagationSHCoeffs.IsCreated) PropagationSHCoeffs.Dispose();
     }
 
     public static void UpdateTrackedTransform(int activeIndex, Transform track)

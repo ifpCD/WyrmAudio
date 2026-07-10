@@ -9,6 +9,9 @@ public partial class WyrmPortal : MonoBehaviour
     [SerializeField] private WyrmRoom roomA;
     [SerializeField] private WyrmRoom roomB;
 
+    public WyrmRoom RoomA => roomA;
+    public WyrmRoom RoomB => roomB;
+
     public int[] RoomIdentifierConnections => new int[] 
     { 
         roomA != null ? roomA.RoomIdentifier : -1, 

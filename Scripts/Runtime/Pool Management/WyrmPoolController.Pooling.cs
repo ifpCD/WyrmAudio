@@ -46,6 +46,11 @@ public partial class WyrmPoolController : MonoBehaviour
 
         SourceUsePropagation[index] = Convert.ToByte(source.PropagationEnabled);
 
+        if (source is WyrmPhononSource phononSource && phononSource.PhononSource != null)
+            SourceHandles[index] = phononSource.PhononSource.Get();
+        else
+            SourceHandles[index] = IntPtr.Zero;
+
         ActiveCount++;
     }
 
@@ -83,6 +88,8 @@ public partial class WyrmPoolController : MonoBehaviour
             PropagationDirections[index] = PropagationDirections[lastIndex];
             PropagationDistances[index] = PropagationDistances[lastIndex];
             PropagationPathEQs[index] = PropagationPathEQs[lastIndex];
+
+            SourceHandles[index] = SourceHandles[lastIndex];
         }
 
         ActiveSources[lastIndex] = null;

@@ -9,9 +9,12 @@ public class WyrmAudioSettings : ScriptableObject
     [HideInInspector]
     public List<AbstractWyrmBank> RegisteredSoundBanks = new();
 
-
     [Header("Audio Rooms")]
     public int maxActiveRooms = 1024;
+
+    [Header("Acoustic Pathing")]
+    [Range(1, 3)]
+    public int pathingAmbisonicsOrder = 1;
 
     static WyrmAudioSettings _instance = null;
 

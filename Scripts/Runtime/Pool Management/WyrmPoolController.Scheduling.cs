@@ -1,6 +1,7 @@
 using System;
 using SteamAudio;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -54,14 +55,23 @@ public partial class WyrmPoolController : MonoBehaviour
         JobHandle roomJobs = WyrmRoomManager.Instance.SchedulePropagation();
         roomJobs.Complete();
 
+        unsafe
+        {
+            WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
+                ActiveCount,
+                (IntPtr*)SourceHandles.GetUnsafeReadOnlyPtr(),
+                (float*)PropagationPathEQs.GetUnsafeReadOnlyPtr(),
+                (float*)PropagationSHCoeffs.GetUnsafeReadOnlyPtr(),
+                WyrmAudioSettings.Instance.pathingAmbisonicsOrder
+            );
+        }
 
         for (int index = 0; index < ActiveCount; index++)
         {
             var source = ActiveSources[index];
             if (source is WyrmPhononSource phononSource)
             {
-                ApplyCustomPathingToSources(PropagationDirections, PropagationDistances, PropagationPathEQs);
-
+                // fine for now
                 float3 pos = SourcePositions[index];
                 float3 fwd = source.CachedTransform.forward;
                 float3 up = source.CachedTransform.up;
@@ -72,45 +82,5 @@ public partial class WyrmPoolController : MonoBehaviour
                 phononSource.SetOcclusionLevel(SourceOcclusions[index]);
             }
         }
-    }
-
-    private unsafe void ApplyCustomPathingToSources(NativeArray<float3> portalDirections, NativeArray<float> pathDistances, NativeArray<float3> pathEQs)
-    {
-        float* eqCoeffs = stackalloc float[3];
-        float* shCoeffs = stackalloc float[16];
-
-        NativeArray<float> tempSH = new(4, Allocator.Temp);
-
-        for (int i = 0; i < ActiveCount; i++)
-        {
-            var phononSource = ActiveSources[i] as WyrmPhononSource;
-            if (phononSource == null || !phononSource.Pathing)
-                continue;
-
-            float dist = pathDistances[i];
-            float gain = 1.0f / math.max(dist, 1.0f);
-
-            WyrmCustomPathing.ProjectToAmbisonics(
-                portalDirections[i],
-                1,
-                gain,
-                ref tempSH);
-
-            for (int s = 0; s < 4; s++)
-                shCoeffs[s] = tempSH[s];
-
-            eqCoeffs[0] = pathEQs[i].x;
-            eqCoeffs[1] = pathEQs[i].y;
-            eqCoeffs[2] = pathEQs[i].z;
-
-            IntPtr sourceHandle = phononSource.PhononSource.Get();
-
-            WyrmCustomPathing.iplSourceSetCustomPathing(
-                sourceHandle,
-                eqCoeffs,
-                shCoeffs);
-        }
-
-        tempSH.Dispose();
     }
 }

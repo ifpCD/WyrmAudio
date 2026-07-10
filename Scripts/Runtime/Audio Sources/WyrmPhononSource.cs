@@ -29,7 +29,6 @@ public partial class WyrmPhononSource : WyrmBaseSource
 
             PhononSource.AddToSimulator(SteamAudioManager.Simulator);
             _pluginHandle = API.iplUnityAddSource(PhononSource.Get());
-
         }
 
         ASource.SetSpatializerFloat(DISTANCE_ATTENUATION, 1f);
@@ -47,9 +46,9 @@ public partial class WyrmPhononSource : WyrmBaseSource
         ASource.SetSpatializerFloat(USER_DEFINED_DIRECTIVITY, 1f);
         ASource.SetSpatializerFloat(FREQUENCY_DEPENDENT_TRANSMISSION, 1f);
 
-        ASource.SetSpatializerFloat(TRANSMISSION_LOW, 0f);
-        ASource.SetSpatializerFloat(TRANSMISSION_MID, 0f);
-        ASource.SetSpatializerFloat(TRANSMISSION_HIGH, 0f);
+        ASource.SetSpatializerFloat(TRANSMISSION_LOW, 0.2f);
+        ASource.SetSpatializerFloat(TRANSMISSION_MID, 0.05f);
+        ASource.SetSpatializerFloat(TRANSMISSION_HIGH, 0.05f);
 
         ASource.SetSpatializerFloat(DIRECT_BINAURAL, 1f); // HRTF
         ASource.SetSpatializerFloat(PLUGIN_SOURCE_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1

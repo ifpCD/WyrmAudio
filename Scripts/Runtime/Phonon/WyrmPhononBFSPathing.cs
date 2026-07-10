@@ -1,28 +1,91 @@
-using Unity.Mathematics;
-using System.Runtime.InteropServices;
 using System;
+using System.Runtime.InteropServices;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 
-public static unsafe class WyrmCustomPathing
+public static class WyrmPhononCustomAPI
 {
     [DllImport("phonon")]
-    public static extern void iplSourceSetCustomPathing(IntPtr source, float* eqCoeffs, float* shCoeffs);
+    public static unsafe extern void iplSourceSetCustomPathingBatch(int numSources, IntPtr* sources, float* eqCoeffs, float* shCoeffs, int shOrder);
+}
 
-    // Helper to calculate SH inside a Burst Job
-    public static void ProjectToAmbisonics(float3 listenerToPortalDir, int order, float gain, ref NativeArray<float> shCoeffs)
+[BurstCompile]
+public struct CalculateAmbisonicsJob : IJobParallelFor
+{
+    [ReadOnly] public NativeArray<float3> Directions;
+    [ReadOnly] public NativeArray<float> Distances;
+
+    // because we are doing SHCoeffs[i * numCoeffs + j]
+    // unity doesn't like it because we are not accessing the native array by our current index 
+    [WriteOnly]
+    [NativeDisableParallelForRestriction]
+    public NativeArray<float> SHCoeffs;
+
+    public int Order;
+
+    public void Execute(int i)
     {
-        // Convert Unity coords to Phonon SH coords: (-z, -x, y)
-        float3 dir = math.normalize(new float3(-listenerToPortalDir.z, -listenerToPortalDir.x, listenerToPortalDir.y));
+        float dist = Distances[i];
+        float gain = 1.0f / math.max(dist, 1.0f);
 
-        // 1st Order Ambisonics (4 coefficients). 
-        // Expand this if you want 2nd (9) or 3rd (16) order.
-        shCoeffs[0] = gain * 0.28209479f; // L0_0
+        float3 dir = Directions[i];
+        if (math.lengthsq(dir) < 0.0001f)
+            dir = new float3(0, 0, 1);
 
-        if (order >= 1)
+        float3 u = math.normalize(dir);
+
+        // Unity = (Ux, Uy, Uz).
+        // Phonon = (Ux, Uy, -Uz).
+        // Google SH = (-Pz, -Px, Py).
+        // so Google SH = (Uz, -Ux, Uy)
+        float x = u.z;
+        float y = -u.x;
+        float z = u.y;
+
+        int numCoeffs = (Order + 1) * (Order + 1);
+        int offset = i * numCoeffs;
+
+        // Order 0
+        SHCoeffs[offset + 0] = gain * 0.28209479f;
+
+        if (Order >= 1)
         {
-            shCoeffs[1] = gain * -0.48860251f * dir.y; // L1_-1
-            shCoeffs[2] = gain * 0.48860251f * dir.z; // L1_0
-            shCoeffs[3] = gain * -0.48860251f * dir.x; // L1_1
+            SHCoeffs[offset + 1] = gain * 0.48860251f * y;
+            SHCoeffs[offset + 2] = gain * 0.48860251f * z;
+            SHCoeffs[offset + 3] = gain * 0.48860251f * x;
+        }
+
+        if (Order >= 2)
+        {
+            float xx = x * x;
+            float yy = y * y;
+            float zz = z * z;
+            float xy = x * y;
+            float yz = y * z;
+            float xz = x * z;
+
+            SHCoeffs[offset + 4] = gain * 1.0925484f * xy;
+            SHCoeffs[offset + 5] = gain * 1.0925484f * yz;
+            SHCoeffs[offset + 6] = gain * 0.3153915f * (3.0f * zz - 1.0f);
+            SHCoeffs[offset + 7] = gain * 1.0925484f * xz;
+            SHCoeffs[offset + 8] = gain * 0.5462742f * (xx - yy);
+        }
+
+        if (Order >= 3)
+        {
+            float xx = x * x;
+            float yy = y * y;
+            float zz = z * z;
+
+            SHCoeffs[offset + 9] = gain * 0.5900435f * y * (3.0f * xx - yy);
+            SHCoeffs[offset + 10] = gain * 2.8906114f * x * y * z;
+            SHCoeffs[offset + 11] = gain * 0.4570457f * y * (5.0f * zz - 1.0f);
+            SHCoeffs[offset + 12] = gain * 0.3731763f * z * (5.0f * zz - 3.0f);
+            SHCoeffs[offset + 13] = gain * 0.4570457f * x * (5.0f * zz - 1.0f);
+            SHCoeffs[offset + 14] = gain * 1.4453057f * z * (xx - yy);
+            SHCoeffs[offset + 15] = gain * 0.5900435f * x * (xx - 3.0f * yy);
         }
     }
 }

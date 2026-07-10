@@ -3,7 +3,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
-[DefaultExecutionOrder(-150)] 
+[DefaultExecutionOrder(-150)]
 public partial class WyrmRoomManager : MonoBehaviour
 {
     public static WyrmRoomManager Instance { get; private set; }
@@ -13,7 +13,7 @@ public partial class WyrmRoomManager : MonoBehaviour
 
     public NativeReference<int> ListenerRoomIdentifier;
     [HideInInspector] public float3 ListenerPosition { get; private set; }
-    
+
     [HideInInspector] public NativeArray<RoomData> Rooms;
     [HideInInspector] public NativeArray<PortalData> Portals;
     [HideInInspector] public NativeArray<RoomAcousticMap> AcousticMap;
@@ -53,16 +53,16 @@ public partial class WyrmRoomManager : MonoBehaviour
 
     public JobHandle SchedulePropagation()
     {
-        if (WyrmPoolController.Instance.ActiveCount == 0) 
+        if (WyrmPoolController.Instance.ActiveCount == 0)
             return default;
-        
+
         ListenerPosition = WyrmAudioManager.GetAudioListener().transform.position;
 
         var locateListenerJob = new LocateListenerJob
         {
             ListenerPosition = ListenerPosition,
             Rooms = Rooms,
-            
+
             ListenerRoomIdentifier = ListenerRoomIdentifier
         };
         JobHandle locateListenerHandle = locateListenerJob.Schedule();
@@ -102,6 +102,15 @@ public partial class WyrmRoomManager : MonoBehaviour
         };
         JobHandle resolvePropagationHandle = resolvePropagationJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, propagationDeps);
 
+        var calculateSHJob = new CalculateAmbisonicsJob
+        {
+            Directions = WyrmPoolController.Instance.PropagationDirections,
+            Distances = WyrmPoolController.Instance.PropagationDistances,
+            SHCoeffs = WyrmPoolController.Instance.PropagationSHCoeffs,
+            Order = WyrmAudioSettings.Instance.pathingAmbisonicsOrder
+        };
+
+        JobHandle shHandle = calculateSHJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, resolvePropagationHandle);
         var prepareRaycastsJob = new PrepareOcclusionRaycastsJob
         {
             SourcePositions = WyrmPoolController.Instance.SourcePositions,
@@ -113,19 +122,21 @@ public partial class WyrmRoomManager : MonoBehaviour
         JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16);
 
         JobHandle raycastHandle = RaycastCommand.ScheduleBatch(
-            WyrmPoolController.Instance.OcclusionCommands, 
-            WyrmPoolController.Instance.OcclusionHits, 
+            WyrmPoolController.Instance.OcclusionCommands,
+            WyrmPoolController.Instance.OcclusionHits,
             16, prepareRaycastsHandle);
 
         var resolveOcclusionJob = new ResolveOcclusionJob
         {
             RaycastHits = WyrmPoolController.Instance.OcclusionHits,
-            
+
             SourceOcclusions = WyrmPoolController.Instance.SourceOcclusions
         };
+
         JobHandle resolveOcclusionHandle = resolveOcclusionJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, raycastHandle);
 
-        return JobHandle.CombineDependencies(resolvePropagationHandle, resolveOcclusionHandle);
+
+        return JobHandle.CombineDependencies(shHandle, resolveOcclusionHandle);
     }
 
     private void PopulateRooms()
@@ -148,7 +159,9 @@ public partial class WyrmRoomManager : MonoBehaviour
         for (int i = 0; i < _portalRefs.Length; i++)
         {
             var portal = _portalRefs[i];
-            var connections = portal.RoomIdentifierConnections;
+
+            int indexA = portal.RoomA != null ? System.Array.IndexOf(_roomRefs, portal.RoomA) : -1;
+            int indexB = portal.RoomB != null ? System.Array.IndexOf(_roomRefs, portal.RoomB) : -1;
 
             Portals[i] = new PortalData
             {
@@ -156,13 +169,14 @@ public partial class WyrmRoomManager : MonoBehaviour
                 extents = Vector3.Scale(portal.BoxCollider.size, portal.transform.lossyScale) * 0.5f,
                 forward = portal.transform.forward,
                 rotation = portal.transform.rotation,
-                roomA = connections[0],
-                roomB = connections[1],
+
+                roomA = indexA,
+                roomB = indexB,
                 openness = portal.Openness
             };
 
-            if (connections[0] != -1) RoomToPortals.Add(connections[0], i);
-            if (connections[1] != -1) RoomToPortals.Add(connections[1], i);
+            if (indexA != -1) RoomToPortals.Add(indexA, i);
+            if (indexB != -1) RoomToPortals.Add(indexB, i);
         }
     }
 
