@@ -16,7 +16,7 @@ public partial class WyrmRoomManager
     public bool drawPortals = true;
 
     [Tooltip("Draws the shortest path tree from the listener out to all connected rooms.")]
-    public bool drawAcousticGraph = true;
+    public bool drawAcousticGraph = false;
 
     [Tooltip("Draws the multi-room path a sound takes to reach the listener.")]
     public bool drawSourcePropagation = true;

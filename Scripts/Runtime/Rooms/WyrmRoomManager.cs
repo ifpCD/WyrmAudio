@@ -102,12 +102,13 @@ public partial class WyrmRoomManager : MonoBehaviour
         };
         JobHandle resolvePropagationHandle = resolvePropagationJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, propagationDeps);
 
-        var calculateSHJob = new CalculateAmbisonicsJob
+        var calculateSHJob = new CalculateSHCoefficientsJob
         {
             Directions = WyrmPoolController.Instance.PropagationDirections,
             Distances = WyrmPoolController.Instance.PropagationDistances,
-            SHCoeffs = WyrmPoolController.Instance.PropagationSHCoeffs,
-            Order = WyrmAudioSettings.Instance.pathingAmbisonicsOrder
+            AmbisonicOrder = SteamAudio.SteamAudioSettings.Singleton.realTimeAmbisonicOrder,
+
+            SHCoeffs = WyrmPoolController.Instance.PropagationSHCoeffs
         };
 
         JobHandle shHandle = calculateSHJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, resolvePropagationHandle);
@@ -115,7 +116,7 @@ public partial class WyrmRoomManager : MonoBehaviour
         {
             SourcePositions = WyrmPoolController.Instance.SourcePositions,
             ListenerPosition = ListenerPosition,
-            LayerMask = OcclusionLayerMask,
+            LayerMask = WyrmAudioSettings.Instance.DefaultMask,
 
             RaycastCommands = WyrmPoolController.Instance.OcclusionCommands
         };

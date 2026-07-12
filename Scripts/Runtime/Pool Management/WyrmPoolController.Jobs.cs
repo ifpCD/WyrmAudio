@@ -13,6 +13,7 @@ public partial class WyrmPoolController : MonoBehaviour
     private struct GatherTrackedPositionsJob : IJobParallelForTransform
     {
         [ReadOnly] public NativeArray<byte> IsTracking;
+        
         [WriteOnly] public NativeArray<float3> TrackedPositions;
 
         // index is AudioSource
@@ -27,6 +28,7 @@ public partial class WyrmPoolController : MonoBehaviour
     {
         [ReadOnly] public NativeArray<byte> IsTracking;
         [ReadOnly] public NativeArray<float3> TrackedPositions;
+
         [WriteOnly] public NativeArray<float3> SourcePositions;
 
         // index is AudioSource

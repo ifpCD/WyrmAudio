@@ -1,8 +1,7 @@
 #if UNITY_EDITOR
 using UnityEngine;
-
 // Helper class to quickly set up rooms in the editor
-public partial class WyrmRoom : MonoBehaviour
+public partial class WyrmPortal : MonoBehaviour
 {
     [Header("Volume Generation")]
     [field: SerializeField] public Transform BottomLeft { get; private set; }
@@ -82,7 +81,7 @@ public partial class WyrmRoom : MonoBehaviour
     {
         if (!BottomLeft || !TopRight)
             return;
-            
+
         if (BoxCollider == null)
             BoxCollider = GetComponent<BoxCollider>();
 

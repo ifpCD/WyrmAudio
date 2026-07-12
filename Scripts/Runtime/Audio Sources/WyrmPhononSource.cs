@@ -23,6 +23,10 @@ public partial class WyrmPhononSource : WyrmBaseSource
 
             simSettings.flags = 0;
             if (Reflections) simSettings.flags |= SimulationFlags.Reflections;
+
+            // Phonon Source must initialize with the pathing flag
+            // to allocate memory for eq/sh in C++. (otherwise we crash)
+            // We then never send the Pathing flag ever again during simulator updates.
             if (Pathing) simSettings.flags |= SimulationFlags.Pathing;
 
             PhononSource = new Source(SteamAudioManager.Simulator, simSettings);
@@ -76,16 +80,17 @@ public partial class WyrmPhononSource : WyrmBaseSource
         }
     }
 
-    public void UpdatePhononSimulatorPosition(float3 worldPos, float3 forward, float3 up, float3 right)
+    // Candidate for custom batch api
+    public void UpdatePhononSimulator(float3 worldPos)
     {
         if (PhononSource == null) return;
 
         SimulationInputs inputs = new();
 
         inputs.source.origin = Common.ConvertVector(worldPos);
-        inputs.source.ahead = Common.ConvertVector(forward);
-        inputs.source.up = Common.ConvertVector(up);
-        inputs.source.right = Common.ConvertVector(right);
+        inputs.source.ahead = Common.ConvertVector(float3.zero);
+        inputs.source.up = Common.ConvertVector(float3.zero);
+        inputs.source.right = Common.ConvertVector(float3.zero);
 
         inputs.flags = 0;
         if (Reflections) inputs.flags |= SimulationFlags.Reflections;
@@ -93,6 +98,7 @@ public partial class WyrmPhononSource : WyrmBaseSource
         PhononSource.SetInputs(inputs.flags, inputs);
     }
 
+    // Candidate for custom batch api
     public void SetOcclusionLevel(float occlusion)
     {
         if (Mathf.Abs(_cachedOcclusion - occlusion) > 0.01f)

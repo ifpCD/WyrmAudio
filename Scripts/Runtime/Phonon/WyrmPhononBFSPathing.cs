@@ -12,18 +12,17 @@ public static class WyrmPhononCustomAPI
 }
 
 [BurstCompile]
-public struct CalculateAmbisonicsJob : IJobParallelFor
+public struct CalculateSHCoefficientsJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float3> Directions;
     [ReadOnly] public NativeArray<float> Distances;
+    [ReadOnly] public int AmbisonicOrder;
+
 
     // because we are doing SHCoeffs[i * numCoeffs + j]
     // unity doesn't like it because we are not accessing the native array by our current index 
-    [WriteOnly]
     [NativeDisableParallelForRestriction]
-    public NativeArray<float> SHCoeffs;
-
-    public int Order;
+    [WriteOnly] public NativeArray<float> SHCoeffs;
 
     public void Execute(int i)
     {
@@ -44,20 +43,20 @@ public struct CalculateAmbisonicsJob : IJobParallelFor
         float y = -u.x;
         float z = u.y;
 
-        int numCoeffs = (Order + 1) * (Order + 1);
+        int numCoeffs = (AmbisonicOrder + 1) * (AmbisonicOrder + 1);
         int offset = i * numCoeffs;
 
         // Order 0
         SHCoeffs[offset + 0] = gain * 0.28209479f;
 
-        if (Order >= 1)
+        if (AmbisonicOrder >= 1)
         {
             SHCoeffs[offset + 1] = gain * 0.48860251f * y;
             SHCoeffs[offset + 2] = gain * 0.48860251f * z;
             SHCoeffs[offset + 3] = gain * 0.48860251f * x;
         }
 
-        if (Order >= 2)
+        if (AmbisonicOrder >= 2)
         {
             float xx = x * x;
             float yy = y * y;
@@ -73,7 +72,7 @@ public struct CalculateAmbisonicsJob : IJobParallelFor
             SHCoeffs[offset + 8] = gain * 0.5462742f * (xx - yy);
         }
 
-        if (Order >= 3)
+        if (AmbisonicOrder >= 3)
         {
             float xx = x * x;
             float yy = y * y;

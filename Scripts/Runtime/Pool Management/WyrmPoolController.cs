@@ -25,6 +25,12 @@ public partial class WyrmPoolController : MonoBehaviour
     public int ActiveCount;
     public double[] PlaybackEndTimes;
 
+    // INPUTS
+    internal NativeArray<float> SourceMinDistances;
+    internal NativeArray<float> SourceMaxDistances;
+    internal NativeArray<byte> SourceUsePropagation;
+
+
     internal TransformAccessArray SourceTransforms;
     internal TransformAccessArray TrackedTransforms;
 
@@ -33,9 +39,6 @@ public partial class WyrmPoolController : MonoBehaviour
     internal NativeArray<float3> SourcePositions;
     internal NativeArray<float3> TrackedPositions;
     internal NativeArray<byte> SourceActiveStates;
-    internal NativeArray<float> SourceMinDistances;
-    internal NativeArray<float> SourceMaxDistances;
-    internal NativeArray<byte> SourceUsePropagation;
 
     public NativeArray<float3> PropagationDirections;
     public NativeArray<float> PropagationDistances;

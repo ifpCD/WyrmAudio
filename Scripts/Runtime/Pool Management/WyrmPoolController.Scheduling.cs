@@ -62,7 +62,7 @@ public partial class WyrmPoolController : MonoBehaviour
                 (IntPtr*)SourceHandles.GetUnsafeReadOnlyPtr(),
                 (float*)PropagationPathEQs.GetUnsafeReadOnlyPtr(),
                 (float*)PropagationSHCoeffs.GetUnsafeReadOnlyPtr(),
-                WyrmAudioSettings.Instance.pathingAmbisonicsOrder
+                SteamAudioSettings.Singleton.realTimeAmbisonicOrder
             );
         }
 
@@ -71,14 +71,7 @@ public partial class WyrmPoolController : MonoBehaviour
             var source = ActiveSources[index];
             if (source is WyrmPhononSource phononSource)
             {
-                // fine for now
-                float3 pos = SourcePositions[index];
-                float3 fwd = source.CachedTransform.forward;
-                float3 up = source.CachedTransform.up;
-                float3 right = source.CachedTransform.right;
-
-                phononSource.UpdatePhononSimulatorPosition(pos, fwd, up, right);
-
+                phononSource.UpdatePhononSimulator(SourcePositions[index]);
                 phononSource.SetOcclusionLevel(SourceOcclusions[index]);
             }
         }

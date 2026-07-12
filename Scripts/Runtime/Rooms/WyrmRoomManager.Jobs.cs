@@ -86,9 +86,9 @@ public partial class WyrmRoomManager : MonoBehaviour
                 exitPortalIndex = -1 
             };
 
-            // Allocating Queue/Array to Temp Memory means it exists completely within the Stack lifetime of the Job.
-            NativeQueue<int> queue = new NativeQueue<int>(Allocator.Temp);
-            NativeArray<bool> inQueue = new NativeArray<bool>(Rooms.Length, Allocator.Temp);
+            // these will need to go at some point
+            NativeQueue<int> queue = new(Allocator.Temp);
+            NativeArray<bool> inQueue = new(Rooms.Length, Allocator.Temp);
 
             queue.Enqueue(startRoom);
             inQueue[startRoom] = true;
