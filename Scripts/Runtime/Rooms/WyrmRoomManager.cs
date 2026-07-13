@@ -51,7 +51,7 @@ public partial class WyrmRoomManager : MonoBehaviour
         PopulatePortalsAndRelations();
     }
 
-    public JobHandle SchedulePropagation()
+    public JobHandle ScheduleEffects()
     {
         if (WyrmPoolController.Instance.ActiveCount == 0)
             return default;
@@ -98,7 +98,7 @@ public partial class WyrmRoomManager : MonoBehaviour
 
             PropagationDirections = WyrmPoolController.Instance.PropagationDirections,
             PropagationDistances = WyrmPoolController.Instance.PropagationDistances,
-            PropagationPathEQs = WyrmPoolController.Instance.PropagationPathEQs,
+            PropagationPathEQs = WyrmPoolController.Instance.TargetPropagationEQ01,
         };
         JobHandle resolvePropagationHandle = resolvePropagationJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, propagationDeps);
 
@@ -108,10 +108,10 @@ public partial class WyrmRoomManager : MonoBehaviour
             Distances = WyrmPoolController.Instance.PropagationDistances,
             AmbisonicOrder = SteamAudio.SteamAudioSettings.Singleton.realTimeAmbisonicOrder,
 
-            SHCoeffs = WyrmPoolController.Instance.PropagationSHCoeffs
+            SHCoeffs = WyrmPoolController.Instance.PropagationSHCoeffOutputs
         };
-
         JobHandle shHandle = calculateSHJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, resolvePropagationHandle);
+
         var prepareRaycastsJob = new PrepareOcclusionRaycastsJob
         {
             SourcePositions = WyrmPoolController.Instance.SourcePositions,
@@ -124,18 +124,16 @@ public partial class WyrmRoomManager : MonoBehaviour
 
         JobHandle raycastHandle = RaycastCommand.ScheduleBatch(
             WyrmPoolController.Instance.OcclusionCommands,
-            WyrmPoolController.Instance.OcclusionHits,
+            WyrmPoolController.Instance.OcclusionHitResults,
             16, prepareRaycastsHandle);
 
         var resolveOcclusionJob = new ResolveOcclusionJob
         {
-            RaycastHits = WyrmPoolController.Instance.OcclusionHits,
+            RaycastHits = WyrmPoolController.Instance.OcclusionHitResults,
 
-            SourceOcclusions = WyrmPoolController.Instance.SourceOcclusions
+            SourceOcclusions = WyrmPoolController.Instance.TargetOcclusion01s
         };
-
         JobHandle resolveOcclusionHandle = resolveOcclusionJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, raycastHandle);
-
 
         return JobHandle.CombineDependencies(shHandle, resolveOcclusionHandle);
     }

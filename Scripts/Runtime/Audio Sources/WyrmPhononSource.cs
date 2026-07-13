@@ -4,9 +4,6 @@ using Unity.Mathematics;
 
 public partial class WyrmPhononSource : WyrmBaseSource
 {
-    public bool Reflections = false;
-    public bool Pathing = false;
-
     public Source PhononSource { get; private set; }
     private int _pluginHandle = -1;
 
@@ -17,17 +14,17 @@ public partial class WyrmPhononSource : WyrmBaseSource
     {
         base.Initialize(pool);
 
-        if (SteamAudioManager.Simulator != null && (Reflections || Pathing))
+        if (SteamAudioManager.Simulator != null && (UseReflections || UsePropagation))
         {
             var simSettings = SteamAudioManager.GetSimulationSettings(false);
 
             simSettings.flags = 0;
-            if (Reflections) simSettings.flags |= SimulationFlags.Reflections;
+            if (UseReflections) simSettings.flags |= SimulationFlags.Reflections;
 
             // Phonon Source must initialize with the pathing flag
             // to allocate memory for eq/sh in C++. (otherwise we crash)
             // We then never send the Pathing flag ever again during simulator updates.
-            if (Pathing) simSettings.flags |= SimulationFlags.Pathing;
+            if (UsePropagation) simSettings.flags |= SimulationFlags.Pathing;
 
             PhononSource = new Source(SteamAudioManager.Simulator, simSettings);
 
@@ -42,7 +39,7 @@ public partial class WyrmPhononSource : WyrmBaseSource
         ASource.SetSpatializerFloat(OCCLUSION, 1f);
         ASource.SetSpatializerFloat(TRANSMISSION, 1f);
 
-        ASource.SetSpatializerFloat(REFLECTIONS, Reflections ? 1f : 0f);
+        ASource.SetSpatializerFloat(REFLECTIONS, UseReflections ? 1f : 0f);
         ASource.SetSpatializerFloat(PATHING, 1f);
 
         ASource.SetSpatializerFloat(HRTF_INTERPOLATION, 1f); // 1 = bilinear
@@ -93,7 +90,7 @@ public partial class WyrmPhononSource : WyrmBaseSource
         inputs.source.right = Common.ConvertVector(float3.zero);
 
         inputs.flags = 0;
-        if (Reflections) inputs.flags |= SimulationFlags.Reflections;
+        if (UseReflections) inputs.flags |= SimulationFlags.Reflections;
 
         PhononSource.SetInputs(inputs.flags, inputs);
     }

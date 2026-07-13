@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -17,78 +15,92 @@ public partial class WyrmPoolController : MonoBehaviour
     public Transform CachedTransform { get; private set; }
     public bool IsDisposed { get; private set; }
 
+    public int MaximumCapacity { get; private set; } = 0;
+
     private bool _hasFocus = true;
     void OnApplicationFocus(bool hasFocus) => _hasFocus = hasFocus;
 
-    // Global contiguous Job states
-    public IWyrmSource[] ActiveSources;
-    public int ActiveCount;
-    public double[] PlaybackEndTimes;
+    public int ActiveCount { get; private set; }
+    internal IWyrmSource[] ActiveSources;
+    internal double[] PlaybackEndTimes;
 
-    // INPUTS
-    internal NativeArray<float> SourceMinDistances;
-    internal NativeArray<float> SourceMaxDistances;
-    internal NativeArray<byte> SourceUsePropagation;
+    // Source Inputs
+    internal NativeArray<float> MinDistances;
+    internal NativeArray<float> MaxDistances;
 
+    internal NativeArray<byte> UseOcclusions;
+    internal NativeArray<byte> UsePropagations;
+    internal NativeArray<byte> UseReflections;
+
+    internal NativeArray<byte> IsSourceTrackingTransform;
+
+    internal NativeArray<float3> SourcePositions;
+    internal NativeArray<float3> TrackedPositions;
+
+    // Occlusion Input Buffers
+    internal NativeArray<RaycastCommand> OcclusionCommands;
+    internal NativeArray<RaycastHit> OcclusionHitResults;
+
+    // Propagation Input Buffers
+    internal NativeArray<int> SourceRoomIdentifiers;
+    internal NativeArray<float3> PropagationDirections;
+    internal NativeArray<float> PropagationDistances;
+
+    // Output Buffers
+    internal NativeArray<float> TargetOcclusion01s;
+    internal NativeArray<float3> TargetPropagationEQ01;
+    internal NativeArray<float> PropagationSHCoeffOutputs;
+
+    internal NativeArray<IntPtr> Pointers;
 
     internal TransformAccessArray SourceTransforms;
     internal TransformAccessArray TrackedTransforms;
 
-    internal NativeArray<byte> IsTracking;
-    internal NativeArray<int> SourceRoomIdentifiers;
-    internal NativeArray<float3> SourcePositions;
-    internal NativeArray<float3> TrackedPositions;
-    internal NativeArray<byte> SourceActiveStates;
-
-    public NativeArray<float3> PropagationDirections;
-    public NativeArray<float> PropagationDistances;
-    public NativeArray<float3> PropagationPathEQs;
-
-    // Occlusion Buffers
-    public NativeArray<RaycastCommand> OcclusionCommands;
-    public NativeArray<RaycastHit> OcclusionHits;
-    public NativeArray<float> SourceOcclusions;
-
-    // Under your global contiguous Job states:
-    internal NativeArray<IntPtr> SourceHandles;
-    public NativeArray<float> PropagationSHCoeffs;
+    // Lerp Output Values (these ones get passed to Phonon)
+    internal NativeArray<float> CurrentOcclusion01;
+    internal NativeArray<float3> CurrentPropagationEQ01s;
+    
 
     void Awake()
     {
         Instance = this;
         CachedTransform = transform;
 
-        int totalMaxSize = 0;
         foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
         {
-            totalMaxSize += config.maxSize;
+            MaximumCapacity += config.maxSize;
         }
 
-        ActiveSources = new IWyrmSource[totalMaxSize];
-        PlaybackEndTimes = new double[totalMaxSize];
+        ActiveSources = new IWyrmSource[MaximumCapacity];
+        PlaybackEndTimes = new double[MaximumCapacity];
 
-        SourceTransforms = new TransformAccessArray(totalMaxSize);
-        TrackedTransforms = new TransformAccessArray(totalMaxSize);
+        SourceTransforms = new TransformAccessArray(MaximumCapacity);
+        TrackedTransforms = new TransformAccessArray(MaximumCapacity);
 
-        IsTracking = new NativeArray<byte>(totalMaxSize, Allocator.Persistent);
-        SourceRoomIdentifiers = new NativeArray<int>(totalMaxSize, Allocator.Persistent);
-        SourcePositions = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
-        TrackedPositions = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
-        SourceActiveStates = new NativeArray<byte>(totalMaxSize, Allocator.Persistent);
-        SourceMinDistances = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
-        SourceMaxDistances = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
-        SourceUsePropagation = new NativeArray<byte>(totalMaxSize, Allocator.Persistent);
+        IsSourceTrackingTransform = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
+        SourceRoomIdentifiers = new NativeArray<int>(MaximumCapacity, Allocator.Persistent);
+        SourcePositions = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
+        TrackedPositions = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
 
-        PropagationDirections = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
-        PropagationDistances = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
-        PropagationPathEQs = new NativeArray<float3>(totalMaxSize, Allocator.Persistent);
+        MinDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+        MaxDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
 
-        OcclusionCommands = new NativeArray<RaycastCommand>(totalMaxSize, Allocator.Persistent);
-        OcclusionHits = new NativeArray<RaycastHit>(totalMaxSize, Allocator.Persistent);
-        SourceOcclusions = new NativeArray<float>(totalMaxSize, Allocator.Persistent);
+        UsePropagations = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
+        UseOcclusions = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
 
-        SourceHandles = new NativeArray<IntPtr>(totalMaxSize, Allocator.Persistent);
-        PropagationSHCoeffs = new NativeArray<float>(totalMaxSize * 16, Allocator.Persistent); // 16 covers up to 3rd Order
+        PropagationDirections = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
+        PropagationDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+        TargetPropagationEQ01 = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
+
+        OcclusionCommands = new NativeArray<RaycastCommand>(MaximumCapacity, Allocator.Persistent);
+        OcclusionHitResults = new NativeArray<RaycastHit>(MaximumCapacity, Allocator.Persistent);
+        TargetOcclusion01s = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+
+        Pointers = new NativeArray<IntPtr>(MaximumCapacity, Allocator.Persistent);
+        PropagationSHCoeffOutputs = new NativeArray<float>(MaximumCapacity * 16, Allocator.Persistent); // 16 covers up to 3rd Order
+
+        CurrentOcclusion01 = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+        CurrentPropagationEQ01s = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
 
         foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
         {
@@ -104,24 +116,28 @@ public partial class WyrmPoolController : MonoBehaviour
 
         if (SourceTransforms.isCreated) SourceTransforms.Dispose();
         if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
-        if (IsTracking.IsCreated) IsTracking.Dispose();
+        if (IsSourceTrackingTransform.IsCreated) IsSourceTrackingTransform.Dispose();
         if (SourceRoomIdentifiers.IsCreated) SourceRoomIdentifiers.Dispose();
         if (SourcePositions.IsCreated) SourcePositions.Dispose();
         if (TrackedPositions.IsCreated) TrackedPositions.Dispose();
-        if (SourceActiveStates.IsCreated) SourceActiveStates.Dispose();
-        if (SourceMinDistances.IsCreated) SourceMinDistances.Dispose();
-        if (SourceMaxDistances.IsCreated) SourceMaxDistances.Dispose();
-        if (SourceUsePropagation.IsCreated) SourceUsePropagation.Dispose();
+
+        if (MinDistances.IsCreated) MinDistances.Dispose();
+        if (MaxDistances.IsCreated) MaxDistances.Dispose();
+        if (UsePropagations.IsCreated) UsePropagations.Dispose();
+        if (UseOcclusions.IsCreated) UsePropagations.Dispose();
         if (PropagationDirections.IsCreated) PropagationDirections.Dispose();
         if (PropagationDistances.IsCreated) PropagationDistances.Dispose();
-        if (PropagationPathEQs.IsCreated) PropagationPathEQs.Dispose();
+        if (TargetPropagationEQ01.IsCreated) TargetPropagationEQ01.Dispose();
 
         if (OcclusionCommands.IsCreated) OcclusionCommands.Dispose();
-        if (OcclusionHits.IsCreated) OcclusionHits.Dispose();
-        if (SourceOcclusions.IsCreated) SourceOcclusions.Dispose();
+        if (OcclusionHitResults.IsCreated) OcclusionHitResults.Dispose();
+        if (TargetOcclusion01s.IsCreated) TargetOcclusion01s.Dispose();
 
-        if (SourceHandles.IsCreated) SourceHandles.Dispose();
-        if (PropagationSHCoeffs.IsCreated) PropagationSHCoeffs.Dispose();
+        if (Pointers.IsCreated) Pointers.Dispose();
+        if (PropagationSHCoeffOutputs.IsCreated) PropagationSHCoeffOutputs.Dispose();
+
+        if (CurrentOcclusion01.IsCreated) PropagationSHCoeffOutputs.Dispose();
+        if (CurrentPropagationEQ01s.IsCreated) PropagationSHCoeffOutputs.Dispose();
     }
 
     public static void UpdateTrackedTransform(int activeIndex, Transform track)

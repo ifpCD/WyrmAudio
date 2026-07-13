@@ -35,33 +35,39 @@ public partial class WyrmPoolController : MonoBehaviour
 
     private void ScheduleJobs()
     {
+        JobHandle finalizerHandle = default;
+
         var gatherJob = new GatherTrackedPositionsJob
         {
-            IsTracking = IsTracking,
+            IsTracking = IsSourceTrackingTransform,
             TrackedPositions = TrackedPositions
         };
         JobHandle gatherHandle = gatherJob.Schedule(TrackedTransforms);
 
         var applyTransformsJob = new ApplySourceTransformsJob
         {
-            IsTracking = IsTracking,
+            IsTracking = IsSourceTrackingTransform,
             TrackedPositions = TrackedPositions,
             SourcePositions = SourcePositions
         };
         JobHandle applyTransformsHandle = applyTransformsJob.Schedule(SourceTransforms, gatherHandle);
-
         applyTransformsHandle.Complete();
 
-        JobHandle roomJobs = WyrmRoomManager.Instance.SchedulePropagation();
-        roomJobs.Complete();
+        JobHandle effectsHandle = WyrmRoomManager.Instance.ScheduleEffects();
+        JobHandle downMixHandle = EffectsMixingProcessor.ScheduleMixing(effectsHandle);
+        JobHandle lerpHandle = LerpProcessor.ScheduleLerping(downMixHandle);
+
+        finalizerHandle = lerpHandle;
+
+        finalizerHandle.Complete();
 
         unsafe
         {
             WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
                 ActiveCount,
-                (IntPtr*)SourceHandles.GetUnsafeReadOnlyPtr(),
-                (float*)PropagationPathEQs.GetUnsafeReadOnlyPtr(),
-                (float*)PropagationSHCoeffs.GetUnsafeReadOnlyPtr(),
+                (IntPtr*)Pointers.GetUnsafeReadOnlyPtr(),
+                (float*)CurrentPropagationEQ01s.GetUnsafeReadOnlyPtr(),
+                (float*)PropagationSHCoeffOutputs.GetUnsafeReadOnlyPtr(),
                 SteamAudioSettings.Singleton.realTimeAmbisonicOrder
             );
         }
@@ -72,7 +78,7 @@ public partial class WyrmPoolController : MonoBehaviour
             if (source is WyrmPhononSource phononSource)
             {
                 phononSource.UpdatePhononSimulator(SourcePositions[index]);
-                phononSource.SetOcclusionLevel(SourceOcclusions[index]);
+                phononSource.SetOcclusionLevel(CurrentOcclusion01[index]);
             }
         }
     }

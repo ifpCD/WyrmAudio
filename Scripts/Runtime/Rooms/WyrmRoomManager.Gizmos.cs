@@ -142,7 +142,7 @@ public partial class WyrmRoomManager
         {
             float3 sourcePosition = pool.SourcePositions[i];
             int sourceRoom = pool.SourceRoomIdentifiers[i];
-            float sourceOcclusion = pool.SourceOcclusions[i];
+            float sourceOcclusion = pool.TargetOcclusion01s[i];
 
             Gizmos.color = Color.yellow;
             Gizmos.DrawSphere(sourcePosition, 0.1f);
