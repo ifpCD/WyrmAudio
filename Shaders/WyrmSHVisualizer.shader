@@ -11,15 +11,17 @@ Shader "Hidden/WyrmAudio/SHVisualizer"
 
         [Header(Color Palette)]
         [HDR] _BaseColor ("Idle/Base Color", Color) = (0.02, 0.1, 0.3, 1.0)
-        [HDR] _LowColor ("Low Freq (Bass) Color", Color) = (1.0, 0.05, 0.0, 1.0) // Deep Red
-        [HDR] _MidColor ("Mid Freq Color", Color) = (0.1, 1.0, 0.3, 1.0)      // Toxic Green
-        [HDR] _HighColor ("High Freq (Treble) Color", Color) = (0.0, 0.8, 1.0, 1.0) // Cyan
+        [HDR] _LowColor ("Low Freq (Bass) Color", Color) = (1.0, 0.05, 0.0, 1.0) 
+        [HDR] _MidColor ("Mid Freq Color", Color) = (0.1, 1.0, 0.3, 1.0)      
+        [HDR] _HighColor ("High Freq (Treble) Color", Color) = (0.0, 0.8, 1.0, 1.0)
     }
     SubShader
     {
         Tags { "RenderType"="Transparent" "Queue"="Overlay" }
+
         Blend SrcAlpha OneMinusSrcAlpha
         ZWrite Off
+        ZTest Always
         Cull Back
 
         Pass
@@ -33,7 +35,7 @@ Shader "Hidden/WyrmAudio/SHVisualizer"
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
-                float2 uv : TEXCOORD0;
+                float2 uv : TEXCOORD0; // Restored UV
             };
 
             struct v2f
@@ -43,7 +45,9 @@ Shader "Hidden/WyrmAudio/SHVisualizer"
                 float intensity : TEXCOORD1;
                 float3 viewDir : TEXCOORD2;
                 float3 normal : TEXCOORD3;
-                float2 uv : TEXCOORD4;
+                float3 objPos : TEXCOORD4; 
+                float2 uv : TEXCOORD5; // Restored UV
+                float bandOpacity : TEXCOORD6;
             };
 
             float4 _SHCoeffs[16];
@@ -62,8 +66,9 @@ Shader "Hidden/WyrmAudio/SHVisualizer"
             v2f vert (appdata v)
             {
                 v2f o;
-                o.uv = v.uv;
+                o.uv = v.uv; // Pass UV to fragment
                 o.normal = UnityObjectToWorldNormal(v.normal);
+                o.objPos = normalize(v.normal); 
                 
                 float3 u = normalize(v.normal);
                 float x = u.z;
@@ -97,11 +102,20 @@ Shader "Hidden/WyrmAudio/SHVisualizer"
                 if (isnan(evaluatedSH.w) || isinf(evaluatedSH.w)) evaluatedSH = float4(0,0,0,0);
                 evaluatedSH *= _Sensitivity;
 
-                float3 bands = max(0.0, evaluatedSH.rgb);
-                
+                // Use abs() to reveal full SH lobes
+                float3 bands = abs(evaluatedSH.rgb);
 
                 float totalBandEnergy = bands.x + bands.y + bands.z + 0.0001; 
-                o.mappedColor = (bands.x * _LowColor.rgb + bands.y * _MidColor.rgb + bands.z * _HighColor.rgb) / totalBandEnergy;
+                
+                o.mappedColor =
+                    (bands.x * _LowColor.rgb +
+                    bands.y * _MidColor.rgb +
+                    bands.z * _HighColor.rgb) / totalBandEnergy;
+
+                o.bandOpacity =
+                    (bands.x * _LowColor.a +
+                    bands.y * _MidColor.a +
+                    bands.z * _HighColor.a) / totalBandEnergy;
 
                 float avgEQ = dot(bands, float3(0.3333, 0.3333, 0.3333));
                 float maxEQ = max(bands.x, max(bands.y, bands.z));
@@ -120,15 +134,20 @@ Shader "Hidden/WyrmAudio/SHVisualizer"
             fixed4 frag (v2f i) : SV_Target
             {
                 float audioGlow = saturate(i.intensity);
-                
                 float3 baseColor = lerp(_BaseColor.rgb, i.mappedColor, audioGlow);
 
                 float2 gridUV = frac(i.uv * 24.0);
-                float gridLine = smoothstep(0.95, 1.0, gridUV.x) + smoothstep(0.95, 1.0, gridUV.y);
-                float dynamicGridIntensity = _GridIntensity * (0.1 + audioGlow * 2.0); // 90% invisible at rest
-                gridLine = saturate(gridLine) * dynamicGridIntensity; 
+                float horizontalLines = smoothstep(0.95, 1.0, gridUV.y);
+                float verticalLines = smoothstep(0.95, 1.0, gridUV.x);
+                
+                float poleFade = smoothstep(0.02, 0.15, i.uv.y) * smoothstep(0.98, 0.85, i.uv.y);
+                verticalLines *= poleFade; 
+                
+                float gridLine = saturate(horizontalLines + verticalLines);
+                float dynamicGridIntensity = _GridIntensity * (0.2 + audioGlow * 1.5);
+                gridLine *= dynamicGridIntensity; 
 
-                float pulse = sin(i.uv.y * 40.0 - _Time.y * 15.0) * 0.5 + 0.5;
+                float pulse = sin(i.objPos.y * 20.0 - _Time.y * 15.0) * 0.5 + 0.5;
                 float pulseGlow = pulse * audioGlow * 0.5;
 
                 float NdotV = saturate(dot(normalize(i.normal), normalize(i.viewDir)));
@@ -137,10 +156,13 @@ Shader "Hidden/WyrmAudio/SHVisualizer"
                 
                 float3 finalColor = baseColor + (baseColor * gridLine) + (i.mappedColor * pulseGlow) + (i.mappedColor * rimGlow);
 
-                float alpha = _IdleOpacity + (gridLine * 0.5) + (audioGlow * 0.8) + (rimGlow * 0.5);
-                alpha = saturate(alpha);
+                float effectiveOpacity = max(_IdleOpacity, i.bandOpacity * audioGlow);
+                
+                float alpha = _IdleOpacity + (audioGlow * i.bandOpacity);
+                alpha += gridLine * effectiveOpacity; 
+                alpha += rimGlow * effectiveOpacity;
 
-                return fixed4(finalColor, alpha);
+                return fixed4(finalColor, saturate(alpha));
             }
             ENDCG
         }

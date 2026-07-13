@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -47,9 +48,11 @@ public partial class WyrmPoolController : MonoBehaviour
     internal NativeArray<float> PropagationDistances;
 
     // Output Buffers
-    internal NativeArray<float> TargetOcclusion01s;
+    internal NativeArray<float> TargetOcclusion01;
     internal NativeArray<float3> TargetPropagationEQ01;
     internal NativeArray<float> PropagationSHCoeffOutputs;
+
+    internal NativeArray<float3> TargetTransmissionEQ01;
 
     internal NativeArray<IntPtr> Pointers;
 
@@ -59,7 +62,7 @@ public partial class WyrmPoolController : MonoBehaviour
     // Lerp Output Values (these ones get passed to Phonon)
     internal NativeArray<float> CurrentOcclusion01;
     internal NativeArray<float3> CurrentPropagationEQ01s;
-    
+
 
     void Awake()
     {
@@ -71,6 +74,25 @@ public partial class WyrmPoolController : MonoBehaviour
             MaximumCapacity += config.maxSize;
         }
 
+        InitializeBuffers();
+
+        foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
+        {
+            pools[config.targetMixerGroup] = new WyrmMixerPool(config, this);
+        }
+    }
+
+    void OnDestroy()
+    {
+        pools.Clear();
+        Instance = null;
+        IsDisposed = true;
+
+        DisposeBuffers();
+    }
+
+    private void InitializeBuffers()
+    {
         ActiveSources = new IWyrmSource[MaximumCapacity];
         PlaybackEndTimes = new double[MaximumCapacity];
 
@@ -92,28 +114,26 @@ public partial class WyrmPoolController : MonoBehaviour
         PropagationDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
         TargetPropagationEQ01 = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
 
-        OcclusionCommands = new NativeArray<RaycastCommand>(MaximumCapacity, Allocator.Persistent);
-        OcclusionHitResults = new NativeArray<RaycastHit>(MaximumCapacity, Allocator.Persistent);
-        TargetOcclusion01s = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+        OcclusionCommands = new NativeArray<RaycastCommand>(MaximumCapacity * 64, Allocator.Persistent);
+        OcclusionHitResults = new NativeArray<RaycastHit>(MaximumCapacity * 64, Allocator.Persistent);
+        TargetOcclusion01 = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+
+        TargetTransmissionEQ01 = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
+
+        for (int i = 0; i < MaximumCapacity; i++)
+        {
+            TargetTransmissionEQ01[i] = Vector3.zero;
+        }
 
         Pointers = new NativeArray<IntPtr>(MaximumCapacity, Allocator.Persistent);
         PropagationSHCoeffOutputs = new NativeArray<float>(MaximumCapacity * 16, Allocator.Persistent); // 16 covers up to 3rd Order
 
         CurrentOcclusion01 = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
         CurrentPropagationEQ01s = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
-
-        foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
-        {
-            pools[config.targetMixerGroup] = new WyrmMixerPool(config, this);
-        }
     }
 
-    void OnDestroy()
+    private void DisposeBuffers()
     {
-        pools.Clear();
-        Instance = null;
-        IsDisposed = true;
-
         if (SourceTransforms.isCreated) SourceTransforms.Dispose();
         if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
         if (IsSourceTrackingTransform.IsCreated) IsSourceTrackingTransform.Dispose();
@@ -131,10 +151,12 @@ public partial class WyrmPoolController : MonoBehaviour
 
         if (OcclusionCommands.IsCreated) OcclusionCommands.Dispose();
         if (OcclusionHitResults.IsCreated) OcclusionHitResults.Dispose();
-        if (TargetOcclusion01s.IsCreated) TargetOcclusion01s.Dispose();
+        if (TargetOcclusion01.IsCreated) TargetOcclusion01.Dispose();
 
         if (Pointers.IsCreated) Pointers.Dispose();
         if (PropagationSHCoeffOutputs.IsCreated) PropagationSHCoeffOutputs.Dispose();
+
+        if (TargetTransmissionEQ01.IsCreated) TargetOcclusion01.Dispose();
 
         if (CurrentOcclusion01.IsCreated) PropagationSHCoeffOutputs.Dispose();
         if (CurrentPropagationEQ01s.IsCreated) PropagationSHCoeffOutputs.Dispose();

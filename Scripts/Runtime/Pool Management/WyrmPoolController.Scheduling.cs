@@ -55,7 +55,7 @@ public partial class WyrmPoolController : MonoBehaviour
 
         JobHandle effectsHandle = WyrmRoomManager.Instance.ScheduleEffects();
         JobHandle downMixHandle = EffectsMixingProcessor.ScheduleMixing(effectsHandle);
-        JobHandle lerpHandle = LerpProcessor.ScheduleLerping(downMixHandle);
+        JobHandle lerpHandle    = LerpProcessor.ScheduleLerping(downMixHandle);
 
         finalizerHandle = lerpHandle;
 
@@ -70,6 +70,16 @@ public partial class WyrmPoolController : MonoBehaviour
                 (float*)PropagationSHCoeffOutputs.GetUnsafeReadOnlyPtr(),
                 SteamAudioSettings.Singleton.realTimeAmbisonicOrder
             );
+
+            WyrmPhononCustomAPI.iplSourceSetCustomDirectBatch(
+                ActiveCount,
+                (IntPtr*)Pointers.GetUnsafeReadOnlyPtr(),
+                (float3*)SourcePositions.GetUnsafeReadOnlyPtr(),
+                null,
+                null
+            // (float*)CurrentOcclusion01.GetUnsafeReadOnlyPtr(),
+            // (float3*)TargetTransmissionEQ01.GetUnsafeReadOnlyPtr()
+            );
         }
 
         for (int index = 0; index < ActiveCount; index++)
@@ -77,7 +87,6 @@ public partial class WyrmPoolController : MonoBehaviour
             var source = ActiveSources[index];
             if (source is WyrmPhononSource phononSource)
             {
-                phononSource.UpdatePhononSimulator(SourcePositions[index]);
                 phononSource.SetOcclusionLevel(CurrentOcclusion01[index]);
             }
         }

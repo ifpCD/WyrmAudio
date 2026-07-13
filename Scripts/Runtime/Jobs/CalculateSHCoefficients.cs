@@ -1,15 +1,7 @@
-using System;
-using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-
-public static class WyrmPhononCustomAPI
-{
-    [DllImport("phonon")]
-    public static unsafe extern void iplSourceSetCustomPathingBatch(int numSources, IntPtr* sources, float* eqCoeffs, float* shCoeffs, int shOrder);
-}
 
 [BurstCompile]
 public struct CalculateSHCoefficientsJob : IJobParallelFor
@@ -17,7 +9,6 @@ public struct CalculateSHCoefficientsJob : IJobParallelFor
     [ReadOnly] public NativeArray<float3> Directions;
     [ReadOnly] public NativeArray<float> Distances;
     [ReadOnly] public int AmbisonicOrder;
-
 
     // because we are doing SHCoeffs[i * numCoeffs + j]
     // unity doesn't like it because we are not accessing the native array by our current index 
@@ -27,7 +18,9 @@ public struct CalculateSHCoefficientsJob : IJobParallelFor
     public void Execute(int i)
     {
         float dist = Distances[i];
-        float gain = 1.0f / math.max(dist, 1.0f);
+        // float gain = 1.0f / (1.0f + dist * 0.1f);
+        float gain = math.exp(-dist * 0.15f);
+        gain *= 5f;
 
         float3 dir = Directions[i];
         if (math.lengthsq(dir) < 0.0001f)

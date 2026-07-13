@@ -11,7 +11,7 @@ public partial class WyrmRoomManager : MonoBehaviour
     {
         [ReadOnly] public NativeArray<float3> SourcePositions;
         [ReadOnly] public NativeArray<RoomData> Rooms;
-        
+
         [WriteOnly] public NativeArray<int> SourceRoomIdentifiers;
 
         public void Execute(int index)
@@ -69,21 +69,21 @@ public partial class WyrmRoomManager : MonoBehaviour
 
             for (int i = 0; i < AcousticMap.Length; i++)
             {
-                AcousticMap[i] = new RoomAcousticMap 
-                { 
-                    totalDistance = float.MaxValue, 
-                    eqAccumulation = new float3(1, 1, 1), 
-                    exitPortalIndex = -1 
+                AcousticMap[i] = new RoomAcousticMap
+                {
+                    totalDistance = float.MaxValue,
+                    eqAccumulation = new float3(1, 1, 1),
+                    exitPortalIndex = -1
                 };
             }
 
             if (startRoom < 0 || startRoom >= Rooms.Length) return;
 
-            AcousticMap[startRoom] = new RoomAcousticMap 
-            { 
-                totalDistance = 0, 
-                eqAccumulation = new float3(1, 1, 1), 
-                exitPortalIndex = -1 
+            AcousticMap[startRoom] = new RoomAcousticMap
+            {
+                totalDistance = 0,
+                eqAccumulation = new float3(1, 1, 1),
+                exitPortalIndex = -1
             };
 
             // these will need to go at some point
@@ -103,7 +103,7 @@ public partial class WyrmRoomManager : MonoBehaviour
                     do
                     {
                         var portal = Portals[portalIndex];
-                        if (portal.openness <= 0.001f) continue; 
+                        if (portal.openness <= 0.001f) continue;
 
                         int nextRoom = (portal.roomA == currRoom) ? portal.roomB : portal.roomA;
                         if (nextRoom == -1) continue;
@@ -158,10 +158,9 @@ public partial class WyrmRoomManager : MonoBehaviour
             int sourceRoom = SourceRoomIdentifiers[index];
             if (sourceRoom == -1)
             {
-                // Fallback direct path if out-of-bounds or lost
                 PropagationDirections[index] = SourcePositions[index] - ListenerPosition;
                 PropagationDistances[index] = math.distance(SourcePositions[index], ListenerPosition);
-                PropagationPathEQs[index] = new float3(1, 1, 1);
+                PropagationPathEQs[index] = new float3(0, 0, 0);
                 return;
             }
 
@@ -173,7 +172,7 @@ public partial class WyrmRoomManager : MonoBehaviour
                 PropagationDistances[index] = math.distance(SourcePositions[index], ListenerPosition);
                 PropagationPathEQs[index] = new float3(1, 1, 1);
             }
-            else 
+            else
             {
                 var portal = Portals[mapData.exitPortalIndex];
                 PropagationDirections[index] = portal.center - ListenerPosition;
@@ -181,50 +180,10 @@ public partial class WyrmRoomManager : MonoBehaviour
                 float distToPortal = math.distance(ListenerPosition, portal.center);
                 PropagationDistances[index] = distToPortal + mapData.totalDistance;
 
-                PropagationPathEQs[index] = mapData.eqAccumulation;
+                PropagationPathEQs[index] = mapData.eqAccumulation * new float3(1f, 0.2f, 0.2f);
             }
         }
     }
 
-    [BurstCompile]
-    public struct PrepareOcclusionRaycastsJob : IJobParallelFor
-    {
-        [ReadOnly] public NativeArray<float3> SourcePositions;
-        [ReadOnly] public float3 ListenerPosition;
-        [ReadOnly] public int LayerMask;
 
-        [WriteOnly] public NativeArray<RaycastCommand> RaycastCommands;
-
-        public void Execute(int index)
-        {
-            float3 src = SourcePositions[index];
-            float3 dir = ListenerPosition - src;
-            float dist = math.length(dir);
-
-            if (dist > 0.001f)
-            {
-                // Avoid zero length cast issues
-                float3 dirNorm = dir / dist;
-                RaycastCommands[index] = new RaycastCommand(src, dirNorm, new QueryParameters(LayerMask, false, QueryTriggerInteraction.Ignore), dist);
-            }
-            else
-            {
-                RaycastCommands[index] = new RaycastCommand();
-            }
-        }
-    }
-
-    [BurstCompile]
-    public struct ResolveOcclusionJob : IJobParallelFor
-    {
-        [ReadOnly] public NativeArray<RaycastHit> RaycastHits;
-
-        [WriteOnly] public NativeArray<float> SourceOcclusions;
-
-        public void Execute(int index)
-        {
-            bool occluded = RaycastHits[index].colliderInstanceID != 0;
-            SourceOcclusions[index] = occluded ? 0f : 1f;
-        }
-    }
 }

@@ -32,34 +32,40 @@ public partial class WyrmPhononSource : WyrmBaseSource
             _pluginHandle = API.iplUnityAddSource(PhononSource.Get());
         }
 
-        ASource.SetSpatializerFloat(DISTANCE_ATTENUATION, 1f);
-        ASource.SetSpatializerFloat(AIR_ABSORPTION, 1f);
-        ASource.SetSpatializerFloat(DIRECTIVITY, 0f);
+        ASource.SetSpatializerFloat(APPLY_DISTANCEATTENUATION, 1f);
+        ASource.SetSpatializerFloat(APPLY_AIRABSORPTION, 1f);
+        // ASource.SetSpatializerFloat(APPLY_DIRECTIVITY, 0f);
 
-        ASource.SetSpatializerFloat(OCCLUSION, 1f);
-        ASource.SetSpatializerFloat(TRANSMISSION, 1f);
+        ASource.SetSpatializerFloat(APPLY_OCCLUSION, 1f);
+        ASource.SetSpatializerFloat(APPLY_TRANSMISSION, 1f);
 
-        ASource.SetSpatializerFloat(REFLECTIONS, UseReflections ? 1f : 0f);
-        ASource.SetSpatializerFloat(PATHING, 1f);
+        ASource.SetSpatializerFloat(APPLY_REFLECTIONS, UseReflections ? 1f : 0f);
+        ASource.SetSpatializerFloat(APPLY_PATHING, 1f);
 
         ASource.SetSpatializerFloat(HRTF_INTERPOLATION, 1f); // 1 = bilinear
 
         ASource.SetSpatializerFloat(USER_DEFINED_DIRECTIVITY, 1f);
         ASource.SetSpatializerFloat(FREQUENCY_DEPENDENT_TRANSMISSION, 1f);
 
-        ASource.SetSpatializerFloat(TRANSMISSION_LOW, 0.2f);
-        ASource.SetSpatializerFloat(TRANSMISSION_MID, 0.05f);
-        ASource.SetSpatializerFloat(TRANSMISSION_HIGH, 0.05f);
+        ASource.SetSpatializerFloat(TRANSMISSION_LOW, 0.1f);
+        ASource.SetSpatializerFloat(TRANSMISSION_MID, 0.025f);
+        ASource.SetSpatializerFloat(TRANSMISSION_HIGH, 0.025f);
+
+        // ASource.SetSpatializerFloat(PATHING_BINAURAL, 1f); // HRTF Propagation
 
         ASource.SetSpatializerFloat(DIRECT_BINAURAL, 1f); // HRTF
         ASource.SetSpatializerFloat(PLUGIN_SOURCE_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
         ASource.SetSpatializerFloat(PERSPECTIVE_CORRECTION, 1f);
+
+
+        // ASource.SetSpatializerFloat(NORMALIZE_PATHING_EQ, 1f); // we explode without this when we feed 0,0,0 propagation eq
+
+        UpdatePhononSimulator();
     }
 
     public override void Deactivate()
     {
         base.Deactivate();
-        SetOcclusionLevel(1f);
     }
 
     private void OnDestroy()
@@ -78,18 +84,11 @@ public partial class WyrmPhononSource : WyrmBaseSource
     }
 
     // Candidate for custom batch api
-    public void UpdatePhononSimulator(float3 worldPos)
+    public void UpdatePhononSimulator()
     {
         if (PhononSource == null) return;
 
-        SimulationInputs inputs = new();
-
-        inputs.source.origin = Common.ConvertVector(worldPos);
-        inputs.source.ahead = Common.ConvertVector(float3.zero);
-        inputs.source.up = Common.ConvertVector(float3.zero);
-        inputs.source.right = Common.ConvertVector(float3.zero);
-
-        inputs.flags = 0;
+        SimulationInputs inputs = new() { flags = 0 };
         if (UseReflections) inputs.flags |= SimulationFlags.Reflections;
 
         PhononSource.SetInputs(inputs.flags, inputs);

@@ -3,11 +3,11 @@ using UnityEngine;
 public class WyrmMixerPool
 {
     public WyrmMixerGroupConfig Config { get; private set; }
-    
+
     private readonly IWyrmSource[] _availableSources;
     private int _availableCount;
     private int _totalCreated;
-    
+
     private readonly WyrmPoolController _controller;
     private readonly Transform _poolRoot;
 
@@ -21,7 +21,7 @@ public class WyrmMixerPool
         _poolRoot.SetParent(_controller.transform);
 
         _availableSources = new IWyrmSource[config.maxSize];
-        
+
         for (int i = 0; i < config.initialSize; i++)
             CreatePooledAudioSource();
     }
@@ -41,8 +41,10 @@ public class WyrmMixerPool
 
     internal void ReturnToAvailable(IWyrmSource source)
     {
-        _controller.ReturnSource(source);
-        _availableSources[_availableCount++] = source;
+        if (_controller.TryReturnSource(source))
+        {
+            _availableSources[_availableCount++] = source;
+        }
     }
 
     private bool TryReserve(out IWyrmSource source, bool isTracking, Vector3 staticPosition, Transform trackTransform)

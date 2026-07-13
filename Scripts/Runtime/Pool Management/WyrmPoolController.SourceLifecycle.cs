@@ -3,9 +3,9 @@ using Unity.Mathematics;
 using UnityEngine;
 
 // Native Arrays break down into two kinds
-// 1. Inputs which are declared during activation that the source might attempt to modify
-// 2. Outputs which are fresh and are always generated after any of these operations happen (100 execution order in LateUpdate)
-// Outputs can be stale because they get overwritten anyways.
+// 1. Inputs that come from the managed space, and can be controlled.
+// 2. Stateless Outputs which are always generated and used instantly (no need to overwrite during remove at swap back).
+// 3. Stateful Outputs like CurrentOcclusion01 which need to be carried over.
 public partial class WyrmPoolController : MonoBehaviour
 {
     internal void ActivateSource(IWyrmSource source, bool isTracking, Vector3 staticPosition, Transform trackTransform)
@@ -48,12 +48,13 @@ public partial class WyrmPoolController : MonoBehaviour
         ActiveCount++;
     }
 
-    internal void ReturnSource(IWyrmSource source)
+    internal bool TryReturnSource(IWyrmSource source)
     {
-        if (IsDisposed) return;
+        if (IsDisposed) return false;
 
         int index = source.ActiveIndex;
-        if (index < 0 || index >= ActiveCount || ActiveSources[index] != source) return;
+        if (index < 0 || index >= ActiveCount || ActiveSources[index] != source)
+            return false;
 
         int lastIndex = ActiveCount - 1;
 
@@ -78,28 +79,10 @@ public partial class WyrmPoolController : MonoBehaviour
             SourcePositions[index] = SourcePositions[lastIndex];
             TrackedPositions[index] = TrackedPositions[lastIndex];
 
-            // OcclusionCommands[index] = OcclusionCommands[lastIndex];
-            // OcclusionHitResults[index] = OcclusionHitResults[lastIndex];
-
-            // SourceRoomIdentifiers[index] = SourceRoomIdentifiers[lastIndex];
-            // PropagationDirections[index] = PropagationDirections[lastIndex];
-            // PropagationDistances[index] = PropagationDistances[lastIndex];
-
-            // TargetOcclusion01[index] = TargetOcclusion01[lastIndex];
-
             Pointers[index] = Pointers[lastIndex];
-            // TargetPropagationEQ01[index] = TargetPropagationEQ01[lastIndex];
 
             CurrentOcclusion01[index] = CurrentOcclusion01[lastIndex];
             CurrentPropagationEQ01s[index] = CurrentPropagationEQ01s[lastIndex];
-
-
-            int targetStride = index * 16;
-            int lastStride = lastIndex * 16;
-            for (int i = 0; i < 16; i++)
-            {
-                PropagationSHCoeffOutputs[targetStride + i] = PropagationSHCoeffOutputs[lastStride + i];
-            }
         }
 
         ActiveSources[lastIndex] = null;
@@ -111,5 +94,7 @@ public partial class WyrmPoolController : MonoBehaviour
         source.Deactivate();
         source.ActiveIndex = -1;
         source.IsBorrowed = false;
+
+        return true;
     }
 }

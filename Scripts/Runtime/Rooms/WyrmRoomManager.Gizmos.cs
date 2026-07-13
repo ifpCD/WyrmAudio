@@ -51,10 +51,10 @@ public partial class WyrmRoomManager
             Gizmos.matrix = Matrix4x4.TRS(room.center, room.rotation, Vector3.one);
 
             // Highlight the room the listener is currently standing in
-            Gizmos.color = isListenerHere ? new Color(0, 1, 0, 0.15f) : new Color(0, 0.5f, 1, 0.05f);
+            Gizmos.color = isListenerHere ? new Color(0, 1, 0, 0.05f) : new Color(0, 0.5f, 1, 0.05f);
             Gizmos.DrawCube(Vector3.zero, room.extents * 2f);
 
-            Gizmos.color = isListenerHere ? Color.green : new Color(0, 0.5f, 1, 0.5f);
+            Gizmos.color = isListenerHere ? new Color(0, 1, 0, 0.5f) : new Color(0, 0.5f, 1, 0.5f);
             Gizmos.DrawWireCube(Vector3.zero, room.extents * 2f);
 
             Gizmos.matrix = Matrix4x4.identity;
@@ -142,7 +142,7 @@ public partial class WyrmRoomManager
         {
             float3 sourcePosition = pool.SourcePositions[i];
             int sourceRoom = pool.SourceRoomIdentifiers[i];
-            float sourceOcclusion = pool.TargetOcclusion01s[i];
+            float sourceOcclusion = pool.TargetOcclusion01[i];
 
             Gizmos.color = Color.yellow;
             Gizmos.DrawSphere(sourcePosition, 0.1f);

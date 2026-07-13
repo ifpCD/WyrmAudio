@@ -9,8 +9,6 @@ public class WyrmAudioManager : MonoBehaviour
 
     private AudioListener listener;
 
-
-
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Initialize()
     {

@@ -12,7 +12,7 @@ internal static class EffectsMixingProcessor
 
         var downMixIfVisible = new StatelessPropagationVisibilityDownMixingJob
         {
-            TargetOcclusion01s = poolController.TargetOcclusion01s,
+            TargetOcclusion01s = poolController.TargetOcclusion01,
             TargetPropagationEQ01s = poolController.TargetPropagationEQ01,
         };
         JobHandle downMixIfVisibleHandle = downMixIfVisible.Schedule(activeCount, 16, dependsOn: appendTo ?? default);
@@ -30,5 +30,6 @@ internal struct StatelessPropagationVisibilityDownMixingJob : IJobParallelFor
     public void Execute(int index)
     {
         TargetPropagationEQ01s[index] *= 1f - TargetOcclusion01s[index];
+        TargetPropagationEQ01s[index] *= 3f;
     }
 }

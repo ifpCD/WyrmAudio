@@ -32,11 +32,45 @@ public partial class WyrmRoomManager : MonoBehaviour
         }
 
         Instance = this;
-        InitializeGraph();
+    }
+
+    private void OnEnable()
+    {
+        // Restore Singleton instance if lost during Domain Reload
+        if (Instance == null) 
+        {
+            Instance = this;
+        }
+
+        if (Instance == this)
+        {
+            InitializeGraph();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (Instance == this)
+        {
+            DisposeCollections();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        DisposeCollections();
+        
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     private void InitializeGraph()
     {
+        // Clean up first just in case to prevent leaks
+        DisposeCollections();
+
         _roomRefs = FindObjectsByType<WyrmRoom>(FindObjectsSortMode.None);
         _portalRefs = FindObjectsByType<WyrmPortal>(FindObjectsSortMode.None);
 
@@ -51,18 +85,35 @@ public partial class WyrmRoomManager : MonoBehaviour
         PopulatePortalsAndRelations();
     }
 
+    private void DisposeCollections()
+    {
+        if (ListenerRoomIdentifier.IsCreated) ListenerRoomIdentifier.Dispose();
+        if (Rooms.IsCreated) Rooms.Dispose();
+        if (Portals.IsCreated) Portals.Dispose();
+        if (AcousticMap.IsCreated) AcousticMap.Dispose();
+        if (RoomToPortals.IsCreated) RoomToPortals.Dispose();
+    }
+
     public JobHandle ScheduleEffects()
     {
-        if (WyrmPoolController.Instance.ActiveCount == 0)
+        // Domain reload null checks
+        if (WyrmPoolController.Instance == null || WyrmPoolController.Instance.ActiveCount == 0)
             return default;
 
-        ListenerPosition = WyrmAudioManager.GetAudioListener().transform.position;
+        // Ensure collections survived / are initialized
+        if (!Rooms.IsCreated || !Portals.IsCreated)
+            return default;
+
+        var listener = WyrmAudioManager.GetAudioListener();
+        if (listener == null)
+            return default;
+
+        ListenerPosition = listener.transform.position;
 
         var locateListenerJob = new LocateListenerJob
         {
             ListenerPosition = ListenerPosition,
             Rooms = Rooms,
-
             ListenerRoomIdentifier = ListenerRoomIdentifier
         };
         JobHandle locateListenerHandle = locateListenerJob.Schedule();
@@ -81,7 +132,6 @@ public partial class WyrmRoomManager : MonoBehaviour
         {
             SourcePositions = WyrmPoolController.Instance.SourcePositions,
             Rooms = Rooms,
-
             SourceRoomIdentifiers = WyrmPoolController.Instance.SourceRoomIdentifiers
         };
         JobHandle locateSourcesHandle = locateSourcesJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16);
@@ -95,7 +145,6 @@ public partial class WyrmRoomManager : MonoBehaviour
             AcousticMap = AcousticMap,
             Portals = Portals,
             ListenerPosition = ListenerPosition,
-
             PropagationDirections = WyrmPoolController.Instance.PropagationDirections,
             PropagationDistances = WyrmPoolController.Instance.PropagationDistances,
             PropagationPathEQs = WyrmPoolController.Instance.TargetPropagationEQ01,
@@ -107,7 +156,6 @@ public partial class WyrmRoomManager : MonoBehaviour
             Directions = WyrmPoolController.Instance.PropagationDirections,
             Distances = WyrmPoolController.Instance.PropagationDistances,
             AmbisonicOrder = SteamAudio.SteamAudioSettings.Singleton.realTimeAmbisonicOrder,
-
             SHCoeffs = WyrmPoolController.Instance.PropagationSHCoeffOutputs
         };
         JobHandle shHandle = calculateSHJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, resolvePropagationHandle);
@@ -117,7 +165,6 @@ public partial class WyrmRoomManager : MonoBehaviour
             SourcePositions = WyrmPoolController.Instance.SourcePositions,
             ListenerPosition = ListenerPosition,
             LayerMask = WyrmAudioSettings.Instance.DefaultMask,
-
             RaycastCommands = WyrmPoolController.Instance.OcclusionCommands
         };
         JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16);
@@ -130,8 +177,7 @@ public partial class WyrmRoomManager : MonoBehaviour
         var resolveOcclusionJob = new ResolveOcclusionJob
         {
             RaycastHits = WyrmPoolController.Instance.OcclusionHitResults,
-
-            SourceOcclusions = WyrmPoolController.Instance.TargetOcclusion01s
+            SourceOcclusions = WyrmPoolController.Instance.TargetOcclusion01
         };
         JobHandle resolveOcclusionHandle = resolveOcclusionJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, raycastHandle);
 
@@ -168,7 +214,6 @@ public partial class WyrmRoomManager : MonoBehaviour
                 extents = Vector3.Scale(portal.BoxCollider.size, portal.transform.lossyScale) * 0.5f,
                 forward = portal.transform.forward,
                 rotation = portal.transform.rotation,
-
                 roomA = indexA,
                 roomB = indexB,
                 openness = portal.Openness
@@ -181,8 +226,13 @@ public partial class WyrmRoomManager : MonoBehaviour
 
     private void Update()
     {
+        if (_portalRefs == null || !Portals.IsCreated) 
+            return;
+
         for (int i = 0; i < _portalRefs.Length; i++)
         {
+            if (_portalRefs[i] == null) continue;
+
             var pData = Portals[i];
             float currentOpenness = _portalRefs[i].Openness;
 
@@ -192,15 +242,5 @@ public partial class WyrmRoomManager : MonoBehaviour
                 Portals[i] = pData;
             }
         }
-    }
-
-    private void OnDestroy()
-    {
-        Instance = null;
-        if (ListenerRoomIdentifier.IsCreated) ListenerRoomIdentifier.Dispose();
-        if (Rooms.IsCreated) Rooms.Dispose();
-        if (Portals.IsCreated) Portals.Dispose();
-        if (AcousticMap.IsCreated) AcousticMap.Dispose();
-        if (RoomToPortals.IsCreated) RoomToPortals.Dispose();
     }
 }
