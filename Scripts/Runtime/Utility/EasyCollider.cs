@@ -20,11 +20,11 @@ public abstract class EasyCollider : MonoBehaviour
 
     public BoxCollider BoxCollider { get; private set; }
 
-    protected abstract Color OutlineColor { get; }
-    protected abstract Color VolumeColor { get; }
+    protected abstract Color OutlineColor { get; set; }
+    protected abstract Color VolumeColor { get; set; }
 
-    protected abstract Color OutlineSelected { get; }
-    protected abstract Color VolumeSelected { get; }
+    protected abstract Color OutlineSelected { get; set; }
+    protected abstract Color VolumeSelected { get; set; }
 
     private void OnEnable()
     {

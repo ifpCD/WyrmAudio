@@ -1,14 +1,11 @@
 using Unity.Jobs;
 
-internal class PropagationProcessor : IPropagationProcessor
+internal static class PropagationProcessor
 {
-    public JobHandle SchedulePropagation()
+    public static JobHandle SchedulePropagation(JobHandle? appendTo = default)
     {
-        throw new System.NotImplementedException();
-    }
-}
+        
 
-internal interface IPropagationProcessor
-{
-    JobHandle SchedulePropagation();
+        return default;
+    }
 }

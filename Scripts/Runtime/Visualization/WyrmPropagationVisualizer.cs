@@ -75,9 +75,8 @@ public class WyrmPropagationVisualizer : MonoBehaviour
         if (!enableVisualization || !Application.isPlaying) return;
 
         var poolController = WyrmPoolController.Instance;
-        var roomManager = WyrmRoomManager.Instance;
 
-        if (poolController == null || roomManager == null || poolController.ActiveCount == 0 || !poolController.TargetSHCoefficients.IsCreated)
+        if (poolController == null || poolController.ActiveCount == 0 || !poolController.TargetSHCoefficients.IsCreated)
             return;
 
         if (_shMaterial == null || _sphereMesh == null)
@@ -124,9 +123,11 @@ public class WyrmPropagationVisualizer : MonoBehaviour
         _propBlock.SetColor(MID_COLOR_ID, midFreqColor);
         _propBlock.SetColor(HIGH_COLOR_ID, highFreqColor);
 
+        var listenerPosition = WyrmAudioManager.GetAudioListener().transform.position;
+
         Graphics.DrawMesh(
             _sphereMesh,
-            Matrix4x4.Translate(roomManager.ListenerPosition),
+            Matrix4x4.Translate(listenerPosition),
             _shMaterial,
             gameObject.layer,
             null,

@@ -7,23 +7,33 @@ using Unity.Mathematics;
 public struct LocateSourcesJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float3> SourcePositions;
-    [ReadOnly] public NativeArray<RoomData> Rooms;
+
+    [ReadOnly] public NativeArray<float4x4> ShapeWorldToLocal;
+    [ReadOnly] public NativeArray<float3> ShapeExtents;
+    [ReadOnly] public NativeArray<int> ShapeRoomIdentifier;
+
+    [ReadOnly] public NativeArray<float4x4> PortalWorldToLocal;
+    [ReadOnly] public NativeArray<float3> PortalExtents;
+    [ReadOnly] public NativeArray<int> PortalRoomA;
+    [ReadOnly] public NativeArray<int> PortalRoomB;
 
     [WriteOnly] public NativeArray<int> SourceRoomIdentifiers;
 
+
     public void Execute(int index)
     {
-        SourceRoomIdentifiers[index] = -1;
-        var sourcePosition = SourcePositions[index];
+        SourceRoomIdentifiers[index] = GraphMath.GetRoomId(
+            SourcePositions[index],
 
-        for (var roomIndex = 0; roomIndex < Rooms.Length; roomIndex++)
-        {
-            if (WyrmPathingMath.IsPointInRoom(sourcePosition, Rooms[roomIndex]))
-            {
-                SourceRoomIdentifiers[index] = roomIndex;
-                return;
-            }
-        }
+            ShapeWorldToLocal,
+            ShapeExtents,
+            ShapeRoomIdentifier,
+
+            PortalWorldToLocal,
+            PortalExtents,
+            PortalRoomA,
+            PortalRoomB
+        );
     }
 }
 
@@ -31,21 +41,32 @@ public struct LocateSourcesJob : IJobParallelFor
 public struct LocateListenerJob : IJob
 {
     [ReadOnly] public float3 ListenerPosition;
-    [ReadOnly] public NativeArray<RoomData> Rooms;
+
+    [ReadOnly] public NativeArray<float4x4> ShapeWorldToLocal;
+    [ReadOnly] public NativeArray<float3> ShapeExtents;
+    [ReadOnly] public NativeArray<int> ShapeRoomIdentifier;
+
+    [ReadOnly] public NativeArray<float4x4> PortalWorldToLocal;
+    [ReadOnly] public NativeArray<float3> PortalExtents;
+    [ReadOnly] public NativeArray<int> PortalRoomA;
+    [ReadOnly] public NativeArray<int> PortalRoomB;
 
     [WriteOnly] public NativeReference<int> ListenerRoomIdentifier;
 
+
     public void Execute()
     {
-        ListenerRoomIdentifier.Value = -1;
+        ListenerRoomIdentifier.Value = GraphMath.GetRoomId(
+            ListenerPosition,
 
-        for (int roomIndex = 0; roomIndex < Rooms.Length; roomIndex++)
-        {
-            if (WyrmPathingMath.IsPointInRoom(ListenerPosition, Rooms[roomIndex]))
-            {
-                ListenerRoomIdentifier.Value = roomIndex;
-                return;
-            }
-        }
+            ShapeWorldToLocal,
+            ShapeExtents,
+            ShapeRoomIdentifier,
+
+            PortalWorldToLocal,
+            PortalExtents,
+            PortalRoomA,
+            PortalRoomB
+        );
     }
 }

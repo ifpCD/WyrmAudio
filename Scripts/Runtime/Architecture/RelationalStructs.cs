@@ -1,27 +1,35 @@
+using Unity.Collections;
 using Unity.Mathematics;
+
+// First we check Listener and Source locations
+public struct PartialRoomShapeData
+{
+    public float3 extents;
+
+    public float4x4 worldToLocal;
+
+    public int roomIdentifier;
+}
+// if we can't find it, we search in Portals (they will overlap with rooms)
+// and if we find them there we will use the forward direction to calculate which side of the portal they are in, and then use A/B rooms respectively
+public struct PortalData
+{
+    public float4x4 worldToLocal;
+
+    public float3 extents;
+
+    public int roomA;
+    public int roomB;
+}
 
 public struct RoomData
 {
-    public int roomIdentifier;
-    public float3 center;
-    public float3 extents; // Half-size for OBB check
-    public quaternion rotation;
 }
 
-public struct PortalData
+// what will go directly into Spherical Harmonic Coefficient Calculator
+public struct SourcePropagationData
 {
-    public float3 center;
-    public float3 extents;
-    public float3 forward; // Useful for calculating sound direction passing through
-    public quaternion rotation;
-    public int roomA;
-    public int roomB;
-    public float openness;
-}
-
-public struct RoomAcousticMap
-{
-    public float totalDistance;
-    public float3 eqAccumulation; // x=low, y=mid, z=high
-    public int exitPortalIndex;   // The portal the sound takes to leave the listener's room
+    public float3 direction;
+    public float spatialWidth;
+    public float distance;
 }

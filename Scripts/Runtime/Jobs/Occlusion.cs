@@ -3,10 +3,9 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Jobs;
 
 [BurstCompile]
-public struct PrepareOcclusionRaycastsJob : IJobParallelFor
+public struct GenerateSourceRaycastCommands : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float3> SourcePositions;
     [ReadOnly] public float3 ListenerPosition;

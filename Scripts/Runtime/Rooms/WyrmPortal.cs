@@ -1,28 +1,59 @@
+using System;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Video;
 
 [DisallowMultipleComponent]
 public partial class WyrmPortal : EasyCollider
 {
+    GraphManager _owner;
+    private int _nativeIndex = -1;
+
     [Header("Relation")]
     [field: SerializeField]
-    public WyrmRoom RoomA { get; set; }
+    public WyrmRoomShape RoomA { get; set; }
 
     [field: SerializeField]
-    public WyrmRoom RoomB { get; set; }
+    public WyrmRoomShape RoomB { get; set; }
 
-    public int[] RoomIdentifierConnections => new int[]
+    internal void InformOfRegistration(GraphManager owner, int myIndex)
     {
-        RoomA != null ? RoomA.RoomIdentifier : -1,
-        RoomB != null ? RoomB.RoomIdentifier : -1
-    };
+        _owner = owner;
+        _nativeIndex = myIndex;
+        Populate();
+    }
+
+    public void Populate()
+    {
+        _owner.PortalWorldToLocal[_nativeIndex] = math.inverse(transform.localToWorldMatrix);
+        _owner.PortalExtents[_nativeIndex] = BoxCollider.size * 0.5f;
+        _owner.PortalRoomA[_nativeIndex] = RoomA != null ? RoomA.RoomIdentifier : -1;
+        _owner.PortalRoomB[_nativeIndex] = RoomB != null ? RoomB.RoomIdentifier : -1;
+        _owner.PortalOpenness[_nativeIndex] = _openness;
+    }
+
+    public float _openness = 1f;
 
     [Header("State")]
     [Range(0f, 1f)]
-    public float Openness = 1f;
+    public float Openness
+    {
+        get => _openness;
+        set
+        {
+            if (_openness == value) return;
 
-    protected override Color OutlineColor => Color.cyan;
-    protected override Color VolumeColor => new(0, 0, 0, 0f);
+            _openness = value;
 
-    protected override Color OutlineSelected => new(0, 0.1f, 1, 1f);
-    protected override Color VolumeSelected => new(0, 0.1f, 1, 0.05f);
+            if (_nativeIndex == -1) return;
+
+            _owner.PortalOpenness[_nativeIndex] = value;
+        }
+    }
+
+    protected override Color OutlineColor { get; set; } = Color.cyan;
+    protected override Color VolumeColor { get; set; } = new(0, 0, 0, 0f);
+
+    protected override Color OutlineSelected { get; set; } = new(0, 0.1f, 1, 1f);
+    protected override Color VolumeSelected { get; set; } = new(0, 0.1f, 1, 0.05f);
 }

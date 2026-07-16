@@ -68,6 +68,9 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
             _minDistance = value;
             ASource.minDistance = value;
+
+            if (ActiveIndex == -1) return;
+            WyrmPoolController.Instance.MinDistances[ActiveIndex] = value;
         }
     }
 
@@ -80,6 +83,9 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
             _maxDistance = value;
             ASource.maxDistance = value;
+
+            if (ActiveIndex == -1) return;
+            WyrmPoolController.Instance.MaxDistances[ActiveIndex] = value;
         }
     }
 }

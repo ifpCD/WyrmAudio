@@ -10,7 +10,7 @@ internal static class EffectsMixingProcessor
         var poolController = WyrmPoolController.Instance;
         var activeCount = poolController.ActiveCount;
 
-        var downMixIfVisible = new StatelessPropagationVisibilityDownMixingJob
+        var downMixIfVisible = new DownmixPropagationOnVisibilityJob
         {
             TargetOcclusion01s = poolController.TargetOcclusion01,
             TargetPropagationEQ01s = poolController.TargetPropagationEQ01,
@@ -21,7 +21,7 @@ internal static class EffectsMixingProcessor
     }
 }
 
-internal struct StatelessPropagationVisibilityDownMixingJob : IJobParallelFor
+internal struct DownmixPropagationOnVisibilityJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float> TargetOcclusion01s;
 
@@ -30,6 +30,5 @@ internal struct StatelessPropagationVisibilityDownMixingJob : IJobParallelFor
     public void Execute(int index)
     {
         TargetPropagationEQ01s[index] *= 1f - TargetOcclusion01s[index];
-        TargetPropagationEQ01s[index] *= 3f;
     }
 }

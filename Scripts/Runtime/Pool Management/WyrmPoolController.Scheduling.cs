@@ -53,7 +53,7 @@ public partial class WyrmPoolController : MonoBehaviour
         JobHandle applyTransformsHandle = applyTransformsJob.Schedule(SourceTransforms, gatherHandle);
         applyTransformsHandle.Complete();
 
-        JobHandle effectsHandle = WyrmRoomManager.Instance.ScheduleEffects();
+        JobHandle effectsHandle = LocationProcessor.ScheduleLocation(GraphManager.Instance);
         JobHandle downMixHandle = EffectsMixingProcessor.ScheduleMixing(effectsHandle);
         JobHandle lerpHandle    = LerpProcessor.ScheduleLerping(downMixHandle);
 

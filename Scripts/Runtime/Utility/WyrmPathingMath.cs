@@ -3,15 +3,54 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Burst;
 
-public static class WyrmPathingMath
+internal static class GraphMath
 {
     [BurstCompile]
-    public static bool IsPointInRoom(float3 worldPoint, in RoomData room)
+    public static bool Contains(float3 worldPoint, float4x4 worldToLocal, float3 extents)
     {
-        float3 localPos = math.mul(math.inverse(room.rotation), worldPoint - room.center);
+        float3 local = math.transform(worldToLocal, worldPoint);
 
-        return math.abs(localPos.x) <= room.extents.x &&
-               math.abs(localPos.y) <= room.extents.y &&
-               math.abs(localPos.z) <= room.extents.z;
+        return math.all(math.abs(local) <= extents);
+    }
+
+    [BurstCompile]
+    public static int GetPortalRoom(float3 worldPoint, float4x4 worldToLocal, int roomA, int roomB)
+    {
+        float3 local = math.transform(worldToLocal, worldPoint);
+
+        return local.z >= 0 ? roomB : roomA;
+    }
+
+    [BurstCompile]
+    public static int GetRoomId(
+        float3 worldPoint,
+
+        in NativeArray<float4x4> ShapeWorldToLocal,
+        in NativeArray<float3> ShapeExtents,
+        in NativeArray<int> ShapeRoomIdentifier,
+
+        in NativeArray<float4x4> PortalWorldToLocal,
+        in NativeArray<float3> PortalExtents,
+        in NativeArray<int> PortalRoomA,
+        in NativeArray<int> PortalRoomB
+    )
+    {
+        for (int i = 0; i < ShapeWorldToLocal.Length; i++)
+        {
+            if (Contains(worldPoint, ShapeWorldToLocal[i], ShapeExtents[i]))
+            {
+                return ShapeRoomIdentifier[i];
+            }
+        }
+
+        for (int i = 0; i < PortalWorldToLocal.Length; i++)
+        {
+            if (Contains(worldPoint, PortalWorldToLocal[i], PortalExtents[i]))
+            {
+                return GetPortalRoom(worldPoint, PortalWorldToLocal[i], PortalRoomA[i], PortalRoomB[i]);
+            }
+        }
+
+        return -1;
     }
 }
