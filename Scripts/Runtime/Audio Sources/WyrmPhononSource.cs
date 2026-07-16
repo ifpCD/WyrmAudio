@@ -34,27 +34,40 @@ public partial class WyrmPhononSource : WyrmBaseSource
 
         ASource.SetSpatializerFloat(APPLY_DISTANCEATTENUATION, 1f);
         ASource.SetSpatializerFloat(APPLY_AIRABSORPTION, 1f);
-        // ASource.SetSpatializerFloat(APPLY_DIRECTIVITY, 0f);
-
+        ASource.SetSpatializerFloat(APPLY_DIRECTIVITY, 0);
         ASource.SetSpatializerFloat(APPLY_OCCLUSION, 1f);
-        ASource.SetSpatializerFloat(APPLY_TRANSMISSION, 1f);
-
-        ASource.SetSpatializerFloat(APPLY_REFLECTIONS, UseReflections ? 1f : 0f);
+        ASource.SetSpatializerFloat(APPLY_TRANSMISSION, 0f);
+        ASource.SetSpatializerFloat(APPLY_REFLECTIONS, UseReflections ? 1 : 0);
         ASource.SetSpatializerFloat(APPLY_PATHING, 1f);
 
         ASource.SetSpatializerFloat(HRTF_INTERPOLATION, 1f); // 1 = bilinear
 
-        ASource.SetSpatializerFloat(USER_DEFINED_DIRECTIVITY, 1f);
-        ASource.SetSpatializerFloat(FREQUENCY_DEPENDENT_TRANSMISSION, 1f);
+        ASource.SetSpatializerFloat(DISTANCEATTENUATION, 1f);
+        ASource.SetSpatializerFloat(DISTANCEATTENUATION_USECURVE, 0f);
+        
+        // ASource.SetSpatializerFloat(DISTANCEATTENUATION_USECURVE, 0f);
+        // ASource.SetSpatializerFloat(DISTANCEATTENUATION_USECURVE, 0f);
+        // ASource.SetSpatializerFloat(DISTANCEATTENUATION_USECURVE, 0f);
+
+        ASource.SetSpatializerFloat(DIRECTIVITY, 1f);
+        ASource.SetSpatializerFloat(TRANSMISSION_TYPE, 1f);
 
         ASource.SetSpatializerFloat(TRANSMISSION_LOW, 0.1f);
         ASource.SetSpatializerFloat(TRANSMISSION_MID, 0.025f);
         ASource.SetSpatializerFloat(TRANSMISSION_HIGH, 0.025f);
 
+        // ASource.SetSpatializerFloat(DIRECT_MIXLEVEL, 0);
+
+        // ASource.SetSpatializerFloat(REFLECTIONS_BINAURAL, 1);
+        // ASource.SetSpatializerFloat(REFLECTIONS_MIXLEVEL, 10);
+        // ASource.SetSpatializerFloat(PATHING_MIXLEVEL, 0);
+
+
+
         // ASource.SetSpatializerFloat(PATHING_BINAURAL, 1f); // HRTF Propagation
 
         ASource.SetSpatializerFloat(DIRECT_BINAURAL, 1f); // HRTF
-        ASource.SetSpatializerFloat(PLUGIN_SOURCE_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
+        ASource.SetSpatializerFloat(SIMULATION_OUTPUTS_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
         ASource.SetSpatializerFloat(PERSPECTIVE_CORRECTION, 1f);
 
 
@@ -99,7 +112,8 @@ public partial class WyrmPhononSource : WyrmBaseSource
     {
         if (Mathf.Abs(_cachedOcclusion - occlusion) > 0.01f)
         {
-            ASource.SetSpatializerFloat(OCCLUSION_VALUE, occlusion);
+            ASource.SetSpatializerFloat(OCCLUSION, occlusion);
+            ASource.SetSpatializerFloat(REFLECTIONS_MIXLEVEL, occlusion);
             _cachedOcclusion = occlusion;
         }
     }

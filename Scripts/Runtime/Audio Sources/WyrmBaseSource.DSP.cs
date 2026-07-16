@@ -38,48 +38,48 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
         }
     }
 
-    void OnAudioFilterRead(float[] data, int channels) => ApplyVolumeDSP(data, channels);
+    // void OnAudioFilterRead(float[] data, int channels) => ApplyVolumeDSP(data, channels);
 
-    protected void ApplyVolumeDSP(float[] data, int channels)
-    {
-        float target = _targetVolume;
-        float current = _currentVolume;
+    // protected void ApplyVolumeDSP(float[] data, int channels)
+    // {
+    //     float target = _targetVolume;
+    //     float current = _currentVolume;
 
-        const float epsilonSquared = 1e-8f;
+    //     const float epsilonSquared = 1e-8f;
 
-        // if we are close enough, snap
-        float diff = target - current;
-        if (diff * diff < epsilonSquared)
-            current = target;
+    //     // if we are close enough, snap
+    //     float diff = target - current;
+    //     if (diff * diff < epsilonSquared)
+    //         current = target;
 
-        if (current == target)
-        {
-            if (current == 1f) return;
+    //     if (current == target)
+    //     {
+    //         if (current == 1f) return;
 
-            if (current == 0f)
-            {
-                Array.Clear(data, 0, data.Length);
-                return;
-            }
+    //         if (current == 0f)
+    //         {
+    //             Array.Clear(data, 0, data.Length);
+    //             return;
+    //         }
 
-            for (int frameOffset = 0; frameOffset < data.Length; frameOffset++)
-            {
-                data[frameOffset] *= current;
-            }
-        }
-        else
-        {
-            for (int frameOffset = 0; frameOffset < data.Length; frameOffset += channels)
-            {
-                current += (target - current) * _volumeAlpha;
+    //         for (int frameOffset = 0; frameOffset < data.Length; frameOffset++)
+    //         {
+    //             data[frameOffset] *= current;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         for (int frameOffset = 0; frameOffset < data.Length; frameOffset += channels)
+    //         {
+    //             current += (target - current) * _volumeAlpha;
 
-                for (int channelIndex = 0; channelIndex < channels; channelIndex++)
-                {
-                    data[frameOffset + channelIndex] *= current;
-                }
-            }
-        }
+    //             for (int channelIndex = 0; channelIndex < channels; channelIndex++)
+    //             {
+    //                 data[frameOffset + channelIndex] *= current;
+    //             }
+    //         }
+    //     }
 
-        _currentVolume = current;
-    }
+    //     _currentVolume = current;
+    // }
 }

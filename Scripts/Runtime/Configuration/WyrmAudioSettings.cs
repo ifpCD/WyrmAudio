@@ -6,6 +6,8 @@ public class WyrmAudioSettings : ScriptableObject
 {
     public List<WyrmMixerGroupConfig> ActiveMixerConfigs = new();
 
+    public List<Object> SoundBankFolders = new();
+
     [HideInInspector]
     public List<AbstractWyrmBank> RegisteredSoundBanks = new();
 

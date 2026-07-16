@@ -180,7 +180,7 @@ public partial class WyrmRoomManager : MonoBehaviour
                 float distToPortal = math.distance(ListenerPosition, portal.center);
                 PropagationDistances[index] = distToPortal + mapData.totalDistance;
 
-                PropagationPathEQs[index] = mapData.eqAccumulation * new float3(1f, 0.2f, 0.2f);
+                PropagationPathEQs[index] = mapData.eqAccumulation;
             }
         }
     }

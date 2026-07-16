@@ -15,7 +15,12 @@ MonoBehaviour:
   ActiveMixerConfigs:
   - {fileID: 11400000, guid: 43c804a2553d77442853b01dfa0714c4, type: 2}
   - {fileID: 11400000, guid: 6cc200f653e66834385ed79bb949831b, type: 2}
+  - {fileID: 11400000, guid: 07b5cbc981de29d499f9a3d8b767b6c0, type: 2}
+  SoundBankFolders:
+  - {fileID: 102900000, guid: 43ce44b6a1b1d0e44b30b542c1a220e4, type: 3}
+  - {fileID: 102900000, guid: ca70da794534aaf49856e75bb12aab73, type: 3}
   RegisteredSoundBanks:
+  - {fileID: 11400000, guid: 849d90f051f349444937df475ce01468, type: 2}
   - {fileID: 11400000, guid: 98c595bd4778eb54790bf36aa05b57f3, type: 2}
   - {fileID: 11400000, guid: 9af1831aa6db71b4fb33145bd18d8d9e, type: 2}
   - {fileID: 11400000, guid: ced2a72630d8bf54f8d861b883a72ce6, type: 2}

@@ -18,9 +18,9 @@ public struct CalculateSHCoefficientsJob : IJobParallelFor
     public void Execute(int i)
     {
         float dist = Distances[i];
-        // float gain = 1.0f / (1.0f + dist * 0.1f);
-        float gain = math.exp(-dist * 0.15f);
-        gain *= 5f;
+        float gain = 1.0f / (1.0f + dist * 0.1f);
+        // float gain = math.exp(-dist * 0.15f);
+        gain *= 0.1f;
 
         float3 dir = Directions[i];
         if (math.lengthsq(dir) < 0.0001f)
@@ -40,13 +40,13 @@ public struct CalculateSHCoefficientsJob : IJobParallelFor
         int offset = i * numCoeffs;
 
         // Order 0
-        SHCoeffs[offset + 0] = gain * 0.28209479f;
+        SHCoeffs[offset + 0] = gain * SH.C0;
 
         if (AmbisonicOrder >= 1)
         {
-            SHCoeffs[offset + 1] = gain * 0.48860251f * y;
-            SHCoeffs[offset + 2] = gain * 0.48860251f * z;
-            SHCoeffs[offset + 3] = gain * 0.48860251f * x;
+            SHCoeffs[offset + 1] = gain * SH.C1 * y;
+            SHCoeffs[offset + 2] = gain * SH.C1 * z;
+            SHCoeffs[offset + 3] = gain * SH.C1 * x;
         }
 
         if (AmbisonicOrder >= 2)
@@ -58,11 +58,11 @@ public struct CalculateSHCoefficientsJob : IJobParallelFor
             float yz = y * z;
             float xz = x * z;
 
-            SHCoeffs[offset + 4] = gain * 1.0925484f * xy;
-            SHCoeffs[offset + 5] = gain * 1.0925484f * yz;
-            SHCoeffs[offset + 6] = gain * 0.3153915f * (3.0f * zz - 1.0f);
-            SHCoeffs[offset + 7] = gain * 1.0925484f * xz;
-            SHCoeffs[offset + 8] = gain * 0.5462742f * (xx - yy);
+            SHCoeffs[offset + 4] = gain * SH.C2 * xy;
+            SHCoeffs[offset + 5] = gain * SH.C2 * yz;
+            SHCoeffs[offset + 6] = gain * SH.C3 * (3.0f * zz - 1.0f);
+            SHCoeffs[offset + 7] = gain * SH.C2 * xz;
+            SHCoeffs[offset + 8] = gain * SH.C4 * (xx - yy);
         }
 
         if (AmbisonicOrder >= 3)
@@ -71,13 +71,13 @@ public struct CalculateSHCoefficientsJob : IJobParallelFor
             float yy = y * y;
             float zz = z * z;
 
-            SHCoeffs[offset + 9] = gain * 0.5900435f * y * (3.0f * xx - yy);
-            SHCoeffs[offset + 10] = gain * 2.8906114f * x * y * z;
-            SHCoeffs[offset + 11] = gain * 0.4570457f * y * (5.0f * zz - 1.0f);
-            SHCoeffs[offset + 12] = gain * 0.3731763f * z * (5.0f * zz - 3.0f);
-            SHCoeffs[offset + 13] = gain * 0.4570457f * x * (5.0f * zz - 1.0f);
-            SHCoeffs[offset + 14] = gain * 1.4453057f * z * (xx - yy);
-            SHCoeffs[offset + 15] = gain * 0.5900435f * x * (xx - 3.0f * yy);
+            SHCoeffs[offset + 9] = gain * SH.C5 * y * (3.0f * xx - yy);
+            SHCoeffs[offset + 10] = gain * SH.C6 * x * y * z;
+            SHCoeffs[offset + 11] = gain * SH.C7 * y * (5.0f * zz - 1.0f);
+            SHCoeffs[offset + 12] = gain * SH.C8 * z * (5.0f * zz - 3.0f);
+            SHCoeffs[offset + 13] = gain * SH.C7 * x * (5.0f * zz - 1.0f);
+            SHCoeffs[offset + 14] = gain * SH.C9 * z * (xx - yy);
+            SHCoeffs[offset + 15] = gain * SH.C5 * x * (xx - 3.0f * yy);
         }
     }
 }

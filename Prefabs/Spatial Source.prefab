@@ -227,5 +227,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: WyrmAudio::PooledSteamAudioSource
   <ASource>k__BackingField: {fileID: 6615845327962746880}
+  <UseReflections>k__BackingField: 1
+  <UsePropagation>k__BackingField: 0
+  <UseOcclusion>k__BackingField: 0
   volumeTransitionTime: 0.05
   <SteamSource>k__BackingField: {fileID: 1277862038185094253}

@@ -20,8 +20,8 @@ public partial class WyrmAudioSettingsEditor : Editor
 
         string fileName = "WyrmMixer.g.cs";
         string[] existingGuids = AssetDatabase.FindAssets("WyrmMixer.g");
-        string filePath = existingGuids.Length > 0 
-            ? AssetDatabase.GUIDToAssetPath(existingGuids[0]) 
+        string filePath = existingGuids.Length > 0
+            ? AssetDatabase.GUIDToAssetPath(existingGuids[0])
             : EditorUtility.SaveFilePanelInProject("Save Generated Class", fileName, "cs", "Select save location");
 
         if (string.IsNullOrEmpty(filePath)) return;
@@ -60,9 +60,9 @@ public partial class WyrmAudioSettingsEditor : Editor
             {
                 string rawGroupName = config.targetMixerGroup.name;
                 string fieldName = SanitizeIdentifier(rawGroupName);
-                
+
                 if (fieldName == mixerClassName) fieldName += "_Group";
-                if (usedNames.Contains(fieldName)) continue; 
+                if (usedNames.Contains(fieldName)) continue;
                 usedNames.Add(fieldName);
 
                 sb.AppendLine($"        public static AudioMixerGroup {fieldName};");
@@ -90,7 +90,7 @@ public partial class WyrmAudioSettingsEditor : Editor
         sb.AppendLine("            string id = config.targetMixerGroup.audioMixer.name + \"/\" + config.targetMixerGroup.name;");
         sb.AppendLine("            switch (id)");
         sb.AppendLine("            {");
-        
+
         foreach (var caseLine in initializationCases)
         {
             sb.AppendLine(caseLine);
@@ -103,24 +103,65 @@ public partial class WyrmAudioSettingsEditor : Editor
 
         File.WriteAllText(filePath, sb.ToString());
         AssetDatabase.ImportAsset(filePath);
-        
+
         Debug.Log($"WyrmAudio: Generated Mixer class updated at {filePath}");
     }
 
     private void GenerateSoundBanksClass()
     {
+
         WyrmAudioSettings settings = (WyrmAudioSettings)target;
 
-        string basePath = "Assets/Plugins/WyrmAudio/Sound Banks";
-        
-        if (!AssetDatabase.IsValidFolder(basePath))
+        // Collect valid folder paths from settings
+        List<string> searchFolders = new();
+
+        if (settings.SoundBankFolders != null && settings.SoundBankFolders.Count > 0)
         {
-            Debug.LogWarning($"WyrmAudio: Sound Banks folder not found at {basePath}. Please ensure the directory exists.");
+            foreach (var folderObj in settings.SoundBankFolders)
+            {
+                if (folderObj == null) continue;
+
+                string path = AssetDatabase.GetAssetPath(folderObj);
+
+                if (AssetDatabase.IsValidFolder(path))
+                {
+                    searchFolders.Add(path);
+                }
+                else
+                {
+                    Debug.LogWarning($"WyrmAudio: {path} is not a valid folder.");
+                }
+            }
+        }
+
+        // Fallback if nothing assigned
+        if (searchFolders.Count == 0)
+        {
+            const string fallbackPath = "Assets/Plugins/WyrmAudio/Sound Banks";
+
+            if (AssetDatabase.IsValidFolder(fallbackPath))
+            {
+                searchFolders.Add(fallbackPath);
+            }
+            else
+            {
+                Debug.LogWarning("WyrmAudio: No SoundBankFolders assigned and fallback folder missing.");
+                return;
+            }
+        }
+
+        // Find all banks in all folders
+        string[] guids = AssetDatabase.FindAssets(
+            "t:WyrmLoopableBank",
+            searchFolders.ToArray()
+        );
+
+        if (guids.Length == 0)
+        {
+            Debug.LogWarning("WyrmAudio: No WyrmLoopableBanks found in assigned folders.");
             return;
         }
 
-        string[] guids = AssetDatabase.FindAssets("t:WyrmLoopableBank", new[] { basePath });
-        
         if (guids.Length == 0)
         {
             Debug.LogWarning("WyrmAudio: No WyrmLoopableBanks found in Sound Banks folder to generate.");
@@ -135,18 +176,26 @@ public partial class WyrmAudioSettingsEditor : Editor
             string path = AssetDatabase.GUIDToAssetPath(guids[i]);
             var bank = AssetDatabase.LoadAssetAtPath<AbstractWyrmBank>(path);
             if (bank == null) continue;
-            
+
             settings.RegisteredSoundBanks.Add(bank);
             int index = settings.RegisteredSoundBanks.Count - 1;
 
-            string relativePath = path.Substring(basePath.Length);
-            if (relativePath.StartsWith("/") || relativePath.StartsWith("\\")) 
+            // Determine which root folder this asset belongs to
+            string matchedRoot = searchFolders
+                .FirstOrDefault(root => path.StartsWith(root));
+
+            if (string.IsNullOrEmpty(matchedRoot))
+                continue;
+
+            string relativePath = path.Substring(matchedRoot.Length);
+
+            if (relativePath.StartsWith("/") || relativePath.StartsWith("\\"))
                 relativePath = relativePath.Substring(1);
-            
-            relativePath = relativePath.Substring(0, relativePath.LastIndexOf('.')); // strip extension
-            
+
+            relativePath = relativePath.Substring(0, relativePath.LastIndexOf('.'));
+
             string[] parts = relativePath.Split('/', '\\');
-            
+
             NamespaceNode current = rootNode;
             for (int j = 0; j < parts.Length - 1; j++)
             {
@@ -157,9 +206,9 @@ public partial class WyrmAudioSettingsEditor : Editor
                 }
                 current = current.SubNodes[safePart];
             }
-            
+
             string bankName = SanitizeIdentifier(parts.Last());
-            
+
             if (bankName == current.Name) bankName += "_Bank";
 
             int dupCount = 1;
@@ -169,7 +218,7 @@ public partial class WyrmAudioSettingsEditor : Editor
                 bankName = originalBankName + "_" + dupCount;
                 dupCount++;
             }
-            
+
             current.Banks.Add((bankName, index));
         }
 
@@ -178,8 +227,8 @@ public partial class WyrmAudioSettingsEditor : Editor
 
         string fileName = "WyrmBank.g.cs";
         string[] existingGuids = AssetDatabase.FindAssets("WyrmBank.g");
-        string filePath = existingGuids.Length > 0 
-            ? AssetDatabase.GUIDToAssetPath(existingGuids[0]) 
+        string filePath = existingGuids.Length > 0
+            ? AssetDatabase.GUIDToAssetPath(existingGuids[0])
             : EditorUtility.SaveFilePanelInProject("Save Generated Class", fileName, "cs", "Select save location");
 
         if (string.IsNullOrEmpty(filePath)) return;
@@ -226,14 +275,14 @@ public partial class WyrmAudioSettingsEditor : Editor
 
         File.WriteAllText(filePath, sb.ToString());
         AssetDatabase.ImportAsset(filePath);
-        
+
         Debug.Log($"WyrmAudio: Generated Sound Banks class updated at {filePath}");
     }
 
     private void WriteNamespaceNode(StringBuilder sb, NamespaceNode node, int indentLevel)
     {
         string indent = new string(' ', indentLevel * 4);
-        
+
         sb.AppendLine($"{indent}public static class {node.Name}");
         sb.AppendLine($"{indent}{{");
 
@@ -271,7 +320,7 @@ public partial class WyrmAudioSettingsEditor : Editor
     {
         if (string.IsNullOrWhiteSpace(name)) return "Unknown";
         string result = Regex.Replace(name, @"[^a-zA-Z0-9_]", "");
-        if (string.IsNullOrEmpty(result)) return "Unknown"; 
+        if (string.IsNullOrEmpty(result)) return "Unknown";
         if (char.IsDigit(result[0])) result = "_" + result;
         return result;
     }
