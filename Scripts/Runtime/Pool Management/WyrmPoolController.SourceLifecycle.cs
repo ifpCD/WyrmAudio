@@ -1,5 +1,4 @@
 using System;
-using Unity.Mathematics;
 using UnityEngine;
 
 // Native Arrays break down into two kinds
@@ -20,14 +19,14 @@ public partial class WyrmPoolController : MonoBehaviour
 
         if (!isTracking)
         {
-            IsSourceTrackingTransform[index] = 0;
+            IsTracking[index] = 0;
             source.CachedTransform.position = staticPosition;
             TrackedPositions[index] = staticPosition;
             SourcePositions[index] = staticPosition;
         }
         else
         {
-            IsSourceTrackingTransform[index] = 1;
+            IsTracking[index] = 1;
             SourcePositions[index] = source.CachedPosition;
             TrackedPositions[index] = trackTransform != null ? trackTransform.position : CachedTransform.position;
         }
@@ -74,7 +73,7 @@ public partial class WyrmPoolController : MonoBehaviour
             UsePropagations[index] = UsePropagations[lastIndex];
             UseOcclusions[index] = UseOcclusions[lastIndex];
 
-            IsSourceTrackingTransform[index] = IsSourceTrackingTransform[lastIndex];
+            IsTracking[index] = IsTracking[lastIndex];
 
             SourcePositions[index] = SourcePositions[lastIndex];
             TrackedPositions[index] = TrackedPositions[lastIndex];

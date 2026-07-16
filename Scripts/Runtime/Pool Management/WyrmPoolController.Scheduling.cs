@@ -35,18 +35,18 @@ public partial class WyrmPoolController : MonoBehaviour
 
     private void ScheduleJobs()
     {
-        JobHandle finalizerHandle = default;
+        JobHandle finalizerHandle;
 
         var gatherJob = new GatherTrackedPositionsJob
         {
-            IsTracking = IsSourceTrackingTransform,
+            IsTracking = IsTracking,
             TrackedPositions = TrackedPositions
         };
         JobHandle gatherHandle = gatherJob.Schedule(TrackedTransforms);
 
         var applyTransformsJob = new ApplySourceTransformsJob
         {
-            IsTracking = IsSourceTrackingTransform,
+            IsTracking = IsTracking,
             TrackedPositions = TrackedPositions,
             SourcePositions = SourcePositions
         };
@@ -67,7 +67,7 @@ public partial class WyrmPoolController : MonoBehaviour
                 ActiveCount,
                 (IntPtr*)Pointers.GetUnsafeReadOnlyPtr(),
                 (float*)CurrentPropagationEQ01s.GetUnsafeReadOnlyPtr(),
-                (float*)PropagationSHCoeffOutputs.GetUnsafeReadOnlyPtr(),
+                (float*)TargetSHCoefficients.GetUnsafeReadOnlyPtr(),
                 SteamAudioSettings.Singleton.realTimeAmbisonicOrder
             );
 

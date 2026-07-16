@@ -1,19 +1,14 @@
 using UnityEngine;
 
-[ExecuteAlways]
-[RequireComponent(typeof(BoxCollider))]
 [DisallowMultipleComponent]
-public partial class WyrmRoom : MonoBehaviour
+public partial class WyrmRoom : EasyCollider
 {
-    [field: SerializeField, Tooltip("Unique ID for this room. Used for graph mapping.")]
+    [field: SerializeField]
     public int RoomIdentifier { get; internal set; }
 
-    public BoxCollider BoxCollider { get; private set; }
+    protected override Color OutlineColor => Color.cyan;
+    protected override Color VolumeColor => new(0, 0, 0, 0f);
 
-    private void Awake()
-    {
-        BoxCollider = GetComponent<BoxCollider>();
-        // If we are fully relying on our Native math bounds, we don't need the physics engine tracking this.
-        if (Application.isPlaying) BoxCollider.enabled = false; 
-    }
+    protected override Color OutlineSelected => Color.green;
+    protected override Color VolumeSelected => new(0, 0.1f, 1, 0.05f);
 }

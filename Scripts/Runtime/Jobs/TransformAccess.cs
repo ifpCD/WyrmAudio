@@ -11,7 +11,7 @@ internal struct GatherTrackedPositionsJob : IJobParallelForTransform
 
     [WriteOnly] public NativeArray<float3> TrackedPositions;
 
-    // index is AudioSource
+    // index is AudioSource, transform is whatever IWyrmSource.TrackedTransform is referencing
     public void Execute(int index, TransformAccess transform)
     {
         if (IsTracking[index] == 1) TrackedPositions[index] = transform.position;

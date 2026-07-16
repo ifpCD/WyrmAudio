@@ -73,6 +73,7 @@ public class WyrmMixerPool
     {
         bool isTracking = track != null;
         if (!TryReserve(out var source, isTracking, isTracking ? default : _controller.CachedTransform.position, track)) return;
+
         source.Play(bank, track, volume);
     }
 
@@ -80,23 +81,22 @@ public class WyrmMixerPool
     {
         bool isTracking = track != null;
         if (!TryReserve(out var source, isTracking, isTracking ? default : _controller.CachedTransform.position, track)) return;
+
         source.Play(clip, track, volume);
     }
 
     public void Play(AbstractWyrmBank bank, Vector3 position, float? volume = null)
     {
         if (!TryReserve(out var source, false, position, null)) return;
-        source.clip = bank.GetBodyClip();
-        if (volume.HasValue) source.volume = volume.Value;
-        source.Play();
+
+        source.Play(bank, volume: volume);
     }
 
     public void Play(AudioClip clip, Vector3 position, float? volume = null)
     {
         if (!TryReserve(out var source, false, position, null)) return;
-        source.clip = clip;
-        if (volume.HasValue) source.TargetVolume = volume.Value;
-        source.Play();
+
+        source.Play(clip, volume: volume);
     }
 
     public bool TryBorrow(out IWyrmSource source)

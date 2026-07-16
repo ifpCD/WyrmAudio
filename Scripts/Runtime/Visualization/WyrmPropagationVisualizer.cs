@@ -77,7 +77,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
         var poolController = WyrmPoolController.Instance;
         var roomManager = WyrmRoomManager.Instance;
 
-        if (poolController == null || roomManager == null || poolController.ActiveCount == 0 || !poolController.PropagationSHCoeffOutputs.IsCreated)
+        if (poolController == null || roomManager == null || poolController.ActiveCount == 0 || !poolController.TargetSHCoefficients.IsCreated)
             return;
 
         if (_shMaterial == null || _sphereMesh == null)
@@ -99,7 +99,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
             float3 rawEq = poolController.CurrentPropagationEQ01s[sourceIdx];
             float3 safeEq = math.max(rawEq, new float3(0.001f));
 
-            var shNativeArray = poolController.PropagationSHCoeffOutputs;
+            var shNativeArray = poolController.TargetSHCoefficients;
 
             for (int c = 0; c < numCoeffs; c++)
             {

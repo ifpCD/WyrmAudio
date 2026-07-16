@@ -25,41 +25,39 @@ public partial class WyrmPoolController : MonoBehaviour
     internal IWyrmSource[] ActiveSources;
     internal double[] PlaybackEndTimes;
 
-    // Source Inputs
+    // Stateful Inputs
     internal NativeArray<float> MinDistances;
     internal NativeArray<float> MaxDistances;
 
     internal NativeArray<byte> UseOcclusions;
     internal NativeArray<byte> UsePropagations;
-    internal NativeArray<byte> UseReflections;
 
-    internal NativeArray<byte> IsSourceTrackingTransform;
-
-    internal NativeArray<float3> SourcePositions;
-    internal NativeArray<float3> TrackedPositions;
-
-    // Occlusion Input Buffers
-    internal NativeArray<RaycastCommand> OcclusionCommands;
-    internal NativeArray<RaycastHit> OcclusionHitResults;
-
-    // Propagation Input Buffers
-    internal NativeArray<int> SourceRoomIdentifiers;
-    internal NativeArray<float3> PropagationDirections;
-    internal NativeArray<float> PropagationDistances;
-
-    // Output Buffers
-    internal NativeArray<float> TargetOcclusion01;
-    internal NativeArray<float3> TargetPropagationEQ01;
-    internal NativeArray<float> PropagationSHCoeffOutputs;
-
-    internal NativeArray<float3> TargetTransmissionEQ01;
-
-    internal NativeArray<IntPtr> Pointers;
+    internal NativeArray<byte> IsTracking;
 
     internal TransformAccessArray SourceTransforms;
     internal TransformAccessArray TrackedTransforms;
 
-    // Lerp Output Values (these ones get passed to Phonon)
+    internal NativeArray<float3> SourcePositions;
+    internal NativeArray<float3> TrackedPositions;
+
+    internal NativeArray<IntPtr> Pointers;
+
+    // Stateless Occlusion Buffers
+    internal NativeArray<RaycastCommand> OcclusionCommands;
+    internal NativeArray<RaycastHit> OcclusionHitResults;
+
+    // Stateless Propagation Buffers
+    internal NativeArray<int> SourceRoomIdentifiers;
+    internal NativeArray<float3> GraphDirections;
+    internal NativeArray<float> GraphDistances;
+
+    // Stateless Output Buffers
+    internal NativeArray<float> TargetOcclusion01;
+    internal NativeArray<float3> TargetPropagationEQ01;
+    internal NativeArray<float> TargetSHCoefficients;
+    internal NativeArray<float3> TargetTransmissionEQ01;
+
+    // Stateful Output Values
     internal NativeArray<float> CurrentOcclusion01;
     internal NativeArray<float3> CurrentPropagationEQ01s;
 
@@ -99,7 +97,7 @@ public partial class WyrmPoolController : MonoBehaviour
         SourceTransforms = new TransformAccessArray(MaximumCapacity);
         TrackedTransforms = new TransformAccessArray(MaximumCapacity);
 
-        IsSourceTrackingTransform = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
+        IsTracking = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
         SourceRoomIdentifiers = new NativeArray<int>(MaximumCapacity, Allocator.Persistent);
         SourcePositions = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
         TrackedPositions = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
@@ -110,23 +108,18 @@ public partial class WyrmPoolController : MonoBehaviour
         UsePropagations = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
         UseOcclusions = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
 
-        PropagationDirections = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
-        PropagationDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+        GraphDirections = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
+        GraphDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
         TargetPropagationEQ01 = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
 
         OcclusionCommands = new NativeArray<RaycastCommand>(MaximumCapacity * 64, Allocator.Persistent);
         OcclusionHitResults = new NativeArray<RaycastHit>(MaximumCapacity * 64, Allocator.Persistent);
         TargetOcclusion01 = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
 
-        TargetTransmissionEQ01 = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
-
-        for (int i = 0; i < MaximumCapacity; i++)
-        {
-            TargetTransmissionEQ01[i] = Vector3.zero;
-        }
+        TargetTransmissionEQ01 = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
         Pointers = new NativeArray<IntPtr>(MaximumCapacity, Allocator.Persistent);
-        PropagationSHCoeffOutputs = new NativeArray<float>(MaximumCapacity * 16, Allocator.Persistent); // 16 covers up to 3rd Order
+        TargetSHCoefficients = new NativeArray<float>(MaximumCapacity * 16, Allocator.Persistent); // 16 covers up to 3rd Order
 
         CurrentOcclusion01 = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
         CurrentPropagationEQ01s = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
@@ -136,7 +129,7 @@ public partial class WyrmPoolController : MonoBehaviour
     {
         if (SourceTransforms.isCreated) SourceTransforms.Dispose();
         if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
-        if (IsSourceTrackingTransform.IsCreated) IsSourceTrackingTransform.Dispose();
+        if (IsTracking.IsCreated) IsTracking.Dispose();
         if (SourceRoomIdentifiers.IsCreated) SourceRoomIdentifiers.Dispose();
         if (SourcePositions.IsCreated) SourcePositions.Dispose();
         if (TrackedPositions.IsCreated) TrackedPositions.Dispose();
@@ -145,8 +138,8 @@ public partial class WyrmPoolController : MonoBehaviour
         if (MaxDistances.IsCreated) MaxDistances.Dispose();
         if (UsePropagations.IsCreated) UsePropagations.Dispose();
         if (UseOcclusions.IsCreated) UsePropagations.Dispose();
-        if (PropagationDirections.IsCreated) PropagationDirections.Dispose();
-        if (PropagationDistances.IsCreated) PropagationDistances.Dispose();
+        if (GraphDirections.IsCreated) GraphDirections.Dispose();
+        if (GraphDistances.IsCreated) GraphDistances.Dispose();
         if (TargetPropagationEQ01.IsCreated) TargetPropagationEQ01.Dispose();
 
         if (OcclusionCommands.IsCreated) OcclusionCommands.Dispose();
@@ -154,12 +147,12 @@ public partial class WyrmPoolController : MonoBehaviour
         if (TargetOcclusion01.IsCreated) TargetOcclusion01.Dispose();
 
         if (Pointers.IsCreated) Pointers.Dispose();
-        if (PropagationSHCoeffOutputs.IsCreated) PropagationSHCoeffOutputs.Dispose();
+        if (TargetSHCoefficients.IsCreated) TargetSHCoefficients.Dispose();
 
         if (TargetTransmissionEQ01.IsCreated) TargetOcclusion01.Dispose();
 
-        if (CurrentOcclusion01.IsCreated) PropagationSHCoeffOutputs.Dispose();
-        if (CurrentPropagationEQ01s.IsCreated) PropagationSHCoeffOutputs.Dispose();
+        if (CurrentOcclusion01.IsCreated) TargetSHCoefficients.Dispose();
+        if (CurrentPropagationEQ01s.IsCreated) TargetSHCoefficients.Dispose();
     }
 
     public static void UpdateTrackedTransform(int activeIndex, Transform track)

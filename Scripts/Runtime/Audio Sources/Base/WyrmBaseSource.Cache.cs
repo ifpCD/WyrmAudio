@@ -1,4 +1,5 @@
 using UnityEngine;
+#pragma warning disable IDE1006 // MonoBehaviour and AudioSource
 
 public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 {

@@ -1,8 +1,13 @@
+using UnityEditor;
 #if UNITY_EDITOR
 using UnityEngine;
+#endif
+
 // Helper class to quickly set up rooms in the editor
-public partial class WyrmPortal : MonoBehaviour
+[RequireComponent(typeof(BoxCollider))]
+public abstract class EasyCollider : MonoBehaviour
 {
+#if UNITY_EDITOR
     [Header("Volume Generation")]
     [field: SerializeField] public Transform BottomLeft { get; private set; }
     [field: SerializeField] public Transform TopRight { get; private set; }
@@ -13,17 +18,25 @@ public partial class WyrmPortal : MonoBehaviour
     private Vector3 lastScale;
     private Quaternion lastRot;
 
+    public BoxCollider BoxCollider { get; private set; }
+
+    protected abstract Color OutlineColor { get; }
+    protected abstract Color VolumeColor { get; }
+
+    protected abstract Color OutlineSelected { get; }
+    protected abstract Color VolumeSelected { get; }
 
     private void OnEnable()
     {
-        BoxCollider = GetComponent<BoxCollider>();
-        BoxCollider.isTrigger = true;
-
+        BoxCollider.enabled = false;
         UpdateCollider();
     }
 
-    private void Update()
+    private void OnValidate()
     {
+        if (BoxCollider == null)
+            BoxCollider = GetComponent<BoxCollider>();
+
         if (!BottomLeft || !TopRight)
             return;
 
@@ -77,39 +90,54 @@ public partial class WyrmPortal : MonoBehaviour
         UpdateCollider();
     }
 
+
     private void OnDrawGizmos()
+    {
+        DrawVolumeGizmo(false);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        DrawVolumeGizmo(true);
+    }
+
+    private void DrawVolumeGizmo(bool selected)
     {
         if (!BottomLeft || !TopRight)
             return;
 
-        if (BoxCollider == null)
-            BoxCollider = GetComponent<BoxCollider>();
-
         var t = transform;
         Gizmos.matrix = t.localToWorldMatrix;
 
-        Vector3 center;
-        Vector3 size;
+        Vector3 center = BoxCollider.center;
+        Vector3 size = BoxCollider.size;
 
-        if (BoxCollider != null)
+        float alpha = 1f;
+
+        if (SceneView.currentDrawingSceneView != null)
         {
-            center = BoxCollider.center;
-            size = BoxCollider.size;
-        }
-        else
-        {
-            Vector3 a = t.InverseTransformPoint(BottomLeft.position);
-            Vector3 b = t.InverseTransformPoint(TopRight.position);
+            Camera cam = SceneView.currentDrawingSceneView.camera;
+            float distance = Vector3.Distance(cam.transform.position, t.position);
 
-            Vector3 min = Vector3.Min(a, b) - Vector3.one * volumePadding;
-            Vector3 max = Vector3.Max(a, b) + Vector3.one * volumePadding;
+            // Adjust these values to control fade range
+            float nearDistance = 5f;
+            float farDistance = 20f;
 
-            center = (min + max) * 0.5f;
-            size = max - min;
+            alpha = Mathf.Lerp(1f, 0.1f,
+                Mathf.InverseLerp(nearDistance, farDistance, distance));
         }
 
-        Gizmos.color = new Color(0.2f, 0.6f, 1f, 1f);
+        Color outlineColor = selected ? OutlineSelected : OutlineColor;
+        Color volumeColor = selected ? VolumeSelected : VolumeColor;
+
+        outlineColor.a *= alpha;
+        volumeColor.a *= alpha;
+
+        Gizmos.color = outlineColor;
         Gizmos.DrawWireCube(center, size);
+
+        Gizmos.color = volumeColor;
+        Gizmos.DrawCube(center, size);
     }
-}
 #endif
+}

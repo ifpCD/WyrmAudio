@@ -198,7 +198,7 @@ public partial class WyrmRoomManager
                 }
 
                 // 4. Visualize the calculated Direction Vector at the Listener
-                float3 propDir = pool.PropagationDirections[i];
+                float3 propDir = pool.GraphDirections[i];
                 if (math.lengthsq(propDir) > 0.001f)
                 {
                     Gizmos.color = Color.blue;

@@ -68,7 +68,6 @@ public partial class WyrmRoomManager : MonoBehaviour
 
     private void InitializeGraph()
     {
-        // Clean up first just in case to prevent leaks
         DisposeCollections();
 
         _roomRefs = FindObjectsByType<WyrmRoom>(FindObjectsSortMode.None);
@@ -145,18 +144,19 @@ public partial class WyrmRoomManager : MonoBehaviour
             AcousticMap = AcousticMap,
             Portals = Portals,
             ListenerPosition = ListenerPosition,
-            PropagationDirections = WyrmPoolController.Instance.PropagationDirections,
-            PropagationDistances = WyrmPoolController.Instance.PropagationDistances,
+
+            PropagationDirections = WyrmPoolController.Instance.GraphDirections,
+            PropagationDistances = WyrmPoolController.Instance.GraphDistances,
             PropagationPathEQs = WyrmPoolController.Instance.TargetPropagationEQ01,
         };
         JobHandle resolvePropagationHandle = resolvePropagationJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, propagationDeps);
 
         var calculateSHJob = new CalculateSHCoefficientsJob
         {
-            Directions = WyrmPoolController.Instance.PropagationDirections,
-            Distances = WyrmPoolController.Instance.PropagationDistances,
+            Directions = WyrmPoolController.Instance.GraphDirections,
+            Distances = WyrmPoolController.Instance.GraphDistances,
             AmbisonicOrder = SteamAudio.SteamAudioSettings.Singleton.realTimeAmbisonicOrder,
-            SHCoeffs = WyrmPoolController.Instance.PropagationSHCoeffOutputs
+            SHCoeffs = WyrmPoolController.Instance.TargetSHCoefficients
         };
         JobHandle shHandle = calculateSHJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, resolvePropagationHandle);
 
@@ -164,7 +164,7 @@ public partial class WyrmRoomManager : MonoBehaviour
         {
             SourcePositions = WyrmPoolController.Instance.SourcePositions,
             ListenerPosition = ListenerPosition,
-            LayerMask = WyrmAudioSettings.Instance.DefaultMask,
+            LayerMask = WyrmAudioSettings.Instance.StaticGeometryMask,
             RaycastCommands = WyrmPoolController.Instance.OcclusionCommands
         };
         JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16);

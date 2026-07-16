@@ -41,7 +41,6 @@ public struct ResolveOcclusionJob : IJobParallelFor
 
     public void Execute(int index)
     {
-        bool occluded = RaycastHits[index].colliderInstanceID != 0;
-        SourceOcclusions[index] = occluded ? 0f : 1f;
+        SourceOcclusions[index] = RaycastHits[index].distance > 0f ? 0f : 1f;
     }
 }
