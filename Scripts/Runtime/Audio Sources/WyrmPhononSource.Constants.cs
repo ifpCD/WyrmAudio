@@ -1,8 +1,4 @@
-using System;
-using UnityEngine;
-using SteamAudio;
-using Unity.Mathematics;
-
+// csharpier-ignore
 public partial class WyrmPhononSource : WyrmBaseSource
 {
     const int APPLY_DISTANCEATTENUATION    = 0;

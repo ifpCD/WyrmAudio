@@ -1,7 +1,6 @@
-using Unity.Mathematics;
-using System.Runtime.CompilerServices;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
+using Unity.Mathematics;
 
 internal static class GraphMath
 {
@@ -24,11 +23,9 @@ internal static class GraphMath
     [BurstCompile]
     public static int GetRoomId(
         float3 worldPoint,
-
         in NativeArray<float4x4> ShapeWorldToLocal,
         in NativeArray<float3> ShapeExtents,
         in NativeArray<int> ShapeRoomIdentifier,
-
         in NativeArray<float4x4> PortalWorldToLocal,
         in NativeArray<float3> PortalExtents,
         in NativeArray<int> PortalRoomA,

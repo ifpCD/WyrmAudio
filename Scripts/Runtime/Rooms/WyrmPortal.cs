@@ -27,8 +27,10 @@ public partial class WyrmPortal : EasyCollider
     {
         _owner.PortalWorldToLocal[_nativeIndex] = math.inverse(transform.localToWorldMatrix);
         _owner.PortalExtents[_nativeIndex] = BoxCollider.size * 0.5f;
+
         _owner.PortalRoomA[_nativeIndex] = RoomA != null ? RoomA.RoomIdentifier : -1;
         _owner.PortalRoomB[_nativeIndex] = RoomB != null ? RoomB.RoomIdentifier : -1;
+
         _owner.PortalOpenness[_nativeIndex] = _openness;
     }
 
@@ -41,11 +43,13 @@ public partial class WyrmPortal : EasyCollider
         get => _openness;
         set
         {
-            if (_openness == value) return;
+            if (_openness == value)
+                return;
 
             _openness = value;
 
-            if (_nativeIndex == -1) return;
+            if (_nativeIndex == -1)
+                return;
 
             _owner.PortalOpenness[_nativeIndex] = value;
         }

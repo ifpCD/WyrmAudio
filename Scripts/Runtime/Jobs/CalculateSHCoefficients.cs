@@ -6,14 +6,20 @@ using Unity.Mathematics;
 [BurstCompile]
 public struct CalculateSHCoefficientsJob : IJobParallelFor
 {
-    [ReadOnly] public NativeArray<float3> Directions;
-    [ReadOnly] public NativeArray<float> Distances;
-    [ReadOnly] public int AmbisonicOrder;
+    [ReadOnly]
+    public NativeArray<float3> Directions;
+
+    [ReadOnly]
+    public NativeArray<float> Distances;
+
+    [ReadOnly]
+    public int AmbisonicOrder;
 
     // because we are doing SHCoeffs[i * numCoeffs + j]
-    // unity doesn't like it because we are not accessing the native array by our current index 
+    // unity doesn't like it because we are not accessing the native array by our current index
     [NativeDisableParallelForRestriction]
-    [WriteOnly] public NativeArray<float> SHCoeffs;
+    [WriteOnly]
+    public NativeArray<float> SHCoeffs;
 
     public void Execute(int i)
     {

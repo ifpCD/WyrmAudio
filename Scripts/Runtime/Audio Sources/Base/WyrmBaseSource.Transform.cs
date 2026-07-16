@@ -13,7 +13,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
             if (_trackedTransform == value) return;
             _trackedTransform = value;
 
-            if (ActiveIndex == -1) return;
+            if (ActiveIndex == -1 || WyrmPoolController.Instance.IsDisposed) return;
             WyrmPoolController.Instance.TrackedTransforms[ActiveIndex] = value;
         }
     }

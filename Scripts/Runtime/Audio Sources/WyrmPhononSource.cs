@@ -1,6 +1,5 @@
-using UnityEngine;
 using SteamAudio;
-using Unity.Mathematics;
+using UnityEngine;
 
 public partial class WyrmPhononSource : WyrmBaseSource
 {
@@ -9,6 +8,8 @@ public partial class WyrmPhononSource : WyrmBaseSource
 
     private float _cachedOcclusion = -1f;
     private float _cachedTransMid = -1f;
+
+    void SetSpatialValue(int index, float value) => ASource.SetSpatializerFloat(index, value);
 
     public override void Initialize(WyrmMixerPool pool)
     {
@@ -19,12 +20,14 @@ public partial class WyrmPhononSource : WyrmBaseSource
             var simSettings = SteamAudioManager.GetSimulationSettings(false);
 
             simSettings.flags = 0;
-            if (UseReflections) simSettings.flags |= SimulationFlags.Reflections;
+            if (UseReflections)
+                simSettings.flags |= SimulationFlags.Reflections;
 
             // Phonon Source must initialize with the pathing flag
             // to allocate memory for eq/sh in C++. (otherwise we crash)
             // We then never send the Pathing flag ever again during simulator updates.
-            if (UsePropagation) simSettings.flags |= SimulationFlags.Pathing;
+            if (UsePropagation)
+                simSettings.flags |= SimulationFlags.Pathing;
 
             PhononSource = new Source(SteamAudioManager.Simulator, simSettings);
 
@@ -32,46 +35,43 @@ public partial class WyrmPhononSource : WyrmBaseSource
             _pluginHandle = API.iplUnityAddSource(PhononSource.Get());
         }
 
-        ASource.SetSpatializerFloat(APPLY_DISTANCEATTENUATION, 1f);
-        ASource.SetSpatializerFloat(APPLY_AIRABSORPTION, 1f);
-        ASource.SetSpatializerFloat(APPLY_DIRECTIVITY, 0);
-        ASource.SetSpatializerFloat(APPLY_OCCLUSION, 1f);
-        ASource.SetSpatializerFloat(APPLY_TRANSMISSION, 0f);
-        ASource.SetSpatializerFloat(APPLY_REFLECTIONS, UseReflections ? 1 : 0);
-        ASource.SetSpatializerFloat(APPLY_PATHING, 1f);
+        SetSpatialValue(APPLY_DISTANCEATTENUATION, 1f);
+        SetSpatialValue(APPLY_AIRABSORPTION, 1f);
+        SetSpatialValue(APPLY_DIRECTIVITY, 0);
+        SetSpatialValue(APPLY_OCCLUSION, 1f);
+        SetSpatialValue(APPLY_TRANSMISSION, 0f);
+        SetSpatialValue(APPLY_REFLECTIONS, UseReflections ? 1 : 0);
+        SetSpatialValue(APPLY_PATHING, 1f);
 
-        ASource.SetSpatializerFloat(HRTF_INTERPOLATION, 1f); // 1 = bilinear
+        SetSpatialValue(HRTF_INTERPOLATION, 1f); // 1 = bilinear
 
-        ASource.SetSpatializerFloat(DISTANCEATTENUATION, 1f);
-        ASource.SetSpatializerFloat(DISTANCEATTENUATION_USECURVE, 0f);
-        
-        // ASource.SetSpatializerFloat(DISTANCEATTENUATION_USECURVE, 0f);
-        // ASource.SetSpatializerFloat(DISTANCEATTENUATION_USECURVE, 0f);
-        // ASource.SetSpatializerFloat(DISTANCEATTENUATION_USECURVE, 0f);
+        SetSpatialValue(DISTANCEATTENUATION, 1f);
+        SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
 
-        ASource.SetSpatializerFloat(DIRECTIVITY, 1f);
-        ASource.SetSpatializerFloat(TRANSMISSION_TYPE, 1f);
+        // SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
+        // SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
+        // SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
 
-        ASource.SetSpatializerFloat(TRANSMISSION_LOW, 0.1f);
-        ASource.SetSpatializerFloat(TRANSMISSION_MID, 0.025f);
-        ASource.SetSpatializerFloat(TRANSMISSION_HIGH, 0.025f);
+        SetSpatialValue(DIRECTIVITY, 1f);
+        SetSpatialValue(TRANSMISSION_TYPE, 1f);
 
-        // ASource.SetSpatializerFloat(DIRECT_MIXLEVEL, 0);
+        SetSpatialValue(TRANSMISSION_LOW, 0.1f);
+        SetSpatialValue(TRANSMISSION_MID, 0.025f);
+        SetSpatialValue(TRANSMISSION_HIGH, 0.025f);
 
-        // ASource.SetSpatializerFloat(REFLECTIONS_BINAURAL, 1);
-        // ASource.SetSpatializerFloat(REFLECTIONS_MIXLEVEL, 10);
-        // ASource.SetSpatializerFloat(PATHING_MIXLEVEL, 0);
+        // SetSpatialValue(DIRECT_MIXLEVEL, 0);
 
+        // SetSpatialValue(REFLECTIONS_BINAURAL, 1);
+        // SetSpatialValue(REFLECTIONS_MIXLEVEL, 10);
+        // SetSpatialValue(PATHING_MIXLEVEL, 0);
 
+        // SetSpatialValue(PATHING_BINAURAL, 1f); // HRTF Propagation
 
-        // ASource.SetSpatializerFloat(PATHING_BINAURAL, 1f); // HRTF Propagation
+        SetSpatialValue(DIRECT_BINAURAL, 1f); // HRTF
+        SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
+        SetSpatialValue(PERSPECTIVE_CORRECTION, 1f);
 
-        ASource.SetSpatializerFloat(DIRECT_BINAURAL, 1f); // HRTF
-        ASource.SetSpatializerFloat(SIMULATION_OUTPUTS_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
-        ASource.SetSpatializerFloat(PERSPECTIVE_CORRECTION, 1f);
-
-
-        // ASource.SetSpatializerFloat(NORMALIZE_PATHING_EQ, 1f); // we explode without this when we feed 0,0,0 propagation eq
+        // SetSpatialValue(NORMALIZE_PATHING_EQ, 1f); // we explode without this when we feed 0,0,0 propagation eq
 
         UpdatePhononSimulator();
     }
@@ -99,10 +99,12 @@ public partial class WyrmPhononSource : WyrmBaseSource
     // Candidate for custom batch api
     public void UpdatePhononSimulator()
     {
-        if (PhononSource == null) return;
+        if (PhononSource == null)
+            return;
 
         SimulationInputs inputs = new() { flags = 0 };
-        if (UseReflections) inputs.flags |= SimulationFlags.Reflections;
+        if (UseReflections)
+            inputs.flags |= SimulationFlags.Reflections;
 
         PhononSource.SetInputs(inputs.flags, inputs);
     }
@@ -112,8 +114,8 @@ public partial class WyrmPhononSource : WyrmBaseSource
     {
         if (Mathf.Abs(_cachedOcclusion - occlusion) > 0.01f)
         {
-            ASource.SetSpatializerFloat(OCCLUSION, occlusion);
-            ASource.SetSpatializerFloat(REFLECTIONS_MIXLEVEL, occlusion);
+            SetSpatialValue(OCCLUSION, occlusion);
+            SetSpatialValue(REFLECTIONS_MIXLEVEL, occlusion);
             _cachedOcclusion = occlusion;
         }
     }

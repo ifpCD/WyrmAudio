@@ -19,6 +19,7 @@ public partial class WyrmPoolController : MonoBehaviour
     public int MaximumCapacity { get; private set; } = 0;
 
     private bool _hasFocus = true;
+
     void OnApplicationFocus(bool hasFocus) => _hasFocus = hasFocus;
 
     public int ActiveCount { get; private set; }
@@ -43,7 +44,7 @@ public partial class WyrmPoolController : MonoBehaviour
     internal NativeArray<IntPtr> Pointers;
 
     // Stateless Occlusion Buffers
-    internal NativeArray<RaycastCommand> OcclusionCommands;
+    internal NativeArray<RaycastCommand> OcclusionRayCommands;
     internal NativeArray<RaycastHit> OcclusionHitResults;
 
     // Stateless Propagation Buffers
@@ -61,7 +62,6 @@ public partial class WyrmPoolController : MonoBehaviour
     internal NativeArray<float> CurrentOcclusion01;
     internal NativeArray<float3> CurrentPropagationEQ01s;
 
-
     void Awake()
     {
         Instance = this;
@@ -72,7 +72,7 @@ public partial class WyrmPoolController : MonoBehaviour
             MaximumCapacity += config.maxSize;
         }
 
-        InitializeBuffers();
+        Allocate();
 
         foreach (var config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
         {
@@ -86,90 +86,101 @@ public partial class WyrmPoolController : MonoBehaviour
         Instance = null;
         IsDisposed = true;
 
-        DisposeBuffers();
+        Deallocate();
     }
 
-    private void InitializeBuffers()
+    // csharpier-ignore
+    private void Allocate()
     {
-        ActiveSources = new IWyrmSource[MaximumCapacity];
-        PlaybackEndTimes = new double[MaximumCapacity];
+        ActiveSources           = new IWyrmSource[MaximumCapacity];
+        PlaybackEndTimes        = new double[MaximumCapacity];
 
-        SourceTransforms = new TransformAccessArray(MaximumCapacity);
-        TrackedTransforms = new TransformAccessArray(MaximumCapacity);
+        MinDistances            = new (MaximumCapacity, Allocator.Persistent);
+        MaxDistances            = new (MaximumCapacity, Allocator.Persistent);
 
-        IsTracking = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
-        SourceRoomIdentifiers = new NativeArray<int>(MaximumCapacity, Allocator.Persistent);
-        SourcePositions = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
-        TrackedPositions = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
+        UseOcclusions           = new (MaximumCapacity, Allocator.Persistent);
+        UsePropagations         = new (MaximumCapacity, Allocator.Persistent);
 
-        MinDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
-        MaxDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+        IsTracking              = new (MaximumCapacity, Allocator.Persistent);
 
-        UsePropagations = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
-        UseOcclusions = new NativeArray<byte>(MaximumCapacity, Allocator.Persistent);
+        SourceTransforms        = new (MaximumCapacity);
+        TrackedTransforms       = new (MaximumCapacity);
 
-        GraphDirections = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
-        GraphDistances = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
-        TargetPropagationEQ01 = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
+        SourcePositions         = new (MaximumCapacity, Allocator.Persistent);
+        TrackedPositions        = new (MaximumCapacity, Allocator.Persistent);
 
-        OcclusionCommands = new NativeArray<RaycastCommand>(MaximumCapacity * 64, Allocator.Persistent);
-        OcclusionHitResults = new NativeArray<RaycastHit>(MaximumCapacity * 64, Allocator.Persistent);
-        TargetOcclusion01 = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
+        Pointers                = new (MaximumCapacity, Allocator.Persistent);
 
-        TargetTransmissionEQ01 = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        // Single Raycast for now
+        OcclusionRayCommands    = new (MaximumCapacity, Allocator.Persistent);
+        OcclusionHitResults     = new (MaximumCapacity, Allocator.Persistent);
 
-        Pointers = new NativeArray<IntPtr>(MaximumCapacity, Allocator.Persistent);
-        TargetSHCoefficients = new NativeArray<float>(MaximumCapacity * 16, Allocator.Persistent); // 16 covers up to 3rd Order
+        SourceRoomIdentifiers   = new (MaximumCapacity, Allocator.Persistent);
+        GraphDirections         = new (MaximumCapacity, Allocator.Persistent);
+        GraphDistances          = new (MaximumCapacity, Allocator.Persistent);
 
-        CurrentOcclusion01 = new NativeArray<float>(MaximumCapacity, Allocator.Persistent);
-        CurrentPropagationEQ01s = new NativeArray<float3>(MaximumCapacity, Allocator.Persistent);
+        TargetPropagationEQ01   = new (MaximumCapacity, Allocator.Persistent);
+        TargetOcclusion01       = new (MaximumCapacity, Allocator.Persistent);
+        TargetSHCoefficients    = new (MaximumCapacity * 16, Allocator.Persistent); // up to 3rd Order
+        TargetTransmissionEQ01  = new (MaximumCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+
+        CurrentOcclusion01      = new (MaximumCapacity, Allocator.Persistent);
+        CurrentPropagationEQ01s = new (MaximumCapacity, Allocator.Persistent);
     }
 
-    private void DisposeBuffers()
+    // csharpier-ignore
+    private void Deallocate()
     {
-        if (SourceTransforms.isCreated) SourceTransforms.Dispose();
-        if (TrackedTransforms.isCreated) TrackedTransforms.Dispose();
-        if (IsTracking.IsCreated) IsTracking.Dispose();
-        if (SourceRoomIdentifiers.IsCreated) SourceRoomIdentifiers.Dispose();
-        if (SourcePositions.IsCreated) SourcePositions.Dispose();
-        if (TrackedPositions.IsCreated) TrackedPositions.Dispose();
+        if (MinDistances.IsCreated)                 MinDistances.Dispose();
+        if (MaxDistances.IsCreated)                 MaxDistances.Dispose();
 
-        if (MinDistances.IsCreated) MinDistances.Dispose();
-        if (MaxDistances.IsCreated) MaxDistances.Dispose();
-        if (UsePropagations.IsCreated) UsePropagations.Dispose();
-        if (UseOcclusions.IsCreated) UsePropagations.Dispose();
-        if (GraphDirections.IsCreated) GraphDirections.Dispose();
-        if (GraphDistances.IsCreated) GraphDistances.Dispose();
-        if (TargetPropagationEQ01.IsCreated) TargetPropagationEQ01.Dispose();
+        if (UseOcclusions.IsCreated)                UseOcclusions.Dispose();
+        if (UsePropagations.IsCreated)              UsePropagations.Dispose();
 
-        if (OcclusionCommands.IsCreated) OcclusionCommands.Dispose();
-        if (OcclusionHitResults.IsCreated) OcclusionHitResults.Dispose();
-        if (TargetOcclusion01.IsCreated) TargetOcclusion01.Dispose();
+        if (IsTracking.IsCreated)                   IsTracking.Dispose();
 
-        if (Pointers.IsCreated) Pointers.Dispose();
-        if (TargetSHCoefficients.IsCreated) TargetSHCoefficients.Dispose();
+        if (SourceTransforms.isCreated)             SourceTransforms.Dispose();
+        if (TrackedTransforms.isCreated)            TrackedTransforms.Dispose();
 
-        if (TargetTransmissionEQ01.IsCreated) TargetOcclusion01.Dispose();
+        if (SourcePositions.IsCreated)              SourcePositions.Dispose();
+        if (TrackedPositions.IsCreated)             TrackedPositions.Dispose();
 
-        if (CurrentOcclusion01.IsCreated) TargetSHCoefficients.Dispose();
-        if (CurrentPropagationEQ01s.IsCreated) TargetSHCoefficients.Dispose();
+        if (Pointers.IsCreated)                     Pointers.Dispose();
+
+        if (OcclusionRayCommands.IsCreated)         OcclusionRayCommands.Dispose();
+        if (OcclusionHitResults.IsCreated)          OcclusionHitResults.Dispose();
+
+        if (SourceRoomIdentifiers.IsCreated)        SourceRoomIdentifiers.Dispose();
+        if (GraphDirections.IsCreated)              GraphDirections.Dispose();
+        if (GraphDistances.IsCreated)               GraphDistances.Dispose();
+
+        if (TargetPropagationEQ01.IsCreated)        TargetPropagationEQ01.Dispose();
+        if (TargetOcclusion01.IsCreated)            TargetOcclusion01.Dispose();
+        if (TargetSHCoefficients.IsCreated)         TargetSHCoefficients.Dispose();
+        if (TargetTransmissionEQ01.IsCreated)       TargetTransmissionEQ01.Dispose();
+
+        if (CurrentOcclusion01.IsCreated)           CurrentOcclusion01.Dispose();
+        if (CurrentPropagationEQ01s.IsCreated)      CurrentPropagationEQ01s.Dispose();
     }
 
     public static void UpdateTrackedTransform(int activeIndex, Transform track)
     {
-        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount) return;
+        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount)
+            return;
         Instance.TrackedTransforms[activeIndex] = track != null ? track : Instance.CachedTransform;
     }
 
     public static void SetPlaybackEndTime(int activeIndex, double endTime)
     {
-        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount) return;
+        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount)
+            return;
         Instance.PlaybackEndTimes[activeIndex] = endTime + 0.1;
     }
 
     public static double GetPlaybackEndTime(int activeIndex)
     {
-        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount) return -1;
+        if (Instance == null || activeIndex < 0 || activeIndex >= Instance.ActiveCount)
+            return -1;
         return Instance.PlaybackEndTimes[activeIndex];
     }
 }

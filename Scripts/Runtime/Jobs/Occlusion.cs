@@ -7,11 +7,17 @@ using UnityEngine;
 [BurstCompile]
 public struct GenerateSourceRaycastCommands : IJobParallelFor
 {
-    [ReadOnly] public NativeArray<float3> SourcePositions;
-    [ReadOnly] public float3 ListenerPosition;
-    [ReadOnly] public int LayerMask;
+    [ReadOnly]
+    public NativeArray<float3> SourcePositions;
 
-    [WriteOnly] public NativeArray<RaycastCommand> RaycastCommands;
+    [ReadOnly]
+    public float3 ListenerPosition;
+
+    [ReadOnly]
+    public int LayerMask;
+
+    [WriteOnly]
+    public NativeArray<RaycastCommand> RaycastCommands;
 
     public void Execute(int index)
     {
@@ -34,9 +40,11 @@ public struct GenerateSourceRaycastCommands : IJobParallelFor
 [BurstCompile]
 public struct ResolveOcclusionJob : IJobParallelFor
 {
-    [ReadOnly] public NativeArray<RaycastHit> RaycastHits;
+    [ReadOnly]
+    public NativeArray<RaycastHit> RaycastHits;
 
-    [WriteOnly] public NativeArray<float> SourceOcclusions;
+    [WriteOnly]
+    public NativeArray<float> SourceOcclusions;
 
     public void Execute(int index)
     {

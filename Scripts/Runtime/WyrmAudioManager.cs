@@ -12,7 +12,8 @@ public class WyrmAudioManager : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Initialize()
     {
-        if (Instance != null) return;
+        if (Instance != null)
+            return;
 
         var go = new GameObject("Wyrm Audio Manager");
         Instance = go.AddComponent<WyrmAudioManager>();
@@ -25,10 +26,12 @@ public class WyrmAudioManager : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InitializeListener()
     {
-        if (Instance.listener != null) return;
+        if (Instance.listener != null)
+            return;
         Instance.listener = FindAnyObjectByType<AudioListener>();
     }
 
     public static void NotifyListenerChangeTo(AudioListener listener) => Instance.listener = listener;
+
     public static AudioListener GetAudioListener() => Instance.listener;
 }

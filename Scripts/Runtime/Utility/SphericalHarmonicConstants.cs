@@ -1,7 +1,7 @@
 internal static class SH
 {
     public const float C0 = 0.28209479f;
-    
+
     public const float C1 = 0.48860251f;
 
     public const float C2 = 1.0925484f;

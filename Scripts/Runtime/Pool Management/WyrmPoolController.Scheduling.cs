@@ -11,23 +11,28 @@ public partial class WyrmPoolController : MonoBehaviour
 {
     void LateUpdate()
     {
-        if (IsDisposed) return;
-        if (ActiveCount == 0) return;
+        if (IsDisposed)
+            return;
+        if (ActiveCount == 0)
+            return;
         CullSources();
         ScheduleJobs();
     }
 
     private void CullSources()
     {
-        if (!_hasFocus) return;
+        if (!_hasFocus)
+            return;
 
         double currentTime = UnityEngine.AudioSettings.dspTime;
         for (int index = ActiveCount - 1; index >= 0; index--)
         {
-            if (currentTime < PlaybackEndTimes[index]) continue;
+            if (currentTime < PlaybackEndTimes[index])
+                continue;
 
             var source = ActiveSources[index];
-            if (source.IsBorrowed || source.isPlaying) continue;
+            if (source.IsBorrowed || source.isPlaying)
+                continue;
 
             source.Return();
         }
@@ -37,25 +42,23 @@ public partial class WyrmPoolController : MonoBehaviour
     {
         JobHandle finalizerHandle;
 
-        var gatherJob = new GatherTrackedPositionsJob
-        {
-            IsTracking = IsTracking,
-            TrackedPositions = TrackedPositions
-        };
+        var gatherJob = new GatherTrackedPositionsJob { IsTracking = IsTracking, TrackedPositions = TrackedPositions };
         JobHandle gatherHandle = gatherJob.Schedule(TrackedTransforms);
 
         var applyTransformsJob = new ApplySourceTransformsJob
         {
             IsTracking = IsTracking,
             TrackedPositions = TrackedPositions,
-            SourcePositions = SourcePositions
+            SourcePositions = SourcePositions,
         };
         JobHandle applyTransformsHandle = applyTransformsJob.Schedule(SourceTransforms, gatherHandle);
+
         applyTransformsHandle.Complete();
 
-        JobHandle effectsHandle = LocationProcessor.ScheduleLocation(GraphManager.Instance);
-        JobHandle downMixHandle = EffectsMixingProcessor.ScheduleMixing(effectsHandle);
-        JobHandle lerpHandle    = LerpProcessor.ScheduleLerping(downMixHandle);
+        JobHandle locationHandle = LocationProcessor.ScheduleLocation(GraphManager.Instance);
+
+        JobHandle downMixHandle = EffectsMixingProcessor.ScheduleMixing(locationHandle);
+        JobHandle lerpHandle = LerpProcessor.ScheduleLerping(downMixHandle);
 
         finalizerHandle = lerpHandle;
 

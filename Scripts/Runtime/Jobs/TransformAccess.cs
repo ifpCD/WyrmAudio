@@ -7,24 +7,31 @@ using UnityEngine.Jobs;
 [BurstCompile]
 internal struct GatherTrackedPositionsJob : IJobParallelForTransform
 {
-    [ReadOnly] public NativeArray<byte> IsTracking;
+    [ReadOnly]
+    public NativeArray<byte> IsTracking;
 
-    [WriteOnly] public NativeArray<float3> TrackedPositions;
+    [WriteOnly]
+    public NativeArray<float3> TrackedPositions;
 
     // index is AudioSource, transform is whatever IWyrmSource.TrackedTransform is referencing
     public void Execute(int index, TransformAccess transform)
     {
-        if (IsTracking[index] == 1) TrackedPositions[index] = transform.position;
+        if (IsTracking[index] == 1)
+            TrackedPositions[index] = transform.position;
     }
 }
 
 [BurstCompile]
 internal struct ApplySourceTransformsJob : IJobParallelForTransform
 {
-    [ReadOnly] public NativeArray<byte> IsTracking;
-    [ReadOnly] public NativeArray<float3> TrackedPositions;
+    [ReadOnly]
+    public NativeArray<byte> IsTracking;
 
-    [WriteOnly] public NativeArray<float3> SourcePositions;
+    [ReadOnly]
+    public NativeArray<float3> TrackedPositions;
+
+    [WriteOnly]
+    public NativeArray<float3> SourcePositions;
 
     // index is AudioSource
     public void Execute(int index, TransformAccess transform)

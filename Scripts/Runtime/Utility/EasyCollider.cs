@@ -9,9 +9,14 @@ public abstract class EasyCollider : MonoBehaviour
 {
 #if UNITY_EDITOR
     [Header("Volume Generation")]
-    [field: SerializeField] public Transform BottomLeft { get; private set; }
-    [field: SerializeField] public Transform TopRight { get; private set; }
-    [SerializeField] private float volumePadding = 0.01f;
+    [field: SerializeField]
+    public Transform BottomLeft { get; private set; }
+
+    [field: SerializeField]
+    public Transform TopRight { get; private set; }
+
+    [SerializeField]
+    private float volumePadding = 0.01f;
 
     private Vector3 lastBottomLeftPos;
     private Vector3 lastTopRightPos;
@@ -41,10 +46,10 @@ public abstract class EasyCollider : MonoBehaviour
             return;
 
         bool changed =
-            BottomLeft.position != lastBottomLeftPos ||
-            TopRight.position != lastTopRightPos ||
-            transform.localScale != lastScale ||
-            transform.rotation != lastRot;
+            BottomLeft.position != lastBottomLeftPos
+            || TopRight.position != lastTopRightPos
+            || transform.localScale != lastScale
+            || transform.rotation != lastRot;
 
         if (changed)
         {
@@ -90,18 +95,11 @@ public abstract class EasyCollider : MonoBehaviour
         UpdateCollider();
     }
 
+    protected virtual void OnDrawGizmos() => DrawVolumeGizmo(false);
 
-    private void OnDrawGizmos()
-    {
-        DrawVolumeGizmo(false);
-    }
+    protected virtual void OnDrawGizmosSelected() => DrawVolumeGizmo(true);
 
-    private void OnDrawGizmosSelected()
-    {
-        DrawVolumeGizmo(true);
-    }
-
-    private void DrawVolumeGizmo(bool selected)
+    protected void DrawVolumeGizmo(bool selected)
     {
         if (!BottomLeft || !TopRight)
             return;
@@ -123,8 +121,7 @@ public abstract class EasyCollider : MonoBehaviour
             float nearDistance = 5f;
             float farDistance = 20f;
 
-            alpha = Mathf.Lerp(1f, 0.1f,
-                Mathf.InverseLerp(nearDistance, farDistance, distance));
+            alpha = Mathf.Lerp(1f, 0.1f, Mathf.InverseLerp(nearDistance, farDistance, distance));
         }
 
         Color outlineColor = selected ? OutlineSelected : OutlineColor;

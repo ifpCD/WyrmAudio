@@ -12,7 +12,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     [field: SerializeField]
     public bool UseReflections { get; set; } = false;
-    
+
     [field: SerializeField]
     public bool UsePropagation { get; set; } = false;
 
@@ -52,7 +52,8 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
             _currentVolume = volume.Value;
         }
 
-        if (track != null) TrackedTransform = track;
+        if (track != null)
+            TrackedTransform = track;
 
         this.clip = clip;
         Play();
@@ -66,8 +67,10 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
             _currentVolume = volume.Value;
         }
 
-        if (track != null) TrackedTransform = track;
-        if (bank.PitchRandomization) ASource.pitch = 1f.WithVariation(bank.PitchDeviation);
+        if (track != null)
+            TrackedTransform = track;
+        if (bank.PitchRandomization)
+            ASource.pitch = 1f.WithVariation(bank.PitchDeviation);
 
         clip = bank.GetBodyClip();
         Play();

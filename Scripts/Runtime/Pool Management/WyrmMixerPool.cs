@@ -28,7 +28,8 @@ public class WyrmMixerPool
 
     private void CreatePooledAudioSource()
     {
-        if (_totalCreated >= Config.maxSize) return;
+        if (_totalCreated >= Config.maxSize)
+            return;
 
         GameObject go = Object.Instantiate(Config.WyrmAudioSourcePrefab, _poolRoot);
         if (go.TryGetComponent(out IWyrmSource source))
@@ -50,7 +51,8 @@ public class WyrmMixerPool
     private bool TryReserve(out IWyrmSource source, bool isTracking, Vector3 staticPosition, Transform trackTransform)
     {
         source = null;
-        if (_controller.IsDisposed) return false;
+        if (_controller.IsDisposed)
+            return false;
 
         if (_availableCount == 0)
         {
@@ -72,7 +74,8 @@ public class WyrmMixerPool
     public void Play(AbstractWyrmBank bank, Transform track = null, float? volume = null)
     {
         bool isTracking = track != null;
-        if (!TryReserve(out var source, isTracking, isTracking ? default : _controller.CachedTransform.position, track)) return;
+        if (!TryReserve(out var source, isTracking, isTracking ? default : _controller.CachedTransform.position, track))
+            return;
 
         source.Play(bank, track, volume);
     }
@@ -80,21 +83,24 @@ public class WyrmMixerPool
     public void Play(AudioClip clip, Transform track = null, float? volume = null)
     {
         bool isTracking = track != null;
-        if (!TryReserve(out var source, isTracking, isTracking ? default : _controller.CachedTransform.position, track)) return;
+        if (!TryReserve(out var source, isTracking, isTracking ? default : _controller.CachedTransform.position, track))
+            return;
 
         source.Play(clip, track, volume);
     }
 
     public void Play(AbstractWyrmBank bank, Vector3 position, float? volume = null)
     {
-        if (!TryReserve(out var source, false, position, null)) return;
+        if (!TryReserve(out var source, false, position, null))
+            return;
 
         source.Play(bank, volume: volume);
     }
 
     public void Play(AudioClip clip, Vector3 position, float? volume = null)
     {
-        if (!TryReserve(out var source, false, position, null)) return;
+        if (!TryReserve(out var source, false, position, null))
+            return;
 
         source.Play(clip, volume: volume);
     }
@@ -102,7 +108,8 @@ public class WyrmMixerPool
     public bool TryBorrow(out IWyrmSource source)
     {
         bool successful = TryReserve(out source, true, default, null);
-        if (successful) source.IsBorrowed = true;
+        if (successful)
+            source.IsBorrowed = true;
         return successful;
     }
 }

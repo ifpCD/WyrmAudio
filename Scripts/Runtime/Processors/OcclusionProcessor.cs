@@ -10,12 +10,12 @@ internal class OcclusionProcessor
             SourcePositions = WyrmPoolController.Instance.SourcePositions,
             ListenerPosition = WyrmAudioManager.GetAudioListener().transform.position,
             LayerMask = WyrmAudioSettings.Instance.StaticGeometryMask,
-            RaycastCommands = WyrmPoolController.Instance.OcclusionCommands
+            RaycastCommands = WyrmPoolController.Instance.OcclusionRayCommands
         };
         JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16);
 
         JobHandle raycastHandle = RaycastCommand.ScheduleBatch(
-            WyrmPoolController.Instance.OcclusionCommands,
+            WyrmPoolController.Instance.OcclusionRayCommands,
             WyrmPoolController.Instance.OcclusionHitResults,
             16, prepareRaycastsHandle);
 
