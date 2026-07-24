@@ -8,20 +8,16 @@ using UnityEngine;
 public abstract class AmbiComponent<T> : MonoBehaviour
     where T : AmbiComponent<T>
 {
-    static T[] _enabledInstances;
-    static int _enabledInstanceCount;
     static int _maximumCapacity;
     static T _allocationOwner;
 
-    int _index = -1;
+    protected int NativeIndex { get; private set; } = -1;
 
-    protected int NativeIndex => _index;
+    protected static T[] EnabledInstances { get; private set; }
 
-    protected bool IsRegistered => _index != -1;
+    public static int ActiveCount { get; private set; }
 
-    protected static T[] EnabledInstances => _enabledInstances;
-
-    public static int ActiveCount => _enabledInstanceCount;
+    protected bool IsRegistered => NativeIndex != -1;
 
     protected abstract int MaximumCapacity { get; }
 
@@ -37,72 +33,70 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
     protected void InitializeRegistry()
     {
-        if (_enabledInstances != null)
+        if (EnabledInstances != null)
             return;
 
         _maximumCapacity = MaximumCapacity;
         if (_maximumCapacity <= 0)
             throw new InvalidOperationException($"{typeof(T).Name} requires a positive maximum capacity.");
 
-        _enabledInstances = new T[_maximumCapacity];
+        EnabledInstances = new T[_maximumCapacity];
         _allocationOwner = (T)this;
         AllocateNative();
     }
 
     protected static void DisposeRegistry()
     {
-        if (_enabledInstances == null)
+        if (EnabledInstances == null)
             return;
 
-        if (_enabledInstanceCount != 0)
-            throw new InvalidOperationException(
-                $"{typeof(T).Name} cannot dispose its registry while {_enabledInstanceCount} instances are registered."
-            );
+        if (ActiveCount != 0)
+            throw new InvalidOperationException($"{typeof(T).Name} cannot dispose its registry while {ActiveCount} instances are registered.");
 
         _allocationOwner.DeallocateNative();
         _allocationOwner = null;
-        _enabledInstances = null;
+        EnabledInstances = null;
         _maximumCapacity = 0;
     }
 
     protected void Register()
     {
-        if (_index >= 0)
+        if (NativeIndex >= 0)
             return;
 
         InitializeRegistry();
 
-        if (_enabledInstanceCount == _maximumCapacity)
+        if (ActiveCount == _maximumCapacity)
             throw new InvalidOperationException($"Enabled {typeof(T).Name} capacity of {_maximumCapacity} was exceeded.");
 
-        _index = _enabledInstanceCount;
-        _enabledInstances[_enabledInstanceCount++] = (T)this;
+        NativeIndex = ActiveCount;
+        EnabledInstances[ActiveCount++] = (T)this;
         LoadManagedToNative();
     }
 
     protected void Deregister()
     {
-        int removedIndex = _index;
+        int removedIndex = NativeIndex;
 
         if (removedIndex < 0)
             return;
 
-        int lastIndex = --_enabledInstanceCount;
+        int lastIndex = --ActiveCount;
 
         if (removedIndex != lastIndex)
         {
-            T movedInstance = _enabledInstances[lastIndex];
+            T movedInstance = EnabledInstances[lastIndex];
 
-            _enabledInstances[removedIndex] = movedInstance;
-            movedInstance._index = removedIndex;
+            EnabledInstances[removedIndex] = movedInstance;
+            movedInstance.NativeIndex = removedIndex;
         }
 
         RemoveNativeAtSwapBack(removedIndex, lastIndex);
 
-        _enabledInstances[lastIndex] = null;
-        _index = -1;
+        EnabledInstances[lastIndex] = null;
+        NativeIndex = -1;
 
-        if (_enabledInstanceCount == 0 && !RetainNativeWhenEmpty)
+        if (ActiveCount == 0 && !RetainNativeWhenEmpty)
             DisposeRegistry();
     }
 }

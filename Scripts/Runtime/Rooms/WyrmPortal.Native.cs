@@ -42,7 +42,7 @@ public partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
     // csharpier-ignore
     protected override void LoadManagedToNative()
     {
-        PortalWorldToLocal[NativeIndex]  = math.inverse(transform.localToWorldMatrix);
+        PortalWorldToLocal[NativeIndex]  = WorldToLocal;
         PortalExtents[NativeIndex]       = Extents;
         PortalRoomA[NativeIndex]         = RoomA != null ? RoomA.RoomIdentifier : -1;
         PortalRoomB[NativeIndex]         = RoomB != null ? RoomB.RoomIdentifier : -1;

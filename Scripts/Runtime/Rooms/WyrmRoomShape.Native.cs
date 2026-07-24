@@ -34,7 +34,7 @@ public partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
     // csharpier-ignore
     protected override void LoadManagedToNative()
     {
-        ShapeWorldToLocal[NativeIndex]           = math.inverse(transform.localToWorldMatrix);
+        ShapeWorldToLocal[NativeIndex]           = WorldToLocal;
         ShapeExtents[NativeIndex]                = Extents;
         ShapeRoomIdentifier[NativeIndex]         = RoomIdentifier;
     }

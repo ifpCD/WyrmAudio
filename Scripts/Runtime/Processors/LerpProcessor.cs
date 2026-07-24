@@ -16,19 +16,21 @@ internal static class LerpProcessor
 
         float expLerpFactor = GetExpLerpFactor(5f);
 
+        // csharpier-ignore
         var lerpOcclusions = new StatelessLerpOcclusion01Job
         {
-            TargetOcclusions01 = WyrmBaseSource.TargetOcclusion01,
-            ExpLerpFactor = expLerpFactor,
+            TargetOcclusions01  = WyrmBaseSource.TargetOcclusion01,
+            ExpLerpFactor       = expLerpFactor,
 
             CurrentOcclusions01 = WyrmBaseSource.CurrentOcclusion01,
         };
         JobHandle lerpOcclusionsHandle = lerpOcclusions.Schedule(activeCount, 16, dependency);
 
+        // csharpier-ignore
         var lerpPropagationEqs = new StatelessLerpPropagation01Job
         {
-            TargetPropagationEQs01 = WyrmBaseSource.TargetPropagationEQ01,
-            ExpLerpFactor = expLerpFactor,
+            TargetPropagationEQs01  = WyrmBaseSource.TargetPropagationEQ01,
+            ExpLerpFactor           = expLerpFactor,
 
             CurrentPropagationEQs01 = WyrmBaseSource.CurrentPropagationEQ01,
         };

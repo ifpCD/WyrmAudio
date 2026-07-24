@@ -11,9 +11,11 @@ internal static class EffectsMixingProcessor
         if (WyrmBaseSource.ActiveCount == 0)
             return dependency;
 
+        // csharpier-ignore
         var downMixIfVisible = new DownmixPropagationOnVisibilityJob
         {
-            TargetOcclusion01s = WyrmBaseSource.TargetOcclusion01,
+            TargetOcclusion01s     = WyrmBaseSource.TargetOcclusion01,
+            
             TargetPropagationEQ01s = WyrmBaseSource.TargetPropagationEQ01,
         };
         return downMixIfVisible.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);

@@ -12,27 +12,25 @@ internal static class OcclusionProcessor
         var raycastCommands = WyrmBaseSource.OcclusionRayCommands.GetSubArray(0, activeCount);
         var raycastResults = WyrmBaseSource.OcclusionHitResults.GetSubArray(0, activeCount);
 
+        // csharpier-ignore
         var prepareRaycastsJob = new GenerateSourceRaycastCommands
         {
-            SourcePositions = WyrmBaseSource.SourcePositions,
-            UseOcclusions = WyrmBaseSource.UseOcclusions,
+            SourcePositions  = WyrmBaseSource.SourcePositions,
+            UseOcclusions    = WyrmBaseSource.UseOcclusions,
             ListenerPosition = WyrmListener.ListenerPosition.Value,
-            LayerMask = WyrmAudioSettings.Instance.StaticGeometryMask,
-            RaycastCommands = raycastCommands,
+            LayerMask        = WyrmAudioSettings.Instance.StaticGeometryMask,
+            
+            RaycastCommands  = raycastCommands,
         };
         JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(activeCount, 16, dependency);
 
-        JobHandle raycastHandle = RaycastCommand.ScheduleBatch(
-            raycastCommands,
-            raycastResults,
-            16,
-            prepareRaycastsHandle
-        );
+        JobHandle raycastHandle = RaycastCommand.ScheduleBatch(raycastCommands, raycastResults, 16, prepareRaycastsHandle);
 
+        // csharpier-ignore
         var resolveOcclusionJob = new ResolveOcclusionJob
         {
-            UseOcclusions = WyrmBaseSource.UseOcclusions,
-            RaycastHits = raycastResults,
+            UseOcclusions    = WyrmBaseSource.UseOcclusions,
+            RaycastHits      = raycastResults,
             SourceOcclusions = WyrmBaseSource.TargetOcclusion01,
         };
         return resolveOcclusionJob.Schedule(activeCount, 16, raycastHandle);

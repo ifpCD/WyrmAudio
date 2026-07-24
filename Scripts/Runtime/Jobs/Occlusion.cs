@@ -60,6 +60,6 @@ public struct ResolveOcclusionJob : IJobParallelFor
 
     public void Execute(int index)
     {
-        SourceOcclusions[index] = UseOcclusions[index] != 0 && RaycastHits[index].distance > 0f ? 1f : 0f;
+        SourceOcclusions[index] = UseOcclusions[index] != 0 && RaycastHits[index].distance > 0f ? 0f : 1f;
     }
 }

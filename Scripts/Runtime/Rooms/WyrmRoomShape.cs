@@ -23,13 +23,7 @@ public partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
     [HideInInspector]
     public EasyColliderState State { get; private set; } = new();
 
-    [Header("Relation")]
-    [field: SerializeField]
-    public WyrmRoomShape RoomA { get; set; }
-
-    [field: SerializeField]
-    public WyrmRoomShape RoomB { get; set; }
-
+    public float4x4 WorldToLocal => math.inverse(transform.localToWorldMatrix);
     public Vector3 Extents => BoxCollider.size * .5f;
 
     void OnEnable() => Register();
@@ -80,6 +74,8 @@ public partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
 
     void OnValidate()
     {
+        if (BoxCollider == null)
+            BoxCollider = GetComponent<BoxCollider>();
         this.ValidateCollider();
 
         samplesContainer ??= new List<Vector3>();
@@ -88,15 +84,11 @@ public partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
 
     void Update()
     {
-        var graph = false;
-
-        if (!graph)
-        {
-            VolumeColor = Color.clear;
+        var ListenerRoomIdentifier = WyrmListener.ListenerRoomIdentifier.Value;
+        if (ListenerRoomIdentifier == -1)
             return;
-        }
 
-        VolumeColor = -1 == RoomIdentifier ? new Color(0, .5f, .5f, .5f) : Color.clear;
+        VolumeColor = ListenerRoomIdentifier == RoomIdentifier ? new Color(0, .5f, .5f, .5f) : Color.clear;
     }
 
 #endif

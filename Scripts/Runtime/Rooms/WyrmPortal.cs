@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -29,6 +30,7 @@ public partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
     [field: SerializeField]
     public WyrmRoomShape RoomB { get; set; }
 
+    public float4x4 WorldToLocal => math.inverse(transform.localToWorldMatrix);
     public Vector3 Extents => BoxCollider.size * .5f;
 
     void OnEnable() => Register();
