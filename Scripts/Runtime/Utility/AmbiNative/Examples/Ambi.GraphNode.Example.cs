@@ -14,11 +14,12 @@ public partial class GraphNode : MonoBehaviour
 
     internal static NativeReference<int> ListenerRoomID;
 
+    // track the array if this is needed in object oriented context after batch updates
     [AmbiSync(nameof(IsInRoom), AmbiSyncType.Output)]
     internal static NativeArray<bool> IsInRooms;
 
-    // jobs, unsafe pointer calls into C++, and completion here
-    [AmbiProcessorHook]
+    // parallel jobs, unsafe pointer calls into C++, etc here
+    [AmbiBatchHook]
     internal static void BatchUpdate() { }
 
     // MANAGED SECTION
@@ -34,23 +35,23 @@ public partial class GraphNode : MonoBehaviour
 
     public bool IsInRoom = false;
 
-    [AmbiManagedHook(AmbiManagedHookType.Awake)]
+    [AmbiHook(AmbiManagedHookType.Awake)]
     internal void AmbiAwake() { }
 
-    [AmbiManagedHook(AmbiManagedHookType.OnEnable)]
+    [AmbiHook(AmbiManagedHookType.OnEnable)]
     internal void AmbiOnEnable() { }
 
     // work before batched update
-    [AmbiManagedHook(AmbiManagedHookType.PreBatchUpdate)]
+    [AmbiHook(AmbiManagedHookType.PreBatchUpdate)]
     internal void PreBatchUpdate() { }
 
     // work after batched update
-    [AmbiManagedHook(AmbiManagedHookType.PostBatchUpdate)]
+    [AmbiHook(AmbiManagedHookType.PostBatchUpdate)]
     internal void PostBatchUpdate() { }
 
-    [AmbiManagedHook(AmbiManagedHookType.OnDisable)]
+    [AmbiHook(AmbiManagedHookType.OnDisable)]
     internal void AmbiOnDisable() { }
 
-    [AmbiManagedHook(AmbiManagedHookType.OnDestroy)]
+    [AmbiHook(AmbiManagedHookType.OnDestroy)]
     internal void AmbiOnDestroy() { }
 }

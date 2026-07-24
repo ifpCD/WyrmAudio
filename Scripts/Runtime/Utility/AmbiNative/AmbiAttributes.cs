@@ -14,13 +14,13 @@ public class AmbiSync : Attribute
     }
 }
 
-public class AmbiProcessorHook : Attribute { }
+public class AmbiBatchHook : Attribute { }
 
-public class AmbiManagedHook : Attribute
+public class AmbiHook : Attribute
 {
     public AmbiManagedHookType ManagedCallback { get; }
 
-    public AmbiManagedHook(AmbiManagedHookType managedCallback = AmbiManagedHookType.PreBatchUpdate)
+    public AmbiHook(AmbiManagedHookType managedCallback = AmbiManagedHookType.PreBatchUpdate)
     {
         ManagedCallback = managedCallback;
     }
