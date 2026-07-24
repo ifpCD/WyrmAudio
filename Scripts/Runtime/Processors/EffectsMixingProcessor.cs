@@ -8,7 +8,7 @@ internal static class EffectsMixingProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        if (WyrmBaseSource.ActiveCount == 0)
+        if (WyrmBaseSource.CompletelyInactive)
             return dependency;
 
         // csharpier-ignore

@@ -10,11 +10,12 @@ internal static class LerpProcessor
 
     public static JobHandle Schedule(JobHandle dependency)
     {
-        int activeCount = WyrmBaseSource.ActiveCount;
-        if (activeCount == 0)
+        if (WyrmBaseSource.CompletelyInactive)
             return dependency;
 
         float expLerpFactor = GetExpLerpFactor(5f);
+        
+        int activeCount = WyrmBaseSource.ActiveCount;
 
         // csharpier-ignore
         var lerpOcclusions = new StatelessLerpOcclusion01Job

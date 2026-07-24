@@ -5,12 +5,12 @@ internal static class OcclusionProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        int activeCount = WyrmBaseSource.ActiveCount;
-        if (activeCount == 0 || WyrmListener.ActiveCount == 0)
+        if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive)
             return dependency;
 
-        var raycastCommands = WyrmBaseSource.OcclusionRayCommands.GetSubArray(0, activeCount);
-        var raycastResults = WyrmBaseSource.OcclusionHitResults.GetSubArray(0, activeCount);
+        int sourceActiveCount = WyrmBaseSource.ActiveCount;
+        var raycastCommands = WyrmBaseSource.OcclusionRayCommands.GetSubArray(0, sourceActiveCount);
+        var raycastResults = WyrmBaseSource.OcclusionHitResults.GetSubArray(0, sourceActiveCount);
 
         // csharpier-ignore
         var prepareRaycastsJob = new GenerateSourceRaycastCommands
@@ -22,7 +22,7 @@ internal static class OcclusionProcessor
             
             RaycastCommands  = raycastCommands,
         };
-        JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(activeCount, 16, dependency);
+        JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(sourceActiveCount, 16, dependency);
 
         JobHandle raycastHandle = RaycastCommand.ScheduleBatch(raycastCommands, raycastResults, 16, prepareRaycastsHandle);
 
@@ -33,6 +33,6 @@ internal static class OcclusionProcessor
             RaycastHits      = raycastResults,
             SourceOcclusions = WyrmBaseSource.TargetOcclusion01,
         };
-        return resolveOcclusionJob.Schedule(activeCount, 16, raycastHandle);
+        return resolveOcclusionJob.Schedule(sourceActiveCount, 16, raycastHandle);
     }
 }

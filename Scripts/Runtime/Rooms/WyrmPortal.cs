@@ -68,11 +68,42 @@ public partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
         Handles.Label(transform.position, gameObject.name, labelStyle);
 
         this.DrawVolumeGizmo(false);
+        DrawListenerRoomHalf();
     }
 
     void OnDrawGizmosSelected()
     {
         this.DrawVolumeGizmo(true);
+        DrawListenerRoomHalf();
+    }
+
+    void DrawListenerRoomHalf()
+    {
+        if (WyrmListener.CompletelyInactive)
+            return;
+
+        int listenerRoomIdentifier = WyrmListener.ListenerRoomIdentifier.Value;
+        float localZDirection;
+
+        if (RoomA != null && listenerRoomIdentifier == RoomA.RoomIdentifier)
+            localZDirection = -1f;
+        else if (RoomB != null && listenerRoomIdentifier == RoomB.RoomIdentifier)
+            localZDirection = 1f;
+        else
+            return;
+
+        Vector3 halfSize = BoxCollider.size;
+        halfSize.z *= .5f;
+
+        Vector3 halfCenter = BoxCollider.center;
+        halfCenter.z += localZDirection * halfSize.z * .5f;
+
+        Color color = new(0, .5f, .5f, .5f);
+        color.a *= this.GetGizmoOpacity();
+
+        Gizmos.matrix = transform.localToWorldMatrix;
+        Gizmos.color = color;
+        Gizmos.DrawCube(halfCenter, halfSize);
     }
 
     void OnValidate()
