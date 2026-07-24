@@ -38,13 +38,15 @@ internal static class GraphMath
         in NativeArray<float4x4> ShapeWorldToLocal,
         in NativeArray<float3> ShapeExtents,
         in NativeArray<int> ShapeRoomIdentifier,
+        int shapeCount,
         in NativeArray<float4x4> PortalWorldToLocal,
         in NativeArray<float3> PortalExtents,
         in NativeArray<int> PortalRoomA,
-        in NativeArray<int> PortalRoomB
+        in NativeArray<int> PortalRoomB,
+        int portalCount
     )
     {
-        for (int i = 0; i < ShapeWorldToLocal.Length; i++)
+        for (int i = 0; i < shapeCount; i++)
         {
             if (Contains(worldPoint, ShapeWorldToLocal[i], ShapeExtents[i]))
             {
@@ -52,7 +54,7 @@ internal static class GraphMath
             }
         }
 
-        for (int i = 0; i < PortalWorldToLocal.Length; i++)
+        for (int i = 0; i < portalCount; i++)
         {
             if (Contains(worldPoint, PortalWorldToLocal[i], PortalExtents[i]))
             {

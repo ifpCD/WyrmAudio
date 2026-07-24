@@ -76,11 +76,6 @@ public partial class WyrmPhononSource : WyrmBaseSource
         UpdatePhononSimulator();
     }
 
-    public override void Deactivate()
-    {
-        base.Deactivate();
-    }
-
     private void OnDestroy()
     {
         if (_pluginHandle != -1)

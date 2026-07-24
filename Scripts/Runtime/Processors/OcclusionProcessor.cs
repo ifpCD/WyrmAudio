@@ -1,31 +1,40 @@
 using Unity.Jobs;
 using UnityEngine;
 
-internal class OcclusionProcessor
+internal static class OcclusionProcessor
 {
-    public JobHandle ScheduleSourceOcclusion(JobHandle? appendTo = default)
+    public static JobHandle Schedule(JobHandle dependency)
     {
+        int activeCount = WyrmBaseSource.EnabledInstanceCount;
+        if (activeCount == 0 || WyrmListener.EnabledInstanceCount == 0)
+            return dependency;
+
+        var raycastCommands = WyrmBaseSource.OcclusionRayCommands.GetSubArray(0, activeCount);
+        var raycastResults = WyrmBaseSource.OcclusionHitResults.GetSubArray(0, activeCount);
+
         var prepareRaycastsJob = new GenerateSourceRaycastCommands
         {
-            SourcePositions = WyrmPoolController.Instance.SourcePositions,
-            ListenerPosition = WyrmAudioManager.GetAudioListener().transform.position,
+            SourcePositions = WyrmBaseSource.SourcePositions,
+            UseOcclusions = WyrmBaseSource.UseOcclusions,
+            ListenerPosition = WyrmListener.ListenerPosition.Value,
             LayerMask = WyrmAudioSettings.Instance.StaticGeometryMask,
-            RaycastCommands = WyrmPoolController.Instance.OcclusionRayCommands
+            RaycastCommands = raycastCommands,
         };
-        JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16);
+        JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(activeCount, 16, dependency);
 
         JobHandle raycastHandle = RaycastCommand.ScheduleBatch(
-            WyrmPoolController.Instance.OcclusionRayCommands,
-            WyrmPoolController.Instance.OcclusionHitResults,
-            16, prepareRaycastsHandle);
+            raycastCommands,
+            raycastResults,
+            16,
+            prepareRaycastsHandle
+        );
 
         var resolveOcclusionJob = new ResolveOcclusionJob
         {
-            RaycastHits = WyrmPoolController.Instance.OcclusionHitResults,
-            SourceOcclusions = WyrmPoolController.Instance.TargetOcclusion01
+            UseOcclusions = WyrmBaseSource.UseOcclusions,
+            RaycastHits = raycastResults,
+            SourceOcclusions = WyrmBaseSource.TargetOcclusion01,
         };
-        JobHandle resolveOcclusionHandle = resolveOcclusionJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, raycastHandle);
-
-        return resolveOcclusionHandle;
+        return resolveOcclusionJob.Schedule(activeCount, 16, raycastHandle);
     }
 }

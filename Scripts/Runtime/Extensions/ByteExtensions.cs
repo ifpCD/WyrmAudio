@@ -4,7 +4,7 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-public static class BoolExtensions
+public static class ByteExtensions
 {
-    public static byte ToByte(this bool value) => Convert.ToByte(value);
+    public static bool ToBool(this byte value) => Convert.ToBoolean(value);
 }

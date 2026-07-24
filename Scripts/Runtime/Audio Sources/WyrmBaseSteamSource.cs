@@ -25,9 +25,12 @@ public class WyrmBaseSteamSource : WyrmBaseSource
         base.PlayOneShot(clip);
     }
 
-    public override void Deactivate()
+    internal override bool Deactivate()
     {
-        base.Deactivate();
+        if (!base.Deactivate())
+            return false;
+
         SteamSource.enabled = false;
+        return true;
     }
 }

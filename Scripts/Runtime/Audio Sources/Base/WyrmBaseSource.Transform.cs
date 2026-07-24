@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
+public partial class WyrmBaseSource
 {
     public Transform CachedTransform { get; private set; } = default;
 
@@ -13,11 +13,10 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
             if (_trackedTransform == value) return;
             _trackedTransform = value;
 
-            if (ActiveIndex == -1 || WyrmPoolController.Instance.IsDisposed) return;
-            WyrmPoolController.Instance.TrackedTransforms[ActiveIndex] = value;
+            if (!IsRegistered)
+                return;
+
+            TrackedTransforms[NativeIndex] = value != null ? value : CachedTransform;
         }
     }
-
-    public Vector3 CachedPosition { get; set; }
-    public Quaternion CachedRotation { get; set; }
 }

@@ -11,6 +11,9 @@ public struct GenerateSourceRaycastCommands : IJobParallelFor
     public NativeArray<float3> SourcePositions;
 
     [ReadOnly]
+    public NativeArray<byte> UseOcclusions;
+
+    [ReadOnly]
     public float3 ListenerPosition;
 
     [ReadOnly]
@@ -21,6 +24,12 @@ public struct GenerateSourceRaycastCommands : IJobParallelFor
 
     public void Execute(int index)
     {
+        if (UseOcclusions[index] == 0)
+        {
+            RaycastCommands[index] = new RaycastCommand();
+            return;
+        }
+
         float3 src = SourcePositions[index];
         float3 dir = ListenerPosition - src;
         float dist = math.length(dir);
@@ -43,11 +52,14 @@ public struct ResolveOcclusionJob : IJobParallelFor
     [ReadOnly]
     public NativeArray<RaycastHit> RaycastHits;
 
+    [ReadOnly]
+    public NativeArray<byte> UseOcclusions;
+
     [WriteOnly]
     public NativeArray<float> SourceOcclusions;
 
     public void Execute(int index)
     {
-        SourceOcclusions[index] = RaycastHits[index].distance > 0f ? 0f : 1f;
+        SourceOcclusions[index] = UseOcclusions[index] != 0 && RaycastHits[index].distance > 0f ? 1f : 0f;
     }
 }

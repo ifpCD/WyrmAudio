@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
+public partial class WyrmBaseSource
 {
     volatile float _targetVolume = 1f;
     volatile float _currentVolume = 1f;

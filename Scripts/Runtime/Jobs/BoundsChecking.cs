@@ -7,9 +7,6 @@ using Unity.Mathematics;
 public struct LocateSourcesJob : IJobParallelFor
 {
     [ReadOnly]
-    public NativeArray<float3> SourcePositions;
-
-    [ReadOnly]
     public NativeArray<float4x4> ShapeWorldToLocal;
 
     [ReadOnly]
@@ -29,6 +26,12 @@ public struct LocateSourcesJob : IJobParallelFor
 
     [ReadOnly]
     public NativeArray<int> PortalRoomB;
+
+    public int ShapeCount;
+    public int PortalCount;
+
+    [ReadOnly]
+    public NativeArray<float3> SourcePositions;
 
     [WriteOnly]
     public NativeArray<int> SourceRoomIdentifiers;
@@ -40,10 +43,12 @@ public struct LocateSourcesJob : IJobParallelFor
             ShapeWorldToLocal,
             ShapeExtents,
             ShapeRoomIdentifier,
+            ShapeCount,
             PortalWorldToLocal,
             PortalExtents,
             PortalRoomA,
-            PortalRoomB
+            PortalRoomB,
+            PortalCount
         );
     }
 }
@@ -51,9 +56,6 @@ public struct LocateSourcesJob : IJobParallelFor
 [BurstCompile]
 public struct LocateListenerJob : IJob
 {
-    [ReadOnly]
-    public float3 ListenerPosition;
-
     [ReadOnly]
     public NativeArray<float4x4> ShapeWorldToLocal;
 
@@ -75,6 +77,12 @@ public struct LocateListenerJob : IJob
     [ReadOnly]
     public NativeArray<int> PortalRoomB;
 
+    public int ShapeCount;
+    public int PortalCount;
+
+    [ReadOnly]
+    public float3 ListenerPosition;
+
     [WriteOnly]
     public NativeReference<int> ListenerRoomIdentifier;
 
@@ -85,10 +93,12 @@ public struct LocateListenerJob : IJob
             ShapeWorldToLocal,
             ShapeExtents,
             ShapeRoomIdentifier,
+            ShapeCount,
             PortalWorldToLocal,
             PortalExtents,
             PortalRoomA,
-            PortalRoomB
+            PortalRoomB,
+            PortalCount
         );
     }
 }

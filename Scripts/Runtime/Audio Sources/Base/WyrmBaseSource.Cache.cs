@@ -1,7 +1,7 @@
 using UnityEngine;
 #pragma warning disable IDE1006 // MonoBehaviour and AudioSource
 
-public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
+public partial class WyrmBaseSource
 {
     private AudioClip _clip;
     private bool _loop;
@@ -68,9 +68,6 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
             _minDistance = value;
             ASource.minDistance = value;
-
-            if (ActiveIndex == -1) return;
-            WyrmPoolController.Instance.MinDistances[ActiveIndex] = value;
         }
     }
 
@@ -83,9 +80,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
             _maxDistance = value;
             ASource.maxDistance = value;
-
-            if (ActiveIndex == -1) return;
-            WyrmPoolController.Instance.MaxDistances[ActiveIndex] = value;
+            
         }
     }
 }

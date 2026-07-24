@@ -1,14 +1,13 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
+public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 {
     [field: SerializeField]
     public AudioSource ASource { get; set; }
 
-    public bool IsBorrowed { get; set; } = false;
-    public int ActiveIndex { get; set; } = -1;
-    public WyrmMixerPool Pool { get; private set; }
+    public bool IsBorrowed { get; internal set; }
+    internal WyrmMixerPool Pool { get; private set; }
 
     [field: SerializeField]
     public bool UseReflections { get; set; } = false;
@@ -24,7 +23,9 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     public virtual void Initialize(WyrmMixerPool pool)
     {
         Pool = pool;
+        Config = pool.Config;
         ASource.outputAudioMixerGroup = Pool.Config.targetMixerGroup;
+        InitializeRegistry();
     }
 
     protected virtual void Awake()
@@ -69,6 +70,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
         if (track != null)
             TrackedTransform = track;
+            
         if (bank.PitchRandomization)
             ASource.pitch = 1f.WithVariation(bank.PitchDeviation);
 
@@ -78,9 +80,14 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public void Return() => Pool.ReturnToAvailable(this);
 
-    public virtual void Deactivate()
+    internal virtual bool Deactivate()
     {
+        if (!IsRegistered)
+            return false;
+
+        Deregister();
         ResetState();
+        return true;
     }
 
     public virtual void ResetState()
@@ -98,13 +105,13 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     {
         if (ASource.loop)
         {
-            WyrmPoolController.SetPlaybackEndTime(ActiveIndex, double.MaxValue);
+            SetPlaybackEndTime(double.MaxValue);
         }
         else
         {
             float activePitch = Mathf.Abs(ASource.pitch);
             float realDuration = activePitch > 0f ? ASource.clip.length / activePitch : float.MaxValue;
-            WyrmPoolController.SetPlaybackEndTime(ActiveIndex, AudioSettings.dspTime + realDuration);
+            SetPlaybackEndTime(AudioSettings.dspTime + realDuration);
         }
 
         ASource.Play();
@@ -114,9 +121,9 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
     {
         double newEndTime = AudioSettings.dspTime + clip.length;
 
-        if (newEndTime > WyrmPoolController.GetPlaybackEndTime(ActiveIndex))
+        if (newEndTime > GetPlaybackEndTime())
         {
-            WyrmPoolController.SetPlaybackEndTime(ActiveIndex, newEndTime);
+            SetPlaybackEndTime(newEndTime);
         }
 
         ASource.PlayOneShot(clip);
@@ -126,7 +133,7 @@ public partial class WyrmBaseSource : MonoBehaviour, IWyrmSource
 
     public virtual void Stop()
     {
-        WyrmPoolController.SetPlaybackEndTime(ActiveIndex, -1);
+        SetPlaybackEndTime(-1);
         ASource.Stop();
     }
 }

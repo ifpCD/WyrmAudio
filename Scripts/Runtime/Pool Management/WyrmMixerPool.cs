@@ -4,7 +4,7 @@ public class WyrmMixerPool
 {
     public WyrmMixerGroupConfig Config { get; private set; }
 
-    private readonly IWyrmSource[] _availableSources;
+    private readonly WyrmBaseSource[] _availableSources;
     private int _availableCount;
     private int _totalCreated;
 
@@ -20,7 +20,7 @@ public class WyrmMixerPool
         _poolRoot = rootGo.transform;
         _poolRoot.SetParent(_controller.transform);
 
-        _availableSources = new IWyrmSource[config.maxSize];
+        _availableSources = new WyrmBaseSource[config.maxSize];
 
         for (int i = 0; i < config.initialSize; i++)
             CreatePooledAudioSource();
@@ -32,7 +32,7 @@ public class WyrmMixerPool
             return;
 
         GameObject go = Object.Instantiate(Config.WyrmAudioSourcePrefab, _poolRoot);
-        if (go.TryGetComponent(out IWyrmSource source))
+        if (go.TryGetComponent(out WyrmBaseSource source))
         {
             source.Initialize(this);
             _availableSources[_availableCount++] = source;
@@ -42,13 +42,17 @@ public class WyrmMixerPool
 
     internal void ReturnToAvailable(IWyrmSource source)
     {
-        if (_controller.TryReturnSource(source))
+        if (source is not WyrmBaseSource pooledSource || pooledSource.Pool != this)
+            throw new System.ArgumentException("The source does not belong to this mixer pool.", nameof(source));
+
+        if (!_controller.IsDisposed && pooledSource.Deactivate())
         {
-            _availableSources[_availableCount++] = source;
+            pooledSource.IsBorrowed = false;
+            _availableSources[_availableCount++] = pooledSource;
         }
     }
 
-    private bool TryReserve(out IWyrmSource source, bool isTracking, Vector3 staticPosition, Transform trackTransform)
+    private bool TryReserve(out WyrmBaseSource source, bool isTracking, Vector3 staticPosition, Transform trackTransform)
     {
         source = null;
         if (_controller.IsDisposed)
@@ -67,7 +71,7 @@ public class WyrmMixerPool
         }
 
         source = _availableSources[--_availableCount];
-        _controller.ActivateSource(source, isTracking, staticPosition, trackTransform);
+        source.Activate(isTracking, staticPosition, isTracking && trackTransform == null ? _controller.CachedTransform : trackTransform);
         return true;
     }
 
@@ -107,9 +111,10 @@ public class WyrmMixerPool
 
     public bool TryBorrow(out IWyrmSource source)
     {
-        bool successful = TryReserve(out source, true, default, null);
+        bool successful = TryReserve(out WyrmBaseSource reservedSource, true, default, null);
+        source = reservedSource;
         if (successful)
-            source.IsBorrowed = true;
+            reservedSource.IsBorrowed = true;
         return successful;
     }
 }

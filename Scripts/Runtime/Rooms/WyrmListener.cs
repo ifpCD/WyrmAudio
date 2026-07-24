@@ -12,15 +12,15 @@ public class WyrmListener : AmbiComponent<WyrmListener>
     public static NativeReference<float3> ListenerPosition;
     public static NativeReference<quaternion> ListenerRotation;
 
-    void OnEnable() => Register();
+    void OnEnable()                        => Register();
 
-    void OnDisable() => Deregister();
+    void OnDisable()                       => Deregister();
 
     protected override void AllocateNative()
     {
-        ListenerRoomIdentifier = new(allocator: Allocator.Persistent);
-        ListenerPosition = new(allocator: Allocator.Persistent);
-        ListenerRotation = new(allocator: Allocator.Persistent);
+        ListenerRoomIdentifier             = new(allocator: Allocator.Persistent);
+        ListenerPosition                   = new(allocator: Allocator.Persistent);
+        ListenerRotation                   = new(allocator: Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
@@ -30,7 +30,22 @@ public class WyrmListener : AmbiComponent<WyrmListener>
         ListenerRotation.TryDispose();
     }
 
-    protected override void LoadManagedToNative() { }
+    internal static bool Synchronize()
+    {
+        if (EnabledInstanceCount == 0)
+            return false;
+
+        Transform listenerTransform = EnabledInstances[0].transform;
+        ListenerPosition.Value = listenerTransform.position;
+        ListenerRotation.Value = listenerTransform.rotation;
+        return true;
+    }
+
+    protected override void LoadManagedToNative()
+    {
+        ListenerRoomIdentifier.Value = -1;
+        Synchronize();
+    }
 
     protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex) { }
 }

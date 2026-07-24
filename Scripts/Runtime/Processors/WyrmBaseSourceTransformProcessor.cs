@@ -4,7 +4,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
-internal static class EffectsMixingProcessor
+internal static class WyrmSourceTransformProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
@@ -21,15 +21,3 @@ internal static class EffectsMixingProcessor
     }
 }
 
-[BurstCompile]
-internal struct DownmixPropagationOnVisibilityJob : IJobParallelFor
-{
-    [ReadOnly] public NativeArray<float> TargetOcclusion01s;
-
-    public NativeArray<float3> TargetPropagationEQ01s;
-
-    public void Execute(int index)
-    {
-        TargetPropagationEQ01s[index] *= 1f - TargetOcclusion01s[index];
-    }
-}

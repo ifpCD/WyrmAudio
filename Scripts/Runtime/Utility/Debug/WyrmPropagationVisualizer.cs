@@ -70,9 +70,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
     {
         if (!enableVisualization || !Application.isPlaying) return;
 
-        var poolController = WyrmPoolController.Instance;
-
-        if (poolController == null || poolController.ActiveCount == 0 || !poolController.TargetSHCoefficients.IsCreated)
+        if (WyrmBaseSource.EnabledInstanceCount == 0 || !WyrmBaseSource.TargetSHCoefficients.IsCreated)
             return;
 
         if (_shMaterial == null || _sphereMesh == null)
@@ -87,14 +85,14 @@ public class WyrmPropagationVisualizer : MonoBehaviour
             _accumulatedSH[i] = Vector4.zero;
         }
 
-        for (int sourceIdx = 0; sourceIdx < poolController.ActiveCount; sourceIdx++)
+        for (int sourceIdx = 0; sourceIdx < WyrmBaseSource.EnabledInstanceCount; sourceIdx++)
         {
             int shOffset = sourceIdx * 16;
 
-            float3 rawEq = poolController.CurrentPropagationEQ01s[sourceIdx];
+            float3 rawEq = WyrmBaseSource.CurrentPropagationEQ01[sourceIdx];
             float3 safeEq = math.max(rawEq, new float3(0.001f));
 
-            var shNativeArray = poolController.TargetSHCoefficients;
+            var shNativeArray = WyrmBaseSource.TargetSHCoefficients;
 
             for (int c = 0; c < numCoeffs; c++)
             {

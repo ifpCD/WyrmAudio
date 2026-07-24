@@ -4,11 +4,11 @@ using UnityEngine.Jobs;
 
 public static class NativeExtensions
 {
-    public static void TryDispose<T>(ref this NativeArray<T> nativeArray)
+    public static void TryDispose<T>(ref this NativeArray<T> array)
         where T : struct
     {
-        if (nativeArray.IsCreated)
-            nativeArray.Dispose();
+        if (array.IsCreated)
+            array.Dispose();
     }
 
     public static void TryDispose<T>(ref this NativeReference<T> nativeReference)
@@ -16,6 +16,12 @@ public static class NativeExtensions
     {
         if (nativeReference.IsCreated)
             nativeReference.Dispose();
+    }
+
+    public static void TryDispose(ref this TransformAccessArray array)
+    {
+        if (array.isCreated)
+            array.Dispose();
     }
 
     public static T GetOrDefault<T>(this NativeArray<T> array, int index)

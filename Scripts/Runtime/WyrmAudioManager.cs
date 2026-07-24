@@ -18,6 +18,7 @@ public class WyrmAudioManager : MonoBehaviour
         var go = new GameObject("Wyrm Audio Manager");
         Instance = go.AddComponent<WyrmAudioManager>();
         go.AddComponent<WyrmPoolController>();
+        go.AddComponent<WyrmAudioScheduler>();
 
         DontDestroyOnLoad(go);
     }
@@ -27,10 +28,31 @@ public class WyrmAudioManager : MonoBehaviour
     {
         if (Instance.listener != null)
             return;
-        Instance.listener = FindAnyObjectByType<AudioListener>();
+
+        NotifyListenerChangeTo(FindAnyObjectByType<AudioListener>());
     }
 
-    public static void NotifyListenerChangeTo(AudioListener listener) => Instance.listener = listener;
+    public static void NotifyListenerChangeTo(AudioListener listener)
+    {
+        if (Instance.listener == listener)
+            return;
+
+        if (
+            Instance.listener != null
+            && Instance.listener.TryGetComponent<WyrmListener>(out WyrmListener previousListener)
+        )
+            previousListener.enabled = false;
+
+        Instance.listener = listener;
+
+        if (listener == null)
+            return;
+
+        if (!listener.TryGetComponent<WyrmListener>(out WyrmListener nextListener))
+            nextListener = listener.gameObject.AddComponent<WyrmListener>();
+
+        nextListener.enabled = true;
+    }
 
     public static AudioListener GetAudioListener() => Instance.listener;
 }

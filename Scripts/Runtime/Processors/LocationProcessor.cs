@@ -2,51 +2,50 @@ using Unity.Jobs;
 
 internal static class LocationProcessor
 {
-    public static JobHandle ScheduleLocation(JobHandle? appendTo = default)
+    public static JobHandle Schedule(JobHandle dependency)
     {
-        if (WyrmPoolController.Instance.ActiveCount == 0)
-            return default;
+        int sourceCount = WyrmBaseSource.EnabledInstanceCount;
+        if (sourceCount == 0 || WyrmListener.EnabledInstanceCount == 0)
+            return dependency;
 
-        var listener = WyrmAudioManager.GetAudioListener();
-        if (listener == null)
-            return default;
-
-        var ListenerPosition = listener.transform.position;
-
-        var locateListenerJob = new LocateListenerJob
-        {
-            ListenerPosition = ListenerPosition,
-
+        var locateListener = new LocateListenerJob
+        { 
             ShapeWorldToLocal = WyrmRoomShape.ShapeWorldToLocal,
             ShapeExtents = WyrmRoomShape.ShapeExtents,
             ShapeRoomIdentifier = WyrmRoomShape.ShapeRoomIdentifier,
+            ShapeCount = WyrmRoomShape.EnabledInstanceCount,
 
             PortalWorldToLocal = WyrmPortal.PortalWorldToLocal,
             PortalExtents = WyrmPortal.PortalExtents,
             PortalRoomA = WyrmPortal.PortalRoomA,
             PortalRoomB = WyrmPortal.PortalRoomB,
+            PortalCount = WyrmPortal.EnabledInstanceCount,
+
+            ListenerPosition = WyrmListener.ListenerPosition.Value,
 
             ListenerRoomIdentifier = WyrmListener.ListenerRoomIdentifier,
         };
-        JobHandle locateListenerHandle = locateListenerJob.Schedule(dependsOn: appendTo ?? default);
+        JobHandle listenerHandle = locateListener.Schedule(dependency);
 
-        var locateSourcesJob = new LocateSourcesJob
+        var locateSources = new LocateSourcesJob
         {
-            SourcePositions = WyrmPoolController.Instance.SourcePositions,
-
             ShapeWorldToLocal = WyrmRoomShape.ShapeWorldToLocal,
             ShapeExtents = WyrmRoomShape.ShapeExtents,
             ShapeRoomIdentifier = WyrmRoomShape.ShapeRoomIdentifier,
+            ShapeCount = WyrmRoomShape.EnabledInstanceCount,
 
             PortalWorldToLocal = WyrmPortal.PortalWorldToLocal,
             PortalExtents = WyrmPortal.PortalExtents,
             PortalRoomA = WyrmPortal.PortalRoomA,
             PortalRoomB = WyrmPortal.PortalRoomB,
+            PortalCount = WyrmPortal.EnabledInstanceCount,
 
-            SourceRoomIdentifiers = WyrmPoolController.Instance.SourceRoomIdentifiers,
+            SourcePositions = WyrmBaseSource.SourcePositions,
+            
+            SourceRoomIdentifiers = WyrmBaseSource.SourceRoomIdentifiers,
         };
-        JobHandle locateSourcesHandle = locateSourcesJob.Schedule(WyrmPoolController.Instance.ActiveCount, 16, dependsOn: appendTo ?? default);
+        JobHandle sourcesHandle = locateSources.Schedule(sourceCount, 16, dependency);
 
-        return JobHandle.CombineDependencies(locateListenerHandle, locateSourcesHandle);
+        return JobHandle.CombineDependencies(listenerHandle, sourcesHandle);
     }
 }

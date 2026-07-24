@@ -11,6 +11,7 @@ public abstract class AmbiComponent<T> : MonoBehaviour
     static T[] _enabledInstances;
     static int _enabledInstanceCount;
     static int _maximumCapacity;
+    static T _allocationOwner;
 
     int _index = -1;
 
@@ -24,6 +25,8 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
     protected abstract int MaximumCapacity { get; }
 
+    protected virtual bool RetainNativeWhenEmpty => false;
+
     protected abstract void AllocateNative();
 
     protected abstract void DeallocateNative();
@@ -32,22 +35,45 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
     protected abstract void LoadManagedToNative();
 
+    protected void InitializeRegistry()
+    {
+        if (_enabledInstances != null)
+            return;
+
+        _maximumCapacity = MaximumCapacity;
+        if (_maximumCapacity <= 0)
+            throw new InvalidOperationException($"{typeof(T).Name} requires a positive maximum capacity.");
+
+        _enabledInstances = new T[_maximumCapacity];
+        _allocationOwner = (T)this;
+        AllocateNative();
+    }
+
+    protected static void DisposeRegistry()
+    {
+        if (_enabledInstances == null)
+            return;
+
+        if (_enabledInstanceCount != 0)
+            throw new InvalidOperationException(
+                $"{typeof(T).Name} cannot dispose its registry while {_enabledInstanceCount} instances are registered."
+            );
+
+        _allocationOwner.DeallocateNative();
+        _allocationOwner = null;
+        _enabledInstances = null;
+        _maximumCapacity = 0;
+    }
+
     protected void Register()
     {
         if (_index >= 0)
             return;
 
-        if (_enabledInstances == null)
-        {
-            _maximumCapacity = MaximumCapacity;
-            _enabledInstances = new T[MaximumCapacity];
-        }
+        InitializeRegistry();
 
         if (_enabledInstanceCount == _maximumCapacity)
             throw new InvalidOperationException($"Enabled {typeof(T).Name} capacity of {_maximumCapacity} was exceeded.");
-
-        if (_enabledInstanceCount == 0)
-            AllocateNative();
 
         _index = _enabledInstanceCount;
         _enabledInstances[_enabledInstanceCount++] = (T)this;
@@ -76,7 +102,7 @@ public abstract class AmbiComponent<T> : MonoBehaviour
         _enabledInstances[lastIndex] = null;
         _index = -1;
 
-        if (_enabledInstanceCount == 0)
-            DeallocateNative();
+        if (_enabledInstanceCount == 0 && !RetainNativeWhenEmpty)
+            DisposeRegistry();
     }
 }

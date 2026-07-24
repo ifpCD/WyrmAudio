@@ -6,33 +6,35 @@ using UnityEngine;
 internal static class LerpProcessor
 {
     [BurstCompile]
-    public static float GetExpLerpFactor(float LerpSpeed) => 1f - math.exp(-LerpSpeed * Time.deltaTime);
+    public static float GetExpLerpFactor(float lerpSpeed) => 1f - math.exp(-lerpSpeed * Time.deltaTime);
 
-    public static JobHandle ScheduleLerping(JobHandle? appendTo = default)
+    public static JobHandle Schedule(JobHandle dependency)
     {
-        var poolController = WyrmPoolController.Instance;
-        var activeCount = poolController.ActiveCount;
-        float ExpLerpFactor = GetExpLerpFactor(5f);
+        int activeCount = WyrmBaseSource.EnabledInstanceCount;
+        if (activeCount == 0)
+            return dependency;
+
+        float expLerpFactor = GetExpLerpFactor(5f);
 
         var lerpOcclusions = new StatelessLerpOcclusion01Job
         {
-            TargetOcclusions01 = poolController.TargetOcclusion01,
-            ExpLerpFactor = ExpLerpFactor,
+            TargetOcclusions01 = WyrmBaseSource.TargetOcclusion01,
+            ExpLerpFactor = expLerpFactor,
 
-            CurrentOcclusions01 = poolController.CurrentOcclusion01,
+            CurrentOcclusions01 = WyrmBaseSource.CurrentOcclusion01,
         };
-        JobHandle lerpOcclusionsHandle = lerpOcclusions.Schedule(activeCount, 16, dependsOn: appendTo ?? default);
+        JobHandle lerpOcclusionsHandle = lerpOcclusions.Schedule(activeCount, 16, dependency);
 
-        var LerpPropagationEQs = new StatelessLerpPropagation01Job
+        var lerpPropagationEqs = new StatelessLerpPropagation01Job
         {
-            TargetPropagationEQs01 = poolController.TargetPropagationEQ01,
-            ExpLerpFactor = ExpLerpFactor,
+            TargetPropagationEQs01 = WyrmBaseSource.TargetPropagationEQ01,
+            ExpLerpFactor = expLerpFactor,
 
-            CurrentPropagationEQs01 = poolController.CurrentPropagationEQ01s,
+            CurrentPropagationEQs01 = WyrmBaseSource.CurrentPropagationEQ01,
         };
-        JobHandle lerpPropagationEQsHandle = LerpPropagationEQs.Schedule(activeCount, 16, dependsOn: appendTo ?? default);
+        JobHandle lerpPropagationEqsHandle = lerpPropagationEqs.Schedule(activeCount, 16, dependency);
 
-        return JobHandle.CombineDependencies(lerpOcclusionsHandle, lerpPropagationEQsHandle);
+        return JobHandle.CombineDependencies(lerpOcclusionsHandle, lerpPropagationEqsHandle);
     }
 }
 

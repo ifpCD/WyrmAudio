@@ -10,8 +10,6 @@ public interface IWyrmSource
 
     WyrmMixerGroupConfig Config { get; }
 
-    void Initialize(WyrmMixerPool pool);
-
     Transform TrackedTransform { get; set; }
 
     void Play(AudioClip clip, Transform track = null, float? volume = null);
@@ -19,18 +17,11 @@ public interface IWyrmSource
 
     void Return();
 
-    bool IsBorrowed { get; set; }
-    int ActiveIndex { get; set; }
-    WyrmMixerPool Pool { get; }
+    bool IsBorrowed { get; }
 
     Transform CachedTransform { get; }
 
-    Vector3 CachedPosition { get; set; }
-    Quaternion CachedRotation { get; set; }
-
     float TargetVolume { get; set; }
-
-    void Deactivate();
 
     // MonoBehaviour
     GameObject gameObject { get; }
