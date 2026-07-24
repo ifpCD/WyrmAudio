@@ -6,10 +6,6 @@ public enum AmbiSyncType
 
 public enum AmbiManagedHookType
 {
-    Awake,
-    OnEnable,
     PreBatchUpdate,
     PostBatchUpdate,
-    OnDisable,
-    OnDestroy,
 }

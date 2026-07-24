@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-internal static class Sampling
+internal static class HaltonSequence
 {
     public static void GenerateBoxVolumeSamples(BoxCollider box, int numSamples, List<Vector3> samples)
     {

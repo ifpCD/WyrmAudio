@@ -54,7 +54,7 @@ public partial class WyrmRoomShape : EasyCollider
 
         samplesContainer ??= new List<Vector3>();
 
-        Sampling.GenerateBoxVolumeSamples(BoxCollider, sampleCount, samplesContainer);
+        HaltonSequence.GenerateBoxVolumeSamples(BoxCollider, sampleCount, samplesContainer);
     }
 
     protected override void OnDrawGizmosSelected()

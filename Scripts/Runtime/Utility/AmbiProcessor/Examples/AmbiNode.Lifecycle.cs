@@ -1,17 +1,36 @@
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Jobs;
 
-public partial class AmbiNode : MonoBehaviour
+public partial class AmbiNode : AmbiComponent<AmbiNode>
 {
-    void Allocate()
+    internal static TransformAccessArray Transforms;
+    internal static NativeArray<float3> Positions;
+    internal static NativeArray<quaternion> Quaternions;
+
+    internal static NativeArray<float3> NodeExtents;
+
+    internal static NativeReference<int> ListenerRoomID;
+
+    internal static NativeArray<byte> IsInRooms;
+
+    protected virtual void OnEnable() => Register();
+
+    protected virtual void OnDisable() => Deregister();
+
+    protected override void AllocateNative()
     {
-        NodeExtents = new(length: MAXIMUM_CAPACITY, allocator: Allocator.Persistent);
+        NodeExtents = new(length: MaximumCapacity, allocator: Allocator.Persistent);
         ListenerRoomID = new(allocator: Allocator.Persistent);
-        IsInRooms = new(length: MAXIMUM_CAPACITY, allocator: Allocator.Persistent);
-        Transforms = new(capacity: MAXIMUM_CAPACITY);
+        IsInRooms = new(length: MaximumCapacity, allocator: Allocator.Persistent);
+        Positions = new(length: MaximumCapacity, allocator: Allocator.Persistent);
+        Quaternions = new(length: MaximumCapacity, allocator: Allocator.Persistent);
+        Transforms = new(capacity: MaximumCapacity);
     }
 
-    void Deallocate()
+    // Should be auto-generated
+    protected override void DeallocateNative()
     {
         if (NodeExtents.IsCreated)
             NodeExtents.Dispose();
@@ -19,20 +38,26 @@ public partial class AmbiNode : MonoBehaviour
             ListenerRoomID.Dispose();
         if (IsInRooms.IsCreated)
             IsInRooms.Dispose();
+        if (Positions.IsCreated)
+            Positions.Dispose();
+        if (Quaternions.IsCreated)
+            Quaternions.Dispose();
         if (Transforms.isCreated)
             Transforms.Dispose();
     }
 
-    // No point in copying over scratch buffer arrays
-    void SwapBackOnDisable(int removedIndex, int lastIndex)
+    // User should write the two methods below in order to deal with custom indices, matrices, etc.
+    protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex)
     {
-        NodeExtents[removedIndex] = NodeExtents[lastIndex];
-        Transforms[removedIndex] = Transforms[lastIndex];
+        if (removedIndex != lastIndex)
+            NodeExtents[removedIndex] = NodeExtents[lastIndex];
+
+        Transforms.RemoveAtSwapBack(removedIndex);
     }
 
-    void LoadManagedToNative()
+    protected override void LoadManagedToNative()
     {
-        NodeExtents[_index] = ColliderExtents;
-        Transforms[_index] = transform;
+        NodeExtents[EnabledIndex] = ColliderExtents;
+        Transforms.Add(transform);
     }
 }

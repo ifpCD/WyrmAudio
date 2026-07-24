@@ -2,23 +2,21 @@ using System;
 using UnityEngine;
 
 // User written
+[AmbiSynchronizable]
 [RequireComponent(typeof(BoxCollider))]
-public partial class AmbiNode : MonoBehaviour
+public partial class AmbiNode : AmbiComponent<AmbiNode>
 {
-    // parallel jobs, unsafe pointer calls into C++, etc here
-    internal static void BatchUpdate() { }
-
     // MANAGED SECTION
     public BoxCollider BoxCollider { get; private set; }
 
     public Vector3 Position
     {
-        get => Positions.GetOrDefault(_index);
+        get => Positions.GetOrDefault(EnabledIndex);
     }
 
     public Quaternion Rotation
     {
-        get => Quaternions.GetOrDefault(_index);
+        get => Quaternions.GetOrDefault(EnabledIndex);
     }
 
     void OnValidate()
@@ -31,10 +29,12 @@ public partial class AmbiNode : MonoBehaviour
 
     public bool IsInRoom
     {
-        get => Convert.ToBoolean(IsInRooms.GetOrDefault(_index));
+        get => IsInRooms.GetOrDefault(EnabledIndex).ToBool();
     }
 
-    internal void PreBatchUpdate() { }
+    [AmbiCallback(AmbiManagedHookType.PreBatchUpdate)]
+    void PreBatchUpdate() { }
 
-    internal void PostBatchUpdate() { }
+    [AmbiCallback(AmbiManagedHookType.PostBatchUpdate)]
+    void PostBatchUpdate() { }
 }
