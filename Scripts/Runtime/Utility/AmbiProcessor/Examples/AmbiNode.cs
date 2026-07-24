@@ -51,15 +51,13 @@ public partial class AmbiNode : MonoBehaviour
         get => Convert.ToBoolean(IsInRooms.GetOrDefault(_index));
     }
 
-    internal void AmbiAwake() { }
-
-    internal void AmbiOnEnable() { }
+    void AmbiOnEnable() { }
 
     internal void PreBatchUpdate() { }
 
     internal void PostBatchUpdate() { }
 
-    internal void AmbiOnDisable() { }
+    void AmbiOnDisable() { }
 
-    internal void AmbiOnDestroy() { }
+    void AmbiOnDestroy() { }
 }
