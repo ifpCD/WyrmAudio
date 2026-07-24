@@ -1,3 +1,4 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -21,6 +22,7 @@ internal static class EffectsMixingProcessor
     }
 }
 
+[BurstCompile]
 internal struct DownmixPropagationOnVisibilityJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float> TargetOcclusion01s;

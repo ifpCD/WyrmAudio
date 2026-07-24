@@ -30,12 +30,22 @@ public static class NativeArrayExtensions
         return array[index];
     }
 
-    public static void SetIfEnabled(this TransformAccessArray array, Transform transform, int index)
+    public static void SetIfEnabled(this TransformAccessArray array, in Transform transform, int index)
     {
         // if (index == -1 || index < 0 || index >= array.Length)
         if (index == -1)
             return;
-            
+
         array[index] = transform;
+    }
+
+    public static void SetIfEnabled<T>(this NativeArray<T> array, in T value, int index)
+        where T : struct
+    {
+        // if (index == -1 || index < 0 || index >= array.Length)
+        if (index == -1)
+            return;
+
+        array[index] = value;
     }
 }

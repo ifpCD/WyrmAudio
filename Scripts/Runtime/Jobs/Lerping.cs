@@ -1,7 +1,9 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
+[BurstCompile]
 internal struct StatelessLerpOcclusion01Job : IJobParallelFor
 {
     [ReadOnly]
@@ -21,6 +23,7 @@ internal struct StatelessLerpOcclusion01Job : IJobParallelFor
     }
 }
 
+[BurstCompile]
 internal struct StatelessLerpPropagation01Job : IJobParallelFor
 {
     [ReadOnly]

@@ -7,10 +7,34 @@ using UnityEditor;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider))]
-public partial class WyrmRoomShape : EasyCollider
+public partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
 {
-    GraphManager _owner;
-    private int _nativeIndex = -1;
+    protected override int MaximumCapacity => 2000;
+
+    [field: SerializeField]
+    public BoxCollider BoxCollider { get; private set; }
+
+    [field: SerializeField]
+    public Transform BottomLeft { get; private set; }
+
+    [field: SerializeField]
+    public Transform TopRight { get; private set; }
+
+    [HideInInspector]
+    public EasyColliderState State { get; private set; } = new();
+
+    [Header("Relation")]
+    [field: SerializeField]
+    public WyrmRoomShape RoomA { get; set; }
+
+    [field: SerializeField]
+    public WyrmRoomShape RoomB { get; set; }
+
+    public Vector3 Extents => BoxCollider.size * .5f;
+
+    void OnEnable() => Register();
+
+    void OnDisable() => Deregister();
 
     [field: SerializeField]
     public int RoomIdentifier { get; internal set; }
@@ -21,79 +45,59 @@ public partial class WyrmRoomShape : EasyCollider
     [HideInInspector]
     public List<Vector3> samplesContainer;
 
-    void OnDestroy() => DeregisterSelf();
-
-    internal void InformOfRegistration(GraphManager owner, int myIndex)
-    {
-        _owner = owner;
-        _nativeIndex = myIndex;
-    }
-
-    public void Populate()
-    {
-        _owner.ShapeWorldToLocal[_nativeIndex] = math.inverse(transform.localToWorldMatrix);
-        _owner.ShapeExtents[_nativeIndex] = Extents;
-
-        _owner.ShapeRoomIdentifier[_nativeIndex] = RoomIdentifier;
-    }
-
-    void DeregisterSelf() { }
-
 #if UNITY_EDITOR
-    protected override Color OutlineColor { get; set; } = GizmoColors.FaintYellow;
-    protected override Color VolumeColor { get; set; } = new(0, 0, 0, 0f);
+    public Color OutlineColor => GizmoColors.FaintYellow;
+    public Color OutlineSelected => GizmoColors.Yellow;
 
-    protected override Color OutlineSelected { get; set; } = GizmoColors.Yellow;
-    protected override Color VolumeSelected { get; set; } = new(0, 0.1f, 1, 0.05f);
+    public Color VolumeSelected => new(0, .1f, 1f, .05f);
+
+    public Color VolumeColor { get; set; } = Color.clear;
 
     GUIStyle labelStyle;
 
-    protected override void OnValidate()
-    {
-        base.OnValidate();
-
-        samplesContainer ??= new List<Vector3>();
-
-        HaltonSequence.GenerateBoxVolumeSamples(BoxCollider, sampleCount, samplesContainer);
-    }
-
-    protected override void OnDrawGizmosSelected()
-    {
-        if (samplesContainer == null || samplesContainer.Count == 0)
-            return;
-
-        Gizmos.color = Color.green;
-
-        foreach (Vector3 point in samplesContainer)
-        {
-            Gizmos.DrawSphere(point, 0.04f);
-        }
-        base.OnDrawGizmosSelected();
-    }
-
-    protected override void OnDrawGizmos()
+    void OnDrawGizmos()
     {
         labelStyle ??= new GUIStyle { alignment = TextAnchor.MiddleCenter };
-        labelStyle.normal.textColor = new Color(1f, 1f, 1f, GizmoOpacity);
+        labelStyle.normal.textColor = new Color(1, 1, 1, this.GetGizmoOpacity());
 
         Handles.Label(transform.position, gameObject.name, labelStyle);
-        base.OnDrawGizmos();
+
+        this.DrawVolumeGizmo(false);
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (samplesContainer != null)
+        {
+            Gizmos.color = Color.green;
+
+            foreach (var p in samplesContainer)
+                Gizmos.DrawSphere(p, .04f);
+        }
+
+        this.DrawVolumeGizmo(true);
+    }
+
+    void OnValidate()
+    {
+        this.ValidateCollider();
+
+        samplesContainer ??= new List<Vector3>();
+        HaltonSequence.GenerateBoxVolumeSamples(BoxCollider, sampleCount, samplesContainer);
     }
 
     void Update()
     {
-        var graphProvider = GraphManager.Instance;
-        if (graphProvider == null)
+        var graph = false;
+
+        if (!graph)
         {
-            VolumeColor = new(0, 0, 0, 0);
+            VolumeColor = Color.clear;
             return;
         }
 
-        if (graphProvider.ListenerRoomIdentifier.Value == RoomIdentifier)
-        {
-            VolumeColor = new(0, 0.5f, 0.5f, 0.5f);
-            return;
-        }
+        VolumeColor = -1 == RoomIdentifier ? new Color(0, .5f, .5f, .5f) : Color.clear;
     }
+
 #endif
 }

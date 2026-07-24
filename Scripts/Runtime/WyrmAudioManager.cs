@@ -17,7 +17,6 @@ public class WyrmAudioManager : MonoBehaviour
 
         var go = new GameObject("Wyrm Audio Manager");
         Instance = go.AddComponent<WyrmAudioManager>();
-        go.AddComponent<GraphManager>();
         go.AddComponent<WyrmPoolController>();
 
         DontDestroyOnLoad(go);

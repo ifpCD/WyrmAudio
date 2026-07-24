@@ -1,4 +1,5 @@
 using System;
+using SaintsField.Playa;
 using UnityEngine;
 
 // User written
@@ -11,12 +12,12 @@ public partial class AmbiNode : AmbiComponent<AmbiNode>
 
     public Vector3 Position
     {
-        get => Positions.GetOrDefault(EnabledIndex);
+        get => Positions.GetOrDefault(NativeIndex);
     }
 
     public Quaternion Rotation
     {
-        get => Quaternions.GetOrDefault(EnabledIndex);
+        get => Quaternions.GetOrDefault(NativeIndex);
     }
 
     void OnValidate()
@@ -27,14 +28,6 @@ public partial class AmbiNode : AmbiComponent<AmbiNode>
 
     public Vector3 ColliderExtents => BoxCollider.size * 0.5f;
 
-    public bool IsInRoom
-    {
-        get => IsInRooms.GetOrDefault(EnabledIndex).ToBool();
-    }
-
-    [AmbiCallback(AmbiManagedHookType.PreBatchUpdate)]
-    void PreBatchUpdate() { }
-
-    [AmbiCallback(AmbiManagedHookType.PostBatchUpdate)]
-    void PostBatchUpdate() { }
+    [ShowInInspector]
+    public bool IsInRoom => IsInRooms.GetOrDefault(NativeIndex).ToBool();
 }

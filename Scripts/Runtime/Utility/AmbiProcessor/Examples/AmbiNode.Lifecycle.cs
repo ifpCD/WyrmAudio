@@ -57,7 +57,7 @@ public partial class AmbiNode : AmbiComponent<AmbiNode>
 
     protected override void LoadManagedToNative()
     {
-        NodeExtents[EnabledIndex] = ColliderExtents;
+        NodeExtents[NativeIndex] = ColliderExtents;
         Transforms.Add(transform);
     }
 }

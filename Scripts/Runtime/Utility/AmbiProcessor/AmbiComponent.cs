@@ -14,7 +14,7 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
     int _index = -1;
 
-    protected int EnabledIndex => _index;
+    protected int NativeIndex => _index;
 
     protected bool IsRegistered => _index != -1;
 
@@ -41,7 +41,6 @@ public abstract class AmbiComponent<T> : MonoBehaviour
         {
             _maximumCapacity = MaximumCapacity;
             _enabledInstances = new T[MaximumCapacity];
-            return;
         }
 
         if (_enabledInstanceCount == _maximumCapacity)

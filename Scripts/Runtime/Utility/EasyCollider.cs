@@ -2,145 +2,140 @@ using UnityEditor;
 #if UNITY_EDITOR
 using UnityEngine;
 #endif
+#pragma warning disable IDE1006 // Naming Styles
 
-// Helper class to quickly set up rooms in the editor
-[RequireComponent(typeof(BoxCollider))]
-public abstract class EasyCollider : MonoBehaviour
+public interface IEasyCollider
 {
-    public BoxCollider BoxCollider { get; protected set; }
-    public Vector3 Extents => BoxCollider.size * 0.5f;
+    Transform transform { get; }
+
+    BoxCollider BoxCollider { get; }
+
+    Transform BottomLeft { get; }
+    Transform TopRight { get; }
+
+    EasyColliderState State { get; }
+
+    Color OutlineColor { get; }
+    Color VolumeColor { get; set; }
+
+    Color OutlineSelected { get; }
+    Color VolumeSelected { get; }
+}
+
+[System.Serializable]
+public class EasyColliderState
+{
+    public float VolumePadding = 0.01f;
+
+    [HideInInspector]
+    public Vector3 LastBottomLeftPos;
+
+    [HideInInspector]
+    public Vector3 LastTopRightPos;
+
+    [HideInInspector]
+    public Vector3 LastScale;
+
+    [HideInInspector]
+    public Quaternion LastRotation;
+
+    public float NearDistance = 5f;
+    public float FarDistance = 20f;
+}
+
+public static class EasyColliderExtensions
+{
+    public static void UpdateCollider(this IEasyCollider self)
+    {
+        if (!self.BottomLeft || !self.TopRight || self.BoxCollider == null)
+            return;
+
+        Vector3 a = self.transform.InverseTransformPoint(self.BottomLeft.position);
+        Vector3 b = self.transform.InverseTransformPoint(self.TopRight.position);
+
+        Vector3 min = Vector3.Min(a, b) - Vector3.one * self.State.VolumePadding;
+        Vector3 max = Vector3.Max(a, b) + Vector3.one * self.State.VolumePadding;
+
+        self.BoxCollider.center = (min + max) * 0.5f;
+        self.BoxCollider.size = max - min;
+    }
+
+    public static void RecenterPivotToCorners(this IEasyCollider self)
+    {
+        if (!self.BottomLeft || !self.TopRight)
+            return;
+
+        Vector3 center = (self.BottomLeft.position + self.TopRight.position) * 0.5f;
+
+        Vector3 bl = self.BottomLeft.position;
+        Vector3 tr = self.TopRight.position;
+
+        self.transform.position = center;
+
+        self.BottomLeft.position = bl;
+        self.TopRight.position = tr;
+
+        self.UpdateCollider();
+    }
 
 #if UNITY_EDITOR
-    [Header("Volume Generation")]
-    [field: SerializeField]
-    public Transform BottomLeft { get; private set; }
-
-    [field: SerializeField]
-    public Transform TopRight { get; private set; }
-
-    [SerializeField]
-    private float volumePadding = 0.01f;
-
-    Vector3 _lastBottomLeftPos;
-    Vector3 _lastTopRightPos;
-    Vector3 _lastScale;
-    Quaternion _lastRot;
-
-    protected float NearDistance = 5f;
-    protected float FarDistance = 20f;
-
-    protected float GizmoOpacity
+    public static bool ValidateCollider(this IEasyCollider self)
     {
-        get
-        {
-            if (SceneView.currentDrawingSceneView == null)
-                return 1f;
-
-            Camera cam = SceneView.currentDrawingSceneView.camera;
-
-            float distance = Vector3.Distance(cam.transform.position, transform.position);
-
-            return Mathf.Lerp(1f, 0.1f, Mathf.InverseLerp(NearDistance, FarDistance, distance));
-        }
-    }
-
-    protected abstract Color OutlineColor { get; set; }
-    protected abstract Color VolumeColor { get; set; }
-
-    protected abstract Color OutlineSelected { get; set; }
-    protected abstract Color VolumeSelected { get; set; }
-
-    void OnEnable()
-    {
-        BoxCollider.enabled = false;
-        UpdateCollider();
-    }
-
-    protected virtual void OnValidate()
-    {
-        if (BoxCollider == null)
-            BoxCollider = GetComponent<BoxCollider>();
-
-        if (!BottomLeft || !TopRight)
-            return;
+        if (!self.BottomLeft || !self.TopRight)
+            return false;
 
         bool changed =
-            BottomLeft.position != _lastBottomLeftPos
-            || TopRight.position != _lastTopRightPos
-            || transform.localScale != _lastScale
-            || transform.rotation != _lastRot;
+            self.BottomLeft.position != self.State.LastBottomLeftPos
+            || self.TopRight.position != self.State.LastTopRightPos
+            || self.transform.localScale != self.State.LastScale
+            || self.transform.rotation != self.State.LastRotation;
 
-        if (changed)
-        {
-            _lastBottomLeftPos = BottomLeft.position;
-            _lastTopRightPos = TopRight.position;
-            _lastScale = transform.localScale;
-            _lastRot = transform.rotation;
+        if (!changed)
+            return false;
 
-            UpdateCollider();
-        }
+        self.State.LastBottomLeftPos = self.BottomLeft.position;
+        self.State.LastTopRightPos = self.TopRight.position;
+        self.State.LastScale = self.transform.localScale;
+        self.State.LastRotation = self.transform.rotation;
+
+        self.UpdateCollider();
+        return true;
     }
 
-    public void UpdateCollider()
+    public static float GetGizmoOpacity(this IEasyCollider self)
     {
-        if (!BottomLeft || !TopRight || BoxCollider == null)
-            return;
+        if (SceneView.currentDrawingSceneView == null)
+            return 1f;
 
-        Vector3 a = transform.InverseTransformPoint(BottomLeft.position);
-        Vector3 b = transform.InverseTransformPoint(TopRight.position);
+        Camera cam = SceneView.currentDrawingSceneView.camera;
 
-        Vector3 min = Vector3.Min(a, b) - Vector3.one * volumePadding;
-        Vector3 max = Vector3.Max(a, b) + Vector3.one * volumePadding;
+        float distance = Vector3.Distance(cam.transform.position, self.transform.position);
 
-        BoxCollider.center = (min + max) * 0.5f;
-        BoxCollider.size = max - min;
+        return Mathf.Lerp(1f, 0.1f, Mathf.InverseLerp(self.State.NearDistance, self.State.FarDistance, distance));
     }
 
-    public void RecenterPivotToCorners()
+    public static void DrawVolumeGizmo(this IEasyCollider self, bool selected)
     {
-        if (!BottomLeft || !TopRight)
+        if (self.BottomLeft == null || self.TopRight == null || self.BoxCollider == null)
             return;
 
-        Vector3 center = (BottomLeft.position + TopRight.position) * 0.5f;
+        Gizmos.matrix = self.transform.localToWorldMatrix;
 
-        Vector3 blWorld = BottomLeft.position;
-        Vector3 trWorld = TopRight.position;
+        Vector3 center = self.BoxCollider.center;
+        Vector3 size = self.BoxCollider.size;
 
-        transform.position = center;
+        float alpha = self.GetGizmoOpacity();
 
-        BottomLeft.position = blWorld;
-        TopRight.position = trWorld;
+        Color outline = selected ? self.OutlineSelected : self.OutlineColor;
+        Color volume = selected ? self.VolumeSelected : self.VolumeColor;
 
-        UpdateCollider();
-    }
+        outline.a *= alpha;
+        volume.a *= alpha;
 
-    protected virtual void OnDrawGizmos() => DrawVolumeGizmo(false);
-
-    protected virtual void OnDrawGizmosSelected() => DrawVolumeGizmo(true);
-
-    protected void DrawVolumeGizmo(bool selected)
-    {
-        if (!BottomLeft || !TopRight)
-            return;
-
-        var t = transform;
-        Gizmos.matrix = t.localToWorldMatrix;
-
-        Vector3 center = BoxCollider.center;
-        Vector3 size = BoxCollider.size;
-
-        float alpha = GizmoOpacity;
-
-        Color outlineColor = selected ? OutlineSelected : OutlineColor;
-        Color volumeColor = selected ? VolumeSelected : VolumeColor;
-
-        outlineColor.a *= alpha;
-        volumeColor.a *= alpha;
-
-        Gizmos.color = outlineColor;
+        Gizmos.color = outline;
         Gizmos.DrawWireCube(center, size);
 
-        Gizmos.color = volumeColor;
+        Gizmos.color = volume;
         Gizmos.DrawCube(center, size);
     }
 #endif

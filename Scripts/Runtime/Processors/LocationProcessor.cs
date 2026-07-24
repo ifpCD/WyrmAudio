@@ -17,14 +17,14 @@ internal static class LocationProcessor
         {
             ListenerPosition = ListenerPosition,
 
-            ShapeWorldToLocal = graphProvider.ShapeWorldToLocal,
-            ShapeExtents = graphProvider.ShapeExtents,
-            ShapeRoomIdentifier = graphProvider.ShapeRoomIdentifier,
+            ShapeWorldToLocal = WyrmRoomShape.ShapeWorldToLocal,
+            ShapeExtents = WyrmRoomShape.ShapeExtents,
+            ShapeRoomIdentifier = WyrmRoomShape.ShapeRoomIdentifier,
 
-            PortalWorldToLocal = graphProvider.PortalWorldToLocal,
-            PortalExtents = graphProvider.PortalExtents,
-            PortalRoomA = graphProvider.PortalRoomA,
-            PortalRoomB = graphProvider.PortalRoomB,
+            PortalWorldToLocal = WyrmPortal.PortalWorldToLocal,
+            PortalExtents = WyrmPortal.PortalExtents,
+            PortalRoomA = WyrmPortal.PortalRoomA,
+            PortalRoomB = WyrmPortal.PortalRoomB,
 
             ListenerRoomIdentifier = graphProvider.ListenerRoomIdentifier,
         };
@@ -34,14 +34,14 @@ internal static class LocationProcessor
         {
             SourcePositions = WyrmPoolController.Instance.SourcePositions,
 
-            ShapeWorldToLocal = graphProvider.ShapeWorldToLocal,
-            ShapeExtents = graphProvider.ShapeExtents,
-            ShapeRoomIdentifier = graphProvider.ShapeRoomIdentifier,
+            ShapeWorldToLocal = WyrmRoomShape.ShapeWorldToLocal,
+            ShapeExtents = WyrmRoomShape.ShapeExtents,
+            ShapeRoomIdentifier = WyrmRoomShape.ShapeRoomIdentifier,
 
-            PortalWorldToLocal = graphProvider.PortalWorldToLocal,
-            PortalExtents = graphProvider.PortalExtents,
-            PortalRoomA = graphProvider.PortalRoomA,
-            PortalRoomB = graphProvider.PortalRoomB,
+            PortalWorldToLocal = WyrmPortal.PortalWorldToLocal,
+            PortalExtents = WyrmPortal.PortalExtents,
+            PortalRoomA = WyrmPortal.PortalRoomA,
+            PortalRoomB = WyrmPortal.PortalRoomB,
 
             SourceRoomIdentifiers = WyrmPoolController.Instance.SourceRoomIdentifiers,
         };
