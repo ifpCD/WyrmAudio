@@ -7,6 +7,8 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider))]
 public abstract class EasyCollider : MonoBehaviour
 {
+    public BoxCollider BoxCollider { get; protected set; }
+
 #if UNITY_EDITOR
     [Header("Volume Generation")]
     [field: SerializeField]
@@ -18,12 +20,28 @@ public abstract class EasyCollider : MonoBehaviour
     [SerializeField]
     private float volumePadding = 0.01f;
 
-    private Vector3 lastBottomLeftPos;
-    private Vector3 lastTopRightPos;
-    private Vector3 lastScale;
-    private Quaternion lastRot;
+    Vector3 _lastBottomLeftPos;
+    Vector3 _lastTopRightPos;
+    Vector3 _lastScale;
+    Quaternion _lastRot;
 
-    public BoxCollider BoxCollider { get; private set; }
+    protected float NearDistance = 5f;
+    protected float FarDistance = 20f;
+
+    protected float GizmoOpacity
+    {
+        get
+        {
+            if (SceneView.currentDrawingSceneView == null)
+                return 1f;
+
+            Camera cam = SceneView.currentDrawingSceneView.camera;
+
+            float distance = Vector3.Distance(cam.transform.position, transform.position);
+
+            return Mathf.Lerp(1f, 0.1f, Mathf.InverseLerp(NearDistance, FarDistance, distance));
+        }
+    }
 
     protected abstract Color OutlineColor { get; set; }
     protected abstract Color VolumeColor { get; set; }
@@ -31,13 +49,13 @@ public abstract class EasyCollider : MonoBehaviour
     protected abstract Color OutlineSelected { get; set; }
     protected abstract Color VolumeSelected { get; set; }
 
-    private void OnEnable()
+    void OnEnable()
     {
         BoxCollider.enabled = false;
         UpdateCollider();
     }
 
-    private void OnValidate()
+    protected virtual void OnValidate()
     {
         if (BoxCollider == null)
             BoxCollider = GetComponent<BoxCollider>();
@@ -46,17 +64,17 @@ public abstract class EasyCollider : MonoBehaviour
             return;
 
         bool changed =
-            BottomLeft.position != lastBottomLeftPos
-            || TopRight.position != lastTopRightPos
-            || transform.localScale != lastScale
-            || transform.rotation != lastRot;
+            BottomLeft.position != _lastBottomLeftPos
+            || TopRight.position != _lastTopRightPos
+            || transform.localScale != _lastScale
+            || transform.rotation != _lastRot;
 
         if (changed)
         {
-            lastBottomLeftPos = BottomLeft.position;
-            lastTopRightPos = TopRight.position;
-            lastScale = transform.localScale;
-            lastRot = transform.rotation;
+            _lastBottomLeftPos = BottomLeft.position;
+            _lastTopRightPos = TopRight.position;
+            _lastScale = transform.localScale;
+            _lastRot = transform.rotation;
 
             UpdateCollider();
         }
@@ -110,19 +128,7 @@ public abstract class EasyCollider : MonoBehaviour
         Vector3 center = BoxCollider.center;
         Vector3 size = BoxCollider.size;
 
-        float alpha = 1f;
-
-        if (SceneView.currentDrawingSceneView != null)
-        {
-            Camera cam = SceneView.currentDrawingSceneView.camera;
-            float distance = Vector3.Distance(cam.transform.position, t.position);
-
-            // Adjust these values to control fade range
-            float nearDistance = 5f;
-            float farDistance = 20f;
-
-            alpha = Mathf.Lerp(1f, 0.1f, Mathf.InverseLerp(nearDistance, farDistance, distance));
-        }
+        float alpha = GizmoOpacity;
 
         Color outlineColor = selected ? OutlineSelected : OutlineColor;
         Color volumeColor = selected ? VolumeSelected : VolumeColor;

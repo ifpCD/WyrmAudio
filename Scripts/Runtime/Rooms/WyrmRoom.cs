@@ -1,8 +1,12 @@
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [DisallowMultipleComponent]
+[RequireComponent(typeof(BoxCollider))]
 public partial class WyrmRoomShape : EasyCollider
 {
     GraphManager _owner;
@@ -17,11 +21,7 @@ public partial class WyrmRoomShape : EasyCollider
     [HideInInspector]
     public List<Vector3> samplesContainer;
 
-    protected override Color OutlineColor { get; set; } = Color.cyan;
-    protected override Color VolumeColor { get; set; } = new(0, 0, 0, 0f);
-
-    protected override Color OutlineSelected { get; set; } = Color.green;
-    protected override Color VolumeSelected { get; set; } = new(0, 0.1f, 1, 0.05f);
+    void OnDestroy() => DeregisterSelf();
 
     internal void InformOfRegistration(GraphManager owner, int myIndex)
     {
@@ -38,13 +38,24 @@ public partial class WyrmRoomShape : EasyCollider
         _owner.ShapeRoomIdentifier[_nativeIndex] = RoomIdentifier;
     }
 
+    void DeregisterSelf() { }
+
 #if UNITY_EDITOR
-    void OnValidate()
+    protected override Color OutlineColor { get; set; } = GizmoColors.FaintYellow;
+    protected override Color VolumeColor { get; set; } = new(0, 0, 0, 0f);
+
+    protected override Color OutlineSelected { get; set; } = GizmoColors.Yellow;
+    protected override Color VolumeSelected { get; set; } = new(0, 0.1f, 1, 0.05f);
+
+    GUIStyle labelStyle;
+
+    protected override void OnValidate()
     {
+        base.OnValidate();
+
         samplesContainer ??= new List<Vector3>();
 
-        if (BoxCollider != null)
-            Sampling.GenerateBoxVolumeSamples(BoxCollider, sampleCount, samplesContainer);
+        Sampling.GenerateBoxVolumeSamples(BoxCollider, sampleCount, samplesContainer);
     }
 
     protected override void OnDrawGizmosSelected()
@@ -58,22 +69,32 @@ public partial class WyrmRoomShape : EasyCollider
         {
             Gizmos.DrawSphere(point, 0.04f);
         }
+        base.OnDrawGizmosSelected();
+    }
+
+    protected override void OnDrawGizmos()
+    {
+        labelStyle ??= new GUIStyle { alignment = TextAnchor.MiddleCenter };
+        labelStyle.normal.textColor = new Color(1f, 1f, 1f, GizmoOpacity);
+
+        Handles.Label(transform.position, gameObject.name, labelStyle);
         base.OnDrawGizmos();
     }
 
     void Update()
     {
         var graphProvider = GraphManager.Instance;
-        if (graphProvider != null)
+        if (graphProvider == null)
         {
-            if (graphProvider.ListenerRoomIdentifier.Value == RoomIdentifier)
-            {
-                VolumeColor = new(0, 0.5f, 0.5f, 0.5f);
-                return;
-            }
+            VolumeColor = new(0, 0, 0, 0);
+            return;
         }
 
-        VolumeColor = new(0, 0, 0, 0);
+        if (graphProvider.ListenerRoomIdentifier.Value == RoomIdentifier)
+        {
+            VolumeColor = new(0, 0.5f, 0.5f, 0.5f);
+            return;
+        }
     }
 #endif
 }

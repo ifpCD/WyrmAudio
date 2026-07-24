@@ -1,9 +1,13 @@
 using System;
+using NUnit.Framework.Constraints;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Video;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [DisallowMultipleComponent]
+[RequireComponent(typeof(BoxCollider))]
 public partial class WyrmPortal : EasyCollider
 {
     GraphManager _owner;
@@ -25,8 +29,9 @@ public partial class WyrmPortal : EasyCollider
 
     public void Populate()
     {
+        BoxCollider collider = GetComponent<BoxCollider>();
         _owner.PortalWorldToLocal[_nativeIndex] = math.inverse(transform.localToWorldMatrix);
-        _owner.PortalExtents[_nativeIndex] = BoxCollider.size * 0.5f;
+        _owner.PortalExtents[_nativeIndex] = collider.size * 0.5f;
 
         _owner.PortalRoomA[_nativeIndex] = RoomA != null ? RoomA.RoomIdentifier : -1;
         _owner.PortalRoomB[_nativeIndex] = RoomB != null ? RoomB.RoomIdentifier : -1;
@@ -43,9 +48,6 @@ public partial class WyrmPortal : EasyCollider
         get => _openness;
         set
         {
-            if (_openness == value)
-                return;
-
             _openness = value;
 
             if (_nativeIndex == -1)
@@ -55,9 +57,22 @@ public partial class WyrmPortal : EasyCollider
         }
     }
 
-    protected override Color OutlineColor { get; set; } = Color.cyan;
-    protected override Color VolumeColor { get; set; } = new(0, 0, 0, 0f);
+#if UNITY_EDITOR
+    protected override Color OutlineColor { get; set; } = GizmoColors.FaintCyan;
+    protected override Color VolumeColor { get; set; } = GizmoColors.None;
 
-    protected override Color OutlineSelected { get; set; } = new(0, 0.1f, 1, 1f);
+    protected override Color OutlineSelected { get; set; } = GizmoColors.Cyan;
     protected override Color VolumeSelected { get; set; } = new(0, 0.1f, 1, 0.05f);
+
+    GUIStyle labelStyle;
+
+    protected override void OnDrawGizmos()
+    {
+        labelStyle ??= new GUIStyle { alignment = TextAnchor.MiddleCenter };
+        labelStyle.normal.textColor = new Color(1f, 1f, 1f, GizmoOpacity * 0.2f);
+
+        Handles.Label(transform.position, gameObject.name, labelStyle);
+        base.OnDrawGizmos();
+    }
+#endif
 }

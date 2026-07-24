@@ -4,9 +4,10 @@
     "references": [
         "SteamAudioUnity",
         "UniTask",
-        "Unity.Mathematics",
+        "Unity.Collections",
         "Unity.Burst",
-        "Unity.Collections"
+        "SaintsField.Runtime",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

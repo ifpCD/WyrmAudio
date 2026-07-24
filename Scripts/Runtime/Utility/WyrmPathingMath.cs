@@ -21,6 +21,18 @@ internal static class GraphMath
     }
 
     [BurstCompile]
+    public static int GetPortalIndex(float3 worldPoint, in NativeArray<float4x4> portalWorldToLocal, in NativeArray<float3> portalExtents)
+    {
+        for (int portalIndex = 0; portalIndex < portalWorldToLocal.Length; portalIndex++)
+        {
+            if (Contains(worldPoint, portalWorldToLocal[portalIndex], portalExtents[portalIndex]))
+                return portalIndex;
+        }
+
+        return -1;
+    }
+
+    [BurstCompile]
     public static int GetRoomId(
         float3 worldPoint,
         in NativeArray<float4x4> ShapeWorldToLocal,
