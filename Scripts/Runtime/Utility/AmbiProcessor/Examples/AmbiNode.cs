@@ -1,7 +1,5 @@
 using System;
-using Codice.CM.Client.Differences.Graphic;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
@@ -10,18 +8,6 @@ using UnityEngine.Jobs;
 [RequireComponent(typeof(BoxCollider))]
 public partial class AmbiNode : MonoBehaviour
 {
-    // BATCH SECTION
-    internal static NativeArray<float3> NodeExtents;
-
-    internal static NativeReference<int> ListenerRoomID;
-
-    internal static NativeArray<byte> IsInRooms;
-
-    internal static TransformAccessArray Transforms;
-
-    internal static NativeArray<float3> Positions;
-    internal static NativeArray<quaternion> Quaternions;
-
     // parallel jobs, unsafe pointer calls into C++, etc here
     internal static void BatchUpdate() { }
 
