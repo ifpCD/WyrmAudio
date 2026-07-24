@@ -2,13 +2,20 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-public static class NativeArrayExtensions
+public static class NativeExtensions
 {
     public static void TryDispose<T>(ref this NativeArray<T> nativeArray)
         where T : struct
     {
         if (nativeArray.IsCreated)
             nativeArray.Dispose();
+    }
+
+    public static void TryDispose<T>(ref this NativeReference<T> nativeReference)
+        where T : unmanaged
+    {
+        if (nativeReference.IsCreated)
+            nativeReference.Dispose();
     }
 
     public static T GetOrDefault<T>(this NativeArray<T> array, int index)

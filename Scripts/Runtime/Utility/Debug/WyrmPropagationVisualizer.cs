@@ -1,11 +1,9 @@
 using UnityEngine;
 using Unity.Mathematics;
 
-[ExecuteAlways]
 [DefaultExecutionOrder(200)]
 public class WyrmPropagationVisualizer : MonoBehaviour
 {
-
     public bool enableVisualization = true;
     public float sensitivity = 25.0f;
 
@@ -40,11 +38,6 @@ public class WyrmPropagationVisualizer : MonoBehaviour
     private static readonly int MID_COLOR_ID = Shader.PropertyToID("_MidColor");
     private static readonly int HIGH_COLOR_ID = Shader.PropertyToID("_HighColor");
 
-    private void OnEnable()
-    {
-        InitializeResources();
-    }
-
     private void InitializeResources()
     {
         if (_propBlock == null)
@@ -63,6 +56,9 @@ public class WyrmPropagationVisualizer : MonoBehaviour
             _sphereMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
         }
     }
+
+#if UNITY_EDITOR
+    private void OnEnable() => InitializeResources();
 
     private void OnDisable()
     {
@@ -135,6 +131,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
             _propBlock
         );
     }
+#endif
 
     private Mesh GenerateHighResSphere(int latLines, int longLines)
     {

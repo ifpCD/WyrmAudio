@@ -2,7 +2,7 @@ using Unity.Jobs;
 
 internal static class LocationProcessor
 {
-    public static JobHandle ScheduleLocation(GraphManager graphProvider, JobHandle? appendTo = default)
+    public static JobHandle ScheduleLocation(JobHandle? appendTo = default)
     {
         if (WyrmPoolController.Instance.ActiveCount == 0)
             return default;
@@ -26,7 +26,7 @@ internal static class LocationProcessor
             PortalRoomA = WyrmPortal.PortalRoomA,
             PortalRoomB = WyrmPortal.PortalRoomB,
 
-            ListenerRoomIdentifier = graphProvider.ListenerRoomIdentifier,
+            ListenerRoomIdentifier = WyrmListener.ListenerRoomIdentifier,
         };
         JobHandle locateListenerHandle = locateListenerJob.Schedule(dependsOn: appendTo ?? default);
 
