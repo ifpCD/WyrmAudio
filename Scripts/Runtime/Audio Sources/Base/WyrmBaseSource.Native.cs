@@ -58,8 +58,8 @@ public partial class WyrmBaseSource
 
     internal static void ShutdownNative()
     {
-        while (EnabledInstanceCount != 0)
-            EnabledInstances[EnabledInstanceCount - 1].Deactivate();
+        while (ActiveCount != 0)
+            EnabledInstances[ActiveCount - 1].Deactivate();
 
         DisposeRegistry();
         _maximumSourceCapacity = 0;

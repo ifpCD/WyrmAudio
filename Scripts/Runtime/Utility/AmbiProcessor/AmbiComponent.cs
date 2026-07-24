@@ -21,7 +21,7 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
     protected static T[] EnabledInstances => _enabledInstances;
 
-    public static int EnabledInstanceCount => _enabledInstanceCount;
+    public static int ActiveCount => _enabledInstanceCount;
 
     protected abstract int MaximumCapacity { get; }
 

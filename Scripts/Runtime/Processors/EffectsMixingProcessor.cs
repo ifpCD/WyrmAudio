@@ -8,8 +8,7 @@ internal static class EffectsMixingProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        int activeCount = WyrmBaseSource.EnabledInstanceCount;
-        if (activeCount == 0)
+        if (WyrmBaseSource.ActiveCount == 0)
             return dependency;
 
         var downMixIfVisible = new DownmixPropagationOnVisibilityJob
@@ -17,7 +16,7 @@ internal static class EffectsMixingProcessor
             TargetOcclusion01s = WyrmBaseSource.TargetOcclusion01,
             TargetPropagationEQ01s = WyrmBaseSource.TargetPropagationEQ01,
         };
-        return downMixIfVisible.Schedule(activeCount, 16, dependency);
+        return downMixIfVisible.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);
     }
 }
 

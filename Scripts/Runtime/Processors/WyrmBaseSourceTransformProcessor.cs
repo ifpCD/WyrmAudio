@@ -8,7 +8,7 @@ internal static class WyrmSourceTransformProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        int activeCount = WyrmBaseSource.EnabledInstanceCount;
+        int activeCount = WyrmBaseSource.ActiveCount;
         if (activeCount == 0)
             return dependency;
 

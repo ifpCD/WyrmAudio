@@ -4,22 +4,27 @@ internal static class LocationProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        int sourceCount = WyrmBaseSource.EnabledInstanceCount;
-        if (sourceCount == 0 || WyrmListener.EnabledInstanceCount == 0)
+        int sourceCount = WyrmBaseSource.ActiveCount;
+        if (
+            WyrmBaseSource.ActiveCount == 0
+            || WyrmListener.ActiveCount == 0
+            || WyrmRoomShape.ActiveCount == 0
+            || WyrmPortal.ActiveCount == 0
+        )
             return dependency;
 
         var locateListener = new LocateListenerJob
-        { 
+        {
             ShapeWorldToLocal = WyrmRoomShape.ShapeWorldToLocal,
             ShapeExtents = WyrmRoomShape.ShapeExtents,
             ShapeRoomIdentifier = WyrmRoomShape.ShapeRoomIdentifier,
-            ShapeCount = WyrmRoomShape.EnabledInstanceCount,
+            ShapeCount = WyrmRoomShape.ActiveCount,
 
             PortalWorldToLocal = WyrmPortal.PortalWorldToLocal,
             PortalExtents = WyrmPortal.PortalExtents,
             PortalRoomA = WyrmPortal.PortalRoomA,
             PortalRoomB = WyrmPortal.PortalRoomB,
-            PortalCount = WyrmPortal.EnabledInstanceCount,
+            PortalCount = WyrmPortal.ActiveCount,
 
             ListenerPosition = WyrmListener.ListenerPosition.Value,
 
@@ -32,16 +37,16 @@ internal static class LocationProcessor
             ShapeWorldToLocal = WyrmRoomShape.ShapeWorldToLocal,
             ShapeExtents = WyrmRoomShape.ShapeExtents,
             ShapeRoomIdentifier = WyrmRoomShape.ShapeRoomIdentifier,
-            ShapeCount = WyrmRoomShape.EnabledInstanceCount,
+            ShapeCount = WyrmRoomShape.ActiveCount,
 
             PortalWorldToLocal = WyrmPortal.PortalWorldToLocal,
             PortalExtents = WyrmPortal.PortalExtents,
             PortalRoomA = WyrmPortal.PortalRoomA,
             PortalRoomB = WyrmPortal.PortalRoomB,
-            PortalCount = WyrmPortal.EnabledInstanceCount,
+            PortalCount = WyrmPortal.ActiveCount,
 
             SourcePositions = WyrmBaseSource.SourcePositions,
-            
+
             SourceRoomIdentifiers = WyrmBaseSource.SourceRoomIdentifiers,
         };
         JobHandle sourcesHandle = locateSources.Schedule(sourceCount, 16, dependency);

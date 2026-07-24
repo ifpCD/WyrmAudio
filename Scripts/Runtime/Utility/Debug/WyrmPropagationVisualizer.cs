@@ -70,7 +70,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
     {
         if (!enableVisualization || !Application.isPlaying) return;
 
-        if (WyrmBaseSource.EnabledInstanceCount == 0 || !WyrmBaseSource.TargetSHCoefficients.IsCreated)
+        if (WyrmBaseSource.ActiveCount == 0 || !WyrmBaseSource.TargetSHCoefficients.IsCreated)
             return;
 
         if (_shMaterial == null || _sphereMesh == null)
@@ -85,7 +85,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
             _accumulatedSH[i] = Vector4.zero;
         }
 
-        for (int sourceIdx = 0; sourceIdx < WyrmBaseSource.EnabledInstanceCount; sourceIdx++)
+        for (int sourceIdx = 0; sourceIdx < WyrmBaseSource.ActiveCount; sourceIdx++)
         {
             int shOffset = sourceIdx * 16;
 

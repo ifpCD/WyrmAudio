@@ -5,8 +5,8 @@ internal static class OcclusionProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        int activeCount = WyrmBaseSource.EnabledInstanceCount;
-        if (activeCount == 0 || WyrmListener.EnabledInstanceCount == 0)
+        int activeCount = WyrmBaseSource.ActiveCount;
+        if (activeCount == 0 || WyrmListener.ActiveCount == 0)
             return dependency;
 
         var raycastCommands = WyrmBaseSource.OcclusionRayCommands.GetSubArray(0, activeCount);

@@ -15,12 +15,12 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
 
     void LateUpdate()
     {
-        if (WyrmBaseSource.EnabledInstanceCount == 0)
+        if (WyrmBaseSource.ActiveCount == 0)
             return;
 
         CullSources();
 
-        if (WyrmBaseSource.EnabledInstanceCount == 0)
+        if (WyrmBaseSource.ActiveCount == 0)
             return;
 
         WyrmListener.Synchronize();
@@ -34,7 +34,7 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
             return;
 
         double currentTime = UnityEngine.AudioSettings.dspTime;
-        for (int index = WyrmBaseSource.EnabledInstanceCount - 1; index >= 0; index--)
+        for (int index = WyrmBaseSource.ActiveCount - 1; index >= 0; index--)
         {
             if (currentTime < WyrmBaseSource.PlaybackEndTimes[index])
                 continue;
@@ -77,7 +77,7 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
 
     static unsafe void SubmitNativeAudio()
     {
-        int activeCount = WyrmBaseSource.EnabledInstanceCount;
+        int activeCount = WyrmBaseSource.ActiveCount;
         SteamAudioSettings steamAudioSettings = SteamAudioSettings.Singleton;
 
         if (steamAudioSettings != null)

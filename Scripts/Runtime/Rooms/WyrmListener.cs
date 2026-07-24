@@ -32,7 +32,7 @@ public class WyrmListener : AmbiComponent<WyrmListener>
 
     internal static bool Synchronize()
     {
-        if (EnabledInstanceCount == 0)
+        if (ActiveCount == 0)
             return false;
 
         Transform listenerTransform = EnabledInstances[0].transform;
