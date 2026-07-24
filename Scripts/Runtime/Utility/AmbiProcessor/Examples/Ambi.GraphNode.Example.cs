@@ -1,29 +1,42 @@
 using System;
+using Codice.CM.Client.Differences.Graphic;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Jobs;
 
 // User written
-[AmbiSynchronizable]
 [RequireComponent(typeof(BoxCollider))]
-public partial class GraphNode : MonoBehaviour
+public partial class AmbiNode : MonoBehaviour
 {
     // BATCH SECTION
-    [AmbiSync(nameof(ColliderExtents), AmbiSyncType.Input)]
     internal static NativeArray<float3> NodeExtents;
 
     internal static NativeReference<int> ListenerRoomID;
 
-    // track the array if this is needed in object oriented context after batch updates
-    [AmbiSync(nameof(IsInRoom), AmbiSyncType.Output)]
-    internal static NativeArray<bool> IsInRooms;
+    internal static NativeArray<byte> IsInRooms;
+
+    internal static TransformAccessArray Transforms;
+
+    internal static NativeArray<float3> Positions;
+    internal static NativeArray<quaternion> Quaternions;
 
     // parallel jobs, unsafe pointer calls into C++, etc here
-    [AmbiBatchHook]
     internal static void BatchUpdate() { }
 
     // MANAGED SECTION
     public BoxCollider BoxCollider { get; private set; }
+
+    public Vector3 Position
+    {
+        get => Positions.GetOrDefault(_index);
+    }
+
+    public Quaternion Rotation
+    {
+        get => Quaternions.GetOrDefault(_index);
+    }
 
     void OnValidate()
     {
@@ -33,25 +46,20 @@ public partial class GraphNode : MonoBehaviour
 
     public Vector3 ColliderExtents => BoxCollider.size * 0.5f;
 
-    public bool IsInRoom = false;
+    public bool IsInRoom
+    {
+        get => Convert.ToBoolean(IsInRooms.GetOrDefault(_index));
+    }
 
-    [AmbiHook(AmbiManagedHookType.Awake)]
     internal void AmbiAwake() { }
 
-    [AmbiHook(AmbiManagedHookType.OnEnable)]
     internal void AmbiOnEnable() { }
 
-    // work before batched update
-    [AmbiHook(AmbiManagedHookType.PreBatchUpdate)]
     internal void PreBatchUpdate() { }
 
-    // work after batched update
-    [AmbiHook(AmbiManagedHookType.PostBatchUpdate)]
     internal void PostBatchUpdate() { }
 
-    [AmbiHook(AmbiManagedHookType.OnDisable)]
     internal void AmbiOnDisable() { }
 
-    [AmbiHook(AmbiManagedHookType.OnDestroy)]
     internal void AmbiOnDestroy() { }
 }
