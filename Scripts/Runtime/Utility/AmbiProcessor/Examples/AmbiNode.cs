@@ -1,8 +1,5 @@
 using System;
-using Unity.Collections;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Jobs;
 
 // User written
 [RequireComponent(typeof(BoxCollider))]
@@ -37,13 +34,7 @@ public partial class AmbiNode : MonoBehaviour
         get => Convert.ToBoolean(IsInRooms.GetOrDefault(_index));
     }
 
-    void AmbiOnEnable() { }
-
     internal void PreBatchUpdate() { }
 
     internal void PostBatchUpdate() { }
-
-    void AmbiOnDisable() { }
-
-    void AmbiOnDestroy() { }
 }
