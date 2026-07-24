@@ -20,24 +20,28 @@ public partial class WyrmPortal : EasyCollider
     [field: SerializeField]
     public WyrmRoomShape RoomB { get; set; }
 
+    public Vector3 Extents => BoxCollider.size * 0.5f;
+
     internal void InformOfRegistration(GraphManager owner, int myIndex)
     {
         _owner = owner;
         _nativeIndex = myIndex;
-        Populate();
     }
 
-    public void Populate()
+    internal void InformIndexChange(int myNewIndex) => _nativeIndex = myNewIndex;
+
+    internal void Populate()
     {
-        BoxCollider collider = GetComponent<BoxCollider>();
         _owner.PortalWorldToLocal[_nativeIndex] = math.inverse(transform.localToWorldMatrix);
-        _owner.PortalExtents[_nativeIndex] = collider.size * 0.5f;
+        _owner.PortalExtents[_nativeIndex] = Extents;
 
         _owner.PortalRoomA[_nativeIndex] = RoomA != null ? RoomA.RoomIdentifier : -1;
         _owner.PortalRoomB[_nativeIndex] = RoomB != null ? RoomB.RoomIdentifier : -1;
 
         _owner.PortalOpenness[_nativeIndex] = _openness;
     }
+
+    void OnDestroy() => _owner.NotifyOfDestruction(this);
 
     public float _openness = 1f;
 

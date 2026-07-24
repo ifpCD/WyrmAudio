@@ -8,6 +8,7 @@ using UnityEngine;
 public abstract class EasyCollider : MonoBehaviour
 {
     public BoxCollider BoxCollider { get; protected set; }
+    public Vector3 Extents => BoxCollider.size * 0.5f;
 
 #if UNITY_EDITOR
     [Header("Volume Generation")]

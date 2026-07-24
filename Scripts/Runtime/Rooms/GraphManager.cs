@@ -47,9 +47,19 @@ internal partial class GraphManager : MonoBehaviour
     public void InformChildrenGraphObjects()
     {
         for (int i = 0; i < _roomShapes.Length; i++)
+        {
             _roomShapes[i].InformOfRegistration(this, i);
+            _portals[i].Populate();
+        }
 
         for (int i = 0; i < _portals.Length; i++)
+        {
             _portals[i].InformOfRegistration(this, i);
+            _portals[i].Populate();
+        }
     }
+
+    internal void NotifyOfDestruction(WyrmPortal portal) { }
+
+    internal void NotifyOfDestruction(WyrmRoomShape roomShape) { }
 }

@@ -27,13 +27,12 @@ public partial class WyrmRoomShape : EasyCollider
     {
         _owner = owner;
         _nativeIndex = myIndex;
-        Populate();
     }
 
     public void Populate()
     {
         _owner.ShapeWorldToLocal[_nativeIndex] = math.inverse(transform.localToWorldMatrix);
-        _owner.ShapeExtents[_nativeIndex] = BoxCollider.size * 0.5f;
+        _owner.ShapeExtents[_nativeIndex] = Extents;
 
         _owner.ShapeRoomIdentifier[_nativeIndex] = RoomIdentifier;
     }
