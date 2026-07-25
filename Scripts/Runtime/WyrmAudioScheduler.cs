@@ -6,7 +6,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-[DefaultExecutionOrder(3)]
 public sealed class WyrmAudioScheduler : MonoBehaviour
 {
     bool _hasFocus = true;
@@ -15,12 +14,12 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
 
     void LateUpdate()
     {
-        if (WyrmBaseSource.ActiveCount == 0)
+        if (WyrmBaseSource.CompletelyInactive)
             return;
 
         CullSources();
 
-        if (WyrmBaseSource.ActiveCount == 0)
+        if (WyrmBaseSource.CompletelyInactive)
             return;
 
         WyrmListener.Synchronize();
@@ -55,21 +54,26 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
         };
         JobHandle gatherHandle = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
 
+        // we use WyrmBaseSource.SourcePositions for every calculation, so we don't need to wait.
         var applySourceTransforms = new ApplySourceTransformsJob
         {
             SourcePositions = WyrmBaseSource.SourcePositions,
         };
         JobHandle transformsHandle = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
 
-        JobHandle locationHandle = LocationProcessor.Schedule(transformsHandle);
+        JobHandle locationHandle = LocationProcessor.Schedule(gatherHandle);
 
-        JobHandle occlusionHandle = OcclusionProcessor.Schedule(transformsHandle);
+        JobHandle occlusionHandle = OcclusionProcessor.Schedule(gatherHandle);
 
         JobHandle effectsDependency = JobHandle.CombineDependencies(occlusionHandle, locationHandle);
 
         JobHandle effectsHandle = EffectsMixingProcessor.Schedule(effectsDependency);
 
-        return LerpProcessor.Schedule(effectsHandle);
+        JobHandle lerpHandle = LerpProcessor.Schedule(effectsHandle);
+
+        JobHandle finalizerHandle = JobHandle.CombineDependencies(lerpHandle, transformsHandle);
+
+        return finalizerHandle;
     }
 
     static unsafe void SubmitNativeAudio()

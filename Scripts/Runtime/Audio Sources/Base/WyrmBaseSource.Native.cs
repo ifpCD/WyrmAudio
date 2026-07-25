@@ -23,7 +23,7 @@ public partial class WyrmBaseSource
     static int _maximumSourceCapacity;
 
     Transform _trackedTransform;
-    double _playbackEndTime = double.NegativeInfinity;
+    internal double PlaybackEndTime { get; private set; } = double.NegativeInfinity;
 
     internal static NativeArray<byte> UseOcclusions;
     internal static TransformAccessArray SourceTransforms;
@@ -40,7 +40,6 @@ public partial class WyrmBaseSource
     internal static NativeArray<float3> CurrentPropagationEQ01;
 
     internal static WyrmBaseSource[] ActiveSources => EnabledInstances;
-    internal double PlaybackEndTime => _playbackEndTime;
 
     public Transform CachedTransform { get; private set; }
 
@@ -88,7 +87,7 @@ public partial class WyrmBaseSource
         Register();
     }
 
-    internal void SetPlaybackEndTime(double endTime) => _playbackEndTime = endTime + 0.1;
+    internal void SetPlaybackEndTime(double endTime) => PlaybackEndTime = endTime + 0.1;
 
     protected override void AllocateNative()
     {
@@ -137,7 +136,7 @@ public partial class WyrmBaseSource
         SourcePositions[index] = PositionTransform.position;
 
         UseOcclusions[index] = UseOcclusion.ToByte();
-        _playbackEndTime = double.NegativeInfinity;
+        PlaybackEndTime = double.NegativeInfinity;
         SourceRoomIdentifiers[index] = -1;
         TargetOcclusion01[index] = 0f;
         CurrentOcclusion01[index] = 0f;
