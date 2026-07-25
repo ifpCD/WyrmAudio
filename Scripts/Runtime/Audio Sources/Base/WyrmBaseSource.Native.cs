@@ -60,8 +60,8 @@ public partial class WyrmBaseSource
 
     Transform PositionTransform => _trackedTransform != null ? _trackedTransform : CachedTransform;
 
-    sealed protected override int MaximumCapacity => _maximumSourceCapacity;
-    sealed protected override bool RetainNativeWhenEmpty => true;
+    protected sealed override int MaximumCapacity => _maximumSourceCapacity;
+    protected sealed override bool RetainNativeWhenEmpty => true;
 
     internal static void ConfigureCapacity(int maximumCapacity)
     {
@@ -90,7 +90,7 @@ public partial class WyrmBaseSource
     internal void SetPlaybackEndTime(double endTime) => PlaybackEndTime = endTime + 0.1;
 
     // csharpier-ignore
-    sealed protected override void AllocateNative()
+    protected sealed override void AllocateNative()
     {
         UseOcclusions          = new(MaximumCapacity, Allocator.Persistent);
         SourceTransforms       = new(MaximumCapacity);
@@ -107,7 +107,7 @@ public partial class WyrmBaseSource
         CurrentPropagationEQ01 = new(MaximumCapacity, Allocator.Persistent);
     }
 
-    sealed protected override void DeallocateNative()
+    protected sealed override void DeallocateNative()
     {
         UseOcclusions.TryDispose();
 
@@ -126,17 +126,18 @@ public partial class WyrmBaseSource
         CurrentPropagationEQ01.TryDispose();
     }
 
-    sealed protected override void LoadManagedToNative()
+    protected sealed override void LoadManagedToNative()
     {
         int index = NativeIndex;
 
         SourceTransforms.Add(CachedTransform);
         PositionTransforms.Add(PositionTransform);
+
         SourcePositions[index]        = PositionTransform.position;
 
         UseOcclusions[index]          = UseOcclusion.ToByte();
         PlaybackEndTime               = double.NegativeInfinity;
-        SourceRoomIdentifiers[index]  = -1;
+
         TargetOcclusion01[index]      = 0f;
         CurrentOcclusion01[index]     = 0f;
         TargetPropagationEQ01[index]  = 1f;

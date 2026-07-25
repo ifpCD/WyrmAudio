@@ -1,10 +1,6 @@
 using System;
 using UnityEngine;
 
-/// <summary>
-/// Maintains a densely packed registry for a concrete Ambi component type.
-/// Native storage and synchronization remain the responsibility of the implementation.
-/// </summary>
 public abstract class AmbiComponent<T> : MonoBehaviour
     where T : AmbiComponent<T>
 {

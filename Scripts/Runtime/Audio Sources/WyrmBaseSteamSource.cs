@@ -11,11 +11,11 @@ public sealed class WyrmBaseSteamSource : WyrmBaseSource
     protected override void OnValidate()
     {
         base.OnValidate();
-        SteamSource = SteamSource != null ? SteamSource : GetComponent<SteamAudioSource>();
     }
 
     protected override void Awake()
     {
+        SteamSource = this.EnsureReference(SteamSource);
         SteamSource.enabled = true;
         base.Awake();
     }

@@ -26,22 +26,22 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
         ASource.outputAudioMixerGroup = Pool.Config.targetMixerGroup;
     }
 
+    // csharpier-ignore
     protected virtual void Awake()
     {
-        CachedTransform = transform;
         CalculateVolumeAlpha();
-        _clip = ASource.clip;
-        _loop = ASource.loop;
-        _volume = ASource.volume;
-        _pitch = ASource.pitch;
-        _minDistance = ASource.minDistance;
-        _maxDistance = ASource.maxDistance;
+
+        ASource         = this.EnsureReference(ASource);
+        CachedTransform = transform;
+        _clip           = ASource.clip;
+        _loop           = ASource.loop;
+        _volume         = ASource.volume;
+        _pitch          = ASource.pitch;
+        _minDistance    = ASource.minDistance;
+        _maxDistance    = ASource.maxDistance;
     }
 
-    protected virtual void OnValidate()
-    {
-        ASource = ASource != null ? ASource : GetComponent<AudioSource>();
-    }
+    protected virtual void OnValidate() { }
 
     public virtual void Play(AudioClip clip, Transform track = null, float? volume = null)
     {
@@ -99,13 +99,14 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 
     internal void CompletePlayback() => Deregister();
 
+    // csharpier-ignore
     public virtual void ResetState()
     {
         TrackedTransform = null;
-        TargetVolume = 1f;
-        volume = 1f;
-        loop = false;
-        pitch = 1f;
+        TargetVolume     = 1f;
+        volume           = 1f;
+        loop             = false;
+        pitch            = 1f;
     }
 
     public bool isPlaying => ASource.isPlaying;
