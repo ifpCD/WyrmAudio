@@ -1,6 +1,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
+[RequireComponent(typeof(AudioSource))]
 public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 {
     [field: SerializeField]
@@ -8,6 +9,7 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 
     public bool IsBorrowed { get; internal set; }
     internal WyrmMixerPool Pool { get; private set; }
+    internal bool IsPooled => Pool != null;
 
     [field: SerializeField]
     public bool UseReflections { get; set; } = false;
@@ -18,14 +20,10 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
     [field: SerializeField]
     public bool UseOcclusion { get; set; } = false;
 
-    public WyrmMixerGroupConfig Config { get; private set; }
-
-    public virtual void Initialize(WyrmMixerPool pool)
+    internal void Initialize(WyrmMixerPool pool)
     {
         Pool = pool;
-        Config = pool.Config;
         ASource.outputAudioMixerGroup = Pool.Config.targetMixerGroup;
-        InitializeRegistry();
     }
 
     protected virtual void Awake()
@@ -42,7 +40,7 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 
     private void OnValidate()
     {
-        volumeTransitionTime = Mathf.Max(0f, volumeTransitionTime);
+        ASource = ASource != null ? ASource : GetComponent<AudioSource>();
     }
 
     public virtual void Play(AudioClip clip, Transform track = null, float? volume = null)
@@ -71,6 +69,8 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
         if (track != null)
             TrackedTransform = track;
 
+        loop = bank.Loop;
+
         if (bank.PitchRandomization)
             ASource.pitch = 1f.WithVariation(bank.PitchDeviation);
 
@@ -78,7 +78,13 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
         Play();
     }
 
-    public void Return() => Pool.ReturnToAvailable(this);
+    public void Return()
+    {
+        if (!IsPooled)
+            throw new System.InvalidOperationException("Only pooled Wyrm sources can be returned.");
+
+        Pool.ReturnToAvailable(this);
+    }
 
     internal virtual bool Deactivate()
     {
@@ -86,9 +92,12 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
             return false;
 
         Deregister();
+        ASource.Stop();
         ResetState();
         return true;
     }
+
+    internal void CompletePlayback() => Deregister();
 
     public virtual void ResetState()
     {
@@ -103,9 +112,11 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 
     public virtual void Play()
     {
-        if (ASource.loop)
+        Register();
+
+        if (loop)
         {
-            SetPlaybackEndTime(double.MaxValue);
+            SetPlaybackEndTime(AudioSettings.dspTime);
         }
         else
         {
@@ -119,12 +130,12 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 
     public virtual void PlayOneShot(AudioClip clip)
     {
+        Register();
+
         double newEndTime = AudioSettings.dspTime + clip.length;
 
-        if (newEndTime > GetPlaybackEndTime())
-        {
+        if (newEndTime > PlaybackEndTime)
             SetPlaybackEndTime(newEndTime);
-        }
 
         ASource.PlayOneShot(clip);
     }
@@ -133,7 +144,9 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 
     public virtual void Stop()
     {
-        SetPlaybackEndTime(-1);
+        SetPlaybackEndTime(double.NegativeInfinity);
         ASource.Stop();
     }
+
+    protected virtual void OnDestroy() => Deregister();
 }

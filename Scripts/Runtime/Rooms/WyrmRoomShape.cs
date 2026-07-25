@@ -84,6 +84,9 @@ public partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
 
     void Update()
     {
+        if (WyrmListener.CompletelyInactive)
+            return;
+
         var ListenerRoomIdentifier = WyrmListener.ListenerRoomIdentifier.Value;
         if (ListenerRoomIdentifier == -1)
             return;

@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 #pragma warning disable IDE1006 // MonoBehaviour and AudioSource
 
@@ -7,8 +6,6 @@ public interface IWyrmSource
     bool UseReflections { get; set; }
     bool UsePropagation { get; set; }
     bool UseOcclusion { get; set; }
-
-    WyrmMixerGroupConfig Config { get; }
 
     Transform TrackedTransform { get; set; }
 

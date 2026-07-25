@@ -52,7 +52,7 @@ public class WyrmMixerPool
         }
     }
 
-    private bool TryReserve(out WyrmBaseSource source, bool isTracking, Vector3 staticPosition, Transform trackTransform)
+    private bool TryReserve(out WyrmBaseSource source, Vector3 position, Transform trackedTransform)
     {
         source = null;
         if (_controller.IsDisposed)
@@ -71,14 +71,13 @@ public class WyrmMixerPool
         }
 
         source = _availableSources[--_availableCount];
-        source.Activate(isTracking, staticPosition, isTracking && trackTransform == null ? _controller.CachedTransform : trackTransform);
+        source.Activate(position, trackedTransform);
         return true;
     }
 
     public void Play(AbstractWyrmBank bank, Transform track = null, float? volume = null)
     {
-        bool isTracking = track != null;
-        if (!TryReserve(out var source, isTracking, isTracking ? default : _controller.CachedTransform.position, track))
+        if (!TryReserve(out var source, track != null ? track.position : _controller.CachedTransform.position, track))
             return;
 
         source.Play(bank, track, volume);
@@ -86,8 +85,7 @@ public class WyrmMixerPool
 
     public void Play(AudioClip clip, Transform track = null, float? volume = null)
     {
-        bool isTracking = track != null;
-        if (!TryReserve(out var source, isTracking, isTracking ? default : _controller.CachedTransform.position, track))
+        if (!TryReserve(out var source, track != null ? track.position : _controller.CachedTransform.position, track))
             return;
 
         source.Play(clip, track, volume);
@@ -95,7 +93,7 @@ public class WyrmMixerPool
 
     public void Play(AbstractWyrmBank bank, Vector3 position, float? volume = null)
     {
-        if (!TryReserve(out var source, false, position, null))
+        if (!TryReserve(out var source, position, null))
             return;
 
         source.Play(bank, volume: volume);
@@ -103,7 +101,7 @@ public class WyrmMixerPool
 
     public void Play(AudioClip clip, Vector3 position, float? volume = null)
     {
-        if (!TryReserve(out var source, false, position, null))
+        if (!TryReserve(out var source, position, null))
             return;
 
         source.Play(clip, volume: volume);
@@ -111,7 +109,7 @@ public class WyrmMixerPool
 
     public bool TryBorrow(out IWyrmSource source)
     {
-        bool successful = TryReserve(out WyrmBaseSource reservedSource, true, default, null);
+        bool successful = TryReserve(out WyrmBaseSource reservedSource, _controller.CachedTransform.position, null);
         source = reservedSource;
         if (successful)
             reservedSource.IsBorrowed = true;

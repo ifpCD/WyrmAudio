@@ -32,6 +32,9 @@ public partial class WyrmBaseSource
 
             _loop = value;
             ASource.loop = value;
+
+            if (IsRegistered)
+                SetPlaybackEndTime(value ? AudioSettings.dspTime : double.NegativeInfinity);
         }
     }
 

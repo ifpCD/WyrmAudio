@@ -10,13 +10,15 @@ public partial class WyrmPoolController : MonoBehaviour
     internal Transform CachedTransform { get; private set; }
     internal bool IsDisposed { get; private set; }
 
-    int _maximumCapacity;
+    bool _nativeInitialized;
 
     void Awake()
     {
         CachedTransform = transform;
+        WyrmAudioSettings settings = WyrmAudioSettings.Instance;
+        int pooledCapacity = 0;
 
-        foreach (WyrmMixerGroupConfig config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
+        foreach (WyrmMixerGroupConfig config in settings.ActiveMixerConfigs)
         {
             if (
                 config == null
@@ -26,15 +28,18 @@ public partial class WyrmPoolController : MonoBehaviour
             )
                 throw new InvalidOperationException("Every active Wyrm mixer configuration must be fully assigned.");
 
-            _maximumCapacity = checked(_maximumCapacity + config.maxSize);
+            pooledCapacity = checked(pooledCapacity + config.maxSize);
         }
 
-        if (_maximumCapacity == 0)
-            return;
+        if (pooledCapacity > settings.MaxActiveSources)
+            throw new InvalidOperationException(
+                $"Configured mixer pools require {pooledCapacity} sources but WyrmAudioSettings allows {settings.MaxActiveSources} active sources."
+            );
 
-        WyrmBaseSource.ConfigureCapacity(_maximumCapacity);
+        WyrmBaseSource.ConfigureCapacity(settings.MaxActiveSources);
+        _nativeInitialized = true;
 
-        foreach (WyrmMixerGroupConfig config in WyrmAudioSettings.Instance.ActiveMixerConfigs)
+        foreach (WyrmMixerGroupConfig config in settings.ActiveMixerConfigs)
             pools.Add(config.targetMixerGroup, new WyrmMixerPool(config, this));
     }
 
@@ -43,7 +48,7 @@ public partial class WyrmPoolController : MonoBehaviour
         IsDisposed = true;
         pools.Clear();
 
-        if (_maximumCapacity != 0)
+        if (_nativeInitialized)
             WyrmBaseSource.ShutdownNative();
     }
 }

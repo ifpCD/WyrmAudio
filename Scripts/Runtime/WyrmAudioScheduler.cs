@@ -36,30 +36,27 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
         double currentTime = UnityEngine.AudioSettings.dspTime;
         for (int index = WyrmBaseSource.ActiveCount - 1; index >= 0; index--)
         {
-            if (currentTime < WyrmBaseSource.PlaybackEndTimes[index])
-                continue;
-
             WyrmBaseSource source = WyrmBaseSource.ActiveSources[index];
-            if (source.IsBorrowed || source.isPlaying)
+            if (source.IsBorrowed || source.isPlaying || currentTime < source.PlaybackEndTime)
                 continue;
 
-            source.Return();
+            if (source.IsPooled)
+                source.Return();
+            else
+                source.CompletePlayback();
         }
     }
 
     static JobHandle ScheduleFrame()
     {
-        var gatherTrackedPositions = new GatherTrackedPositionsJob
+        var gatherSourcePositions = new GatherSourcePositionsJob
         {
-            IsTracking = WyrmBaseSource.IsTracking,
-            TrackedPositions = WyrmBaseSource.TrackedPositions,
+            SourcePositions = WyrmBaseSource.SourcePositions,
         };
-        JobHandle gatherHandle = gatherTrackedPositions.Schedule(WyrmBaseSource.TrackedTransforms);
+        JobHandle gatherHandle = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
 
         var applySourceTransforms = new ApplySourceTransformsJob
         {
-            IsTracking = WyrmBaseSource.IsTracking,
-            TrackedPositions = WyrmBaseSource.TrackedPositions,
             SourcePositions = WyrmBaseSource.SourcePositions,
         };
         JobHandle transformsHandle = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);

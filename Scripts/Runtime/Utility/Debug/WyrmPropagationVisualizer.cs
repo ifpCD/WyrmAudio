@@ -85,7 +85,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
         if (!enableVisualization || !Application.isPlaying)
             return;
 
-        if (WyrmBaseSource.ActiveCount == 0 || !WyrmBaseSource.TargetSHCoefficients.IsCreated)
+        if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive)
             return;
 
         if (_shMaterial == null || _sphereMesh == null)

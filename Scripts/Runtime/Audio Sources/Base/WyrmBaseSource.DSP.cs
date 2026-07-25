@@ -14,6 +14,7 @@ public partial class WyrmBaseSource
     }
 
     [SerializeField]
+    [Range(0, 0.1f)]
     float volumeTransitionTime = 0.05f;
 
     public float VolumeTransitionTime
@@ -37,9 +38,7 @@ public partial class WyrmBaseSource
             _volumeAlpha = 1f - Mathf.Exp(-1f / (sampleRate * volumeTransitionTime));
         }
         else
-        {
             _volumeAlpha = 1f;
-        }
     }
 
     // void OnAudioFilterRead(float[] data, int channels) => ApplyVolumeDSP(data, channels);

@@ -22,16 +22,13 @@ public partial class WyrmBaseSource
 {
     static int _maximumSourceCapacity;
 
-    bool _activationIsTracking;
-    Vector3 _activationPosition;
-    Transform _activationTrackedTransform;
+    Transform _trackedTransform;
+    double _playbackEndTime = double.NegativeInfinity;
 
     internal static NativeArray<byte> UseOcclusions;
-    internal static NativeArray<byte> IsTracking;
     internal static TransformAccessArray SourceTransforms;
-    internal static TransformAccessArray TrackedTransforms;
+    internal static TransformAccessArray PositionTransforms;
     internal static NativeArray<float3> SourcePositions;
-    internal static NativeArray<float3> TrackedPositions;
     internal static NativeArray<IntPtr> Pointers;
     internal static NativeArray<RaycastCommand> OcclusionRayCommands;
     internal static NativeArray<RaycastHit> OcclusionHitResults;
@@ -41,9 +38,28 @@ public partial class WyrmBaseSource
     internal static NativeArray<float> TargetSHCoefficients;
     internal static NativeArray<float> CurrentOcclusion01;
     internal static NativeArray<float3> CurrentPropagationEQ01;
-    internal static double[] PlaybackEndTimes;
 
     internal static WyrmBaseSource[] ActiveSources => EnabledInstances;
+    internal double PlaybackEndTime => _playbackEndTime;
+
+    public Transform CachedTransform { get; private set; }
+
+    public Transform TrackedTransform
+    {
+        get => _trackedTransform;
+        set
+        {
+            if (_trackedTransform == value)
+                return;
+
+            _trackedTransform = value;
+
+            if (IsRegistered)
+                PositionTransforms[NativeIndex] = PositionTransform;
+        }
+    }
+
+    Transform PositionTransform => _trackedTransform != null ? _trackedTransform : CachedTransform;
 
     protected override int MaximumCapacity => _maximumSourceCapacity;
     protected override bool RetainNativeWhenEmpty => true;
@@ -59,40 +75,29 @@ public partial class WyrmBaseSource
     internal static void ShutdownNative()
     {
         while (ActiveCount != 0)
-            EnabledInstances[ActiveCount - 1].Deactivate();
+            EnabledInstances[ActiveCount - 1].Deregister();
 
         DisposeRegistry();
         _maximumSourceCapacity = 0;
     }
 
-    internal void Activate(bool isTracking, Vector3 staticPosition, Transform trackedTransform)
+    internal void Activate(Vector3 position, Transform trackedTransform)
     {
-        _activationIsTracking = isTracking;
-        _activationPosition = staticPosition;
-        _activationTrackedTransform = trackedTransform;
+        CachedTransform.position = position;
         _trackedTransform = trackedTransform;
         Register();
     }
 
-    internal void SetPlaybackEndTime(double endTime)
-    {
-        if (IsRegistered)
-            PlaybackEndTimes[NativeIndex] = endTime + 0.1;
-    }
-
-    internal double GetPlaybackEndTime() => IsRegistered ? PlaybackEndTimes[NativeIndex] : -1;
+    internal void SetPlaybackEndTime(double endTime) => _playbackEndTime = endTime + 0.1;
 
     protected override void AllocateNative()
     {
         int capacity = MaximumCapacity;
 
-        PlaybackEndTimes = new double[capacity];
         UseOcclusions = new(capacity, Allocator.Persistent);
-        IsTracking = new(capacity, Allocator.Persistent);
         SourceTransforms = new(capacity);
-        TrackedTransforms = new(capacity);
+        PositionTransforms = new(capacity);
         SourcePositions = new(capacity, Allocator.Persistent);
-        TrackedPositions = new(capacity, Allocator.Persistent);
         Pointers = new(capacity, Allocator.Persistent);
         OcclusionRayCommands = new(capacity, Allocator.Persistent);
         OcclusionHitResults = new(capacity, Allocator.Persistent);
@@ -106,15 +111,12 @@ public partial class WyrmBaseSource
 
     protected override void DeallocateNative()
     {
-        PlaybackEndTimes = null;
         UseOcclusions.TryDispose();
-        IsTracking.TryDispose();
 
         SourceTransforms.TryDispose();
-        TrackedTransforms.TryDispose();
+        PositionTransforms.TryDispose();
 
         SourcePositions.TryDispose();
-        TrackedPositions.TryDispose();
         Pointers.TryDispose();
         OcclusionRayCommands.TryDispose();
         OcclusionHitResults.TryDispose();
@@ -131,25 +133,11 @@ public partial class WyrmBaseSource
         int index = NativeIndex;
 
         SourceTransforms.Add(CachedTransform);
-        TrackedTransforms.Add(_activationTrackedTransform != null ? _activationTrackedTransform : CachedTransform);
-
-        if (_activationIsTracking)
-        {
-            IsTracking[index] = 1;
-            float3 position = _activationTrackedTransform != null ? _activationTrackedTransform.position : CachedTransform.position;
-            TrackedPositions[index] = position;
-            SourcePositions[index] = position;
-        }
-        else
-        {
-            IsTracking[index] = 0;
-            CachedTransform.position = _activationPosition;
-            TrackedPositions[index] = _activationPosition;
-            SourcePositions[index] = _activationPosition;
-        }
+        PositionTransforms.Add(PositionTransform);
+        SourcePositions[index] = PositionTransform.position;
 
         UseOcclusions[index] = UseOcclusion.ToByte();
-        PlaybackEndTimes[index] = double.MaxValue;
+        _playbackEndTime = double.NegativeInfinity;
         SourceRoomIdentifiers[index] = -1;
         TargetOcclusion01[index] = 0f;
         CurrentOcclusion01[index] = 0f;
@@ -166,11 +154,8 @@ public partial class WyrmBaseSource
     {
         if (removedIndex != lastIndex)
         {
-            PlaybackEndTimes[removedIndex] = PlaybackEndTimes[lastIndex];
             UseOcclusions[removedIndex] = UseOcclusions[lastIndex];
-            IsTracking[removedIndex] = IsTracking[lastIndex];
             SourcePositions[removedIndex] = SourcePositions[lastIndex];
-            TrackedPositions[removedIndex] = TrackedPositions[lastIndex];
             Pointers[removedIndex] = Pointers[lastIndex];
             SourceRoomIdentifiers[removedIndex] = SourceRoomIdentifiers[lastIndex];
             TargetOcclusion01[removedIndex] = TargetOcclusion01[lastIndex];
@@ -185,6 +170,6 @@ public partial class WyrmBaseSource
         }
 
         SourceTransforms.RemoveAtSwapBack(removedIndex);
-        TrackedTransforms.RemoveAtSwapBack(removedIndex);
+        PositionTransforms.RemoveAtSwapBack(removedIndex);
     }
 }

@@ -7,13 +7,12 @@ public partial class WyrmPhononSource : WyrmBaseSource
     private int _pluginHandle = -1;
 
     private float _cachedOcclusion = -1f;
-    private float _cachedTransMid = -1f;
 
     void SetSpatialValue(int index, float value) => ASource.SetSpatializerFloat(index, value);
 
-    public override void Initialize(WyrmMixerPool pool)
+    protected override void Awake()
     {
-        base.Initialize(pool);
+        base.Awake();
 
         if (SteamAudioManager.Simulator != null && (UseReflections || UsePropagation))
         {
@@ -76,8 +75,10 @@ public partial class WyrmPhononSource : WyrmBaseSource
         UpdatePhononSimulator();
     }
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
+        base.OnDestroy();
+
         if (_pluginHandle != -1)
             API.iplUnityRemoveSource(_pluginHandle);
 

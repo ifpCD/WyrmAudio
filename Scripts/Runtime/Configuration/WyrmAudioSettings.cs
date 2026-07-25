@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class WyrmAudioSettings : ScriptableObject
 {
+    [Header("Sources")]
+    [Min(1)]
+    public int MaxActiveSources = 1024;
+
     public List<WyrmMixerGroupConfig> ActiveMixerConfigs = new();
 
     public List<Object> SoundBankFolders = new();
