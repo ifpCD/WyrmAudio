@@ -6,13 +6,16 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
+[DefaultExecutionOrder(1)]
 public sealed class WyrmAudioScheduler : MonoBehaviour
 {
     bool _hasFocus = true;
 
     void OnApplicationFocus(bool hasFocus) => _hasFocus = hasFocus;
 
-    void LateUpdate()
+    JobHandle handle = default;
+
+    void Update()
     {
         if (WyrmBaseSource.CompletelyInactive)
             return;
@@ -23,10 +26,22 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
             return;
 
         WyrmListener.Synchronize();
-        ScheduleFrame().Complete();
-        SubmitNativeAudio();
+        handle = ScheduleFrame();
     }
 
+    void LateUpdate()
+    {
+        if (WyrmBaseSource.CompletelyInactive)
+            return;
+
+        if (handle == default)
+            return;
+
+        handle.Complete();
+        SubmitNativeAudio();
+        handle = default;
+    }
+    
     void CullSources()
     {
         if (!_hasFocus)
@@ -52,7 +67,7 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
         var gatherSourcePositions   = new GatherSourcePositionsJob { SourcePositions = WyrmBaseSource.SourcePositions };
         JobHandle gatherHandle      = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
 
-        // we use WyrmBaseSource.SourcePositions for every calculation, so we don't need to wait.
+        // we use WyrmBaseSource.SourcePositions for every calculation, so we can append it to the finalizer handle
         var applySourceTransforms   = new ApplySourceTransformsJob { SourcePositions = WyrmBaseSource.SourcePositions };
         JobHandle transformsHandle  = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
 

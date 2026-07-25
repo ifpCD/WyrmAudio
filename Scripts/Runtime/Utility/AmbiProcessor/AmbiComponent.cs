@@ -15,7 +15,7 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
     public static bool CompletelyInactive => ActiveCount == 0;
 
-    protected bool IsRegistered => NativeIndex != -1;
+    public bool IsRegistered => NativeIndex != -1;
 
     protected abstract int MaximumCapacity { get; }
 
