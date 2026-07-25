@@ -70,7 +70,7 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 
         if (track != null)
             TrackedTransform = track;
-            
+
         if (bank.PitchRandomization)
             ASource.pitch = 1f.WithVariation(bank.PitchDeviation);
 

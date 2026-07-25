@@ -5,7 +5,7 @@ internal static class LocationProcessor
     public static JobHandle Schedule(JobHandle dependency)
     {
         int sourceCount = WyrmBaseSource.ActiveCount;
-        if (WyrmBaseSource.ActiveCount == 0 || WyrmListener.ActiveCount == 0 || WyrmRoomShape.ActiveCount == 0 || WyrmPortal.ActiveCount == 0)
+        if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive || WyrmRoomShape.CompletelyInactive || WyrmPortal.CompletelyInactive)
             return dependency;
 
         // csharpier-ignore

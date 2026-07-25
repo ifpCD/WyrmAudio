@@ -1,5 +1,5 @@
-using UnityEngine;
 using Unity.Mathematics;
+using UnityEngine;
 
 [DefaultExecutionOrder(200)]
 public class WyrmPropagationVisualizer : MonoBehaviour
@@ -11,14 +11,26 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
     public float deformationScale = 1.5f;
 
-    [Range(0f, 0.2f)] public float idleOpacity = 0.02f;
-    [Range(0f, 1f)] public float gridOpacity = 0.25f;
-    [Range(20, 100)] public int sphereResolution = 60;
+    [Range(0f, 0.2f)]
+    public float idleOpacity = 0.02f;
 
-    [ColorUsage(true, true)] public Color idleColor = new Color(0.02f, 0.1f, 0.3f, 1.0f);
-    [ColorUsage(true, true)] public Color lowFreqColor = new Color(1.0f, 0.05f, 0.0f, 1.0f);
-    [ColorUsage(true, true)] public Color midFreqColor = new Color(0.1f, 1.0f, 0.3f, 1.0f);
-    [ColorUsage(true, true)] public Color highFreqColor = new Color(0.0f, 0.8f, 1.0f, 1.0f);
+    [Range(0f, 1f)]
+    public float gridOpacity = 0.25f;
+
+    [Range(20, 100)]
+    public int sphereResolution = 60;
+
+    [ColorUsage(true, true)]
+    public Color idleColor = new(0.02f, 0.1f, 0.3f, 1.0f);
+
+    [ColorUsage(true, true)]
+    public Color lowFreqColor = new(1.0f, 0.05f, 0.0f, 1.0f);
+
+    [ColorUsage(true, true)]
+    public Color midFreqColor = new(0.1f, 1.0f, 0.3f, 1.0f);
+
+    [ColorUsage(true, true)]
+    public Color highFreqColor = new(0.0f, 0.8f, 1.0f, 1.0f);
 
     private Mesh _sphereMesh;
     private Material _shMaterial;
@@ -62,13 +74,16 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
     private void OnDisable()
     {
-        if (_shMaterial != null) DestroyImmediate(_shMaterial);
-        if (_sphereMesh != null) DestroyImmediate(_sphereMesh);
+        if (_shMaterial != null)
+            DestroyImmediate(_shMaterial);
+        if (_sphereMesh != null)
+            DestroyImmediate(_sphereMesh);
     }
 
     private void LateUpdate()
     {
-        if (!enableVisualization || !Application.isPlaying) return;
+        if (!enableVisualization || !Application.isPlaying)
+            return;
 
         if (WyrmBaseSource.ActiveCount == 0 || !WyrmBaseSource.TargetSHCoefficients.IsCreated)
             return;
@@ -117,17 +132,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
         _propBlock.SetColor(MID_COLOR_ID, midFreqColor);
         _propBlock.SetColor(HIGH_COLOR_ID, highFreqColor);
 
-        var listenerPosition = WyrmAudioManager.GetAudioListener().transform.position;
-
-        Graphics.DrawMesh(
-            _sphereMesh,
-            Matrix4x4.Translate(listenerPosition),
-            _shMaterial,
-            gameObject.layer,
-            null,
-            0,
-            _propBlock
-        );
+        Graphics.DrawMesh(_sphereMesh, Matrix4x4.Translate(WyrmListener.ListenerPosition.Value), _shMaterial, gameObject.layer, null, 0, _propBlock);
     }
 #endif
 
