@@ -7,7 +7,7 @@ using UnityEditor;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider))]
-public partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
+public sealed partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
 {
     protected override int MaximumCapacity => 2000;
 

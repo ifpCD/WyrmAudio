@@ -46,32 +46,27 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
         }
     }
 
+    // csharpier-ignore
     static JobHandle ScheduleFrame()
     {
-        var gatherSourcePositions = new GatherSourcePositionsJob
-        {
-            SourcePositions = WyrmBaseSource.SourcePositions,
-        };
-        JobHandle gatherHandle = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
+        var gatherSourcePositions   = new GatherSourcePositionsJob { SourcePositions = WyrmBaseSource.SourcePositions };
+        JobHandle gatherHandle      = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
 
         // we use WyrmBaseSource.SourcePositions for every calculation, so we don't need to wait.
-        var applySourceTransforms = new ApplySourceTransformsJob
-        {
-            SourcePositions = WyrmBaseSource.SourcePositions,
-        };
-        JobHandle transformsHandle = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
+        var applySourceTransforms   = new ApplySourceTransformsJob { SourcePositions = WyrmBaseSource.SourcePositions };
+        JobHandle transformsHandle  = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
 
-        JobHandle locationHandle = LocationProcessor.Schedule(gatherHandle);
+        JobHandle locationHandle    = LocationProcessor.Schedule(gatherHandle);
 
-        JobHandle occlusionHandle = OcclusionProcessor.Schedule(gatherHandle);
+        JobHandle occlusionHandle   = OcclusionProcessor.Schedule(gatherHandle);
 
         JobHandle effectsDependency = JobHandle.CombineDependencies(occlusionHandle, locationHandle);
 
-        JobHandle effectsHandle = EffectsMixingProcessor.Schedule(effectsDependency);
+        JobHandle effectsHandle     = EffectsMixingProcessor.Schedule(effectsDependency);
 
-        JobHandle lerpHandle = LerpProcessor.Schedule(effectsHandle);
+        JobHandle lerpHandle        = LerpProcessor.Schedule(effectsHandle);
 
-        JobHandle finalizerHandle = JobHandle.CombineDependencies(lerpHandle, transformsHandle);
+        JobHandle finalizerHandle   = JobHandle.CombineDependencies(lerpHandle, transformsHandle);
 
         return finalizerHandle;
     }
@@ -100,6 +95,7 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
             );
         }
 
+        // refactor
         for (int index = 0; index < activeCount; index++)
         {
             if (WyrmBaseSource.ActiveSources[index] is WyrmPhononSource phononSource)

@@ -2,7 +2,7 @@ using System;
 using Unity.Collections;
 using Unity.Mathematics;
 
-public partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
+public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
 {
     public static NativeArray<float4x4> PortalWorldToLocal;
     public static NativeArray<float3> PortalExtents;

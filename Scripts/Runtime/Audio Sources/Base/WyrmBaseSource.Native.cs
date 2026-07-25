@@ -60,8 +60,8 @@ public partial class WyrmBaseSource
 
     Transform PositionTransform => _trackedTransform != null ? _trackedTransform : CachedTransform;
 
-    protected override int MaximumCapacity => _maximumSourceCapacity;
-    protected override bool RetainNativeWhenEmpty => true;
+    sealed protected override int MaximumCapacity => _maximumSourceCapacity;
+    sealed protected override bool RetainNativeWhenEmpty => true;
 
     internal static void ConfigureCapacity(int maximumCapacity)
     {
@@ -89,26 +89,25 @@ public partial class WyrmBaseSource
 
     internal void SetPlaybackEndTime(double endTime) => PlaybackEndTime = endTime + 0.1;
 
-    protected override void AllocateNative()
+    // csharpier-ignore
+    sealed protected override void AllocateNative()
     {
-        int capacity = MaximumCapacity;
-
-        UseOcclusions = new(capacity, Allocator.Persistent);
-        SourceTransforms = new(capacity);
-        PositionTransforms = new(capacity);
-        SourcePositions = new(capacity, Allocator.Persistent);
-        Pointers = new(capacity, Allocator.Persistent);
-        OcclusionRayCommands = new(capacity, Allocator.Persistent);
-        OcclusionHitResults = new(capacity, Allocator.Persistent);
-        SourceRoomIdentifiers = new(capacity, Allocator.Persistent);
-        TargetOcclusion01 = new(capacity, Allocator.Persistent);
-        TargetPropagationEQ01 = new(capacity, Allocator.Persistent);
-        TargetSHCoefficients = new(capacity * 16, Allocator.Persistent);
-        CurrentOcclusion01 = new(capacity, Allocator.Persistent);
-        CurrentPropagationEQ01 = new(capacity, Allocator.Persistent);
+        UseOcclusions          = new(MaximumCapacity, Allocator.Persistent);
+        SourceTransforms       = new(MaximumCapacity);
+        PositionTransforms     = new(MaximumCapacity);
+        SourcePositions        = new(MaximumCapacity, Allocator.Persistent);
+        Pointers               = new(MaximumCapacity, Allocator.Persistent);
+        OcclusionRayCommands   = new(MaximumCapacity, Allocator.Persistent);
+        OcclusionHitResults    = new(MaximumCapacity, Allocator.Persistent);
+        SourceRoomIdentifiers  = new(MaximumCapacity, Allocator.Persistent);
+        TargetOcclusion01      = new(MaximumCapacity, Allocator.Persistent);
+        TargetPropagationEQ01  = new(MaximumCapacity, Allocator.Persistent);
+        TargetSHCoefficients   = new(MaximumCapacity * 16, Allocator.Persistent);
+        CurrentOcclusion01     = new(MaximumCapacity, Allocator.Persistent);
+        CurrentPropagationEQ01 = new(MaximumCapacity, Allocator.Persistent);
     }
 
-    protected override void DeallocateNative()
+    sealed protected override void DeallocateNative()
     {
         UseOcclusions.TryDispose();
 
@@ -127,20 +126,20 @@ public partial class WyrmBaseSource
         CurrentPropagationEQ01.TryDispose();
     }
 
-    protected override void LoadManagedToNative()
+    sealed protected override void LoadManagedToNative()
     {
         int index = NativeIndex;
 
         SourceTransforms.Add(CachedTransform);
         PositionTransforms.Add(PositionTransform);
-        SourcePositions[index] = PositionTransform.position;
+        SourcePositions[index]        = PositionTransform.position;
 
-        UseOcclusions[index] = UseOcclusion.ToByte();
-        PlaybackEndTime = double.NegativeInfinity;
-        SourceRoomIdentifiers[index] = -1;
-        TargetOcclusion01[index] = 0f;
-        CurrentOcclusion01[index] = 0f;
-        TargetPropagationEQ01[index] = 1f;
+        UseOcclusions[index]          = UseOcclusion.ToByte();
+        PlaybackEndTime               = double.NegativeInfinity;
+        SourceRoomIdentifiers[index]  = -1;
+        TargetOcclusion01[index]      = 0f;
+        CurrentOcclusion01[index]     = 0f;
+        TargetPropagationEQ01[index]  = 1f;
         CurrentPropagationEQ01[index] = 1f;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
@@ -149,21 +148,23 @@ public partial class WyrmBaseSource
             Pointers[index] = IntPtr.Zero;
     }
 
-    protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex)
+    // csharpier-ignore
+    sealed protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex)
     {
         if (removedIndex != lastIndex)
         {
-            UseOcclusions[removedIndex] = UseOcclusions[lastIndex];
-            SourcePositions[removedIndex] = SourcePositions[lastIndex];
-            Pointers[removedIndex] = Pointers[lastIndex];
-            SourceRoomIdentifiers[removedIndex] = SourceRoomIdentifiers[lastIndex];
-            TargetOcclusion01[removedIndex] = TargetOcclusion01[lastIndex];
-            TargetPropagationEQ01[removedIndex] = TargetPropagationEQ01[lastIndex];
-            CurrentOcclusion01[removedIndex] = CurrentOcclusion01[lastIndex];
+            UseOcclusions[removedIndex]          = UseOcclusions[lastIndex];
+            SourcePositions[removedIndex]        = SourcePositions[lastIndex];
+            Pointers[removedIndex]               = Pointers[lastIndex];
+            SourceRoomIdentifiers[removedIndex]  = SourceRoomIdentifiers[lastIndex];
+            TargetOcclusion01[removedIndex]      = TargetOcclusion01[lastIndex];
+            TargetPropagationEQ01[removedIndex]  = TargetPropagationEQ01[lastIndex];
+            CurrentOcclusion01[removedIndex]     = CurrentOcclusion01[lastIndex];
             CurrentPropagationEQ01[removedIndex] = CurrentPropagationEQ01[lastIndex];
 
-            int removedShOffset = removedIndex * 16;
-            int lastShOffset = lastIndex * 16;
+            int removedShOffset                  = removedIndex * 16;
+            int lastShOffset                     = lastIndex * 16;
+
             for (int coefficient = 0; coefficient < 16; coefficient++)
                 TargetSHCoefficients[removedShOffset + coefficient] = TargetSHCoefficients[lastShOffset + coefficient];
         }

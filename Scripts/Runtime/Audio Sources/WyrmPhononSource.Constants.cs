@@ -1,5 +1,5 @@
 // csharpier-ignore
-public partial class WyrmPhononSource : WyrmBaseSource
+public sealed partial class WyrmPhononSource : WyrmBaseSource
 {
     const int APPLY_DISTANCEATTENUATION    = 0;
     const int APPLY_AIRABSORPTION          = 1;

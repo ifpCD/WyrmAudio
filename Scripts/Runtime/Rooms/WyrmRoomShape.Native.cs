@@ -2,7 +2,7 @@ using System;
 using Unity.Collections;
 using Unity.Mathematics;
 
-public partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
+public sealed partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
 {
     public static NativeArray<float4x4> ShapeWorldToLocal;
     public static NativeArray<float3> ShapeExtents;

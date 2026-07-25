@@ -2,10 +2,17 @@ using System;
 using SteamAudio;
 using UnityEngine;
 
-public class WyrmBaseSteamSource : WyrmBaseSource
+[RequireComponent(typeof(SteamAudioSource))]
+public sealed class WyrmBaseSteamSource : WyrmBaseSource
 {
-    [field: SerializeField]
+    [HideInInspector]
     public SteamAudioSource SteamSource { get; set; }
+
+    protected override void OnValidate()
+    {
+        base.OnValidate();
+        SteamSource = SteamSource != null ? SteamSource : GetComponent<SteamAudioSource>();
+    }
 
     protected override void Awake()
     {

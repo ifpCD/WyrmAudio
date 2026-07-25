@@ -4,7 +4,7 @@ using UnityEngine;
 [RequireComponent(typeof(AudioSource))]
 public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 {
-    [field: SerializeField]
+    [HideInInspector]
     public AudioSource ASource { get; set; }
 
     public bool IsBorrowed { get; internal set; }
@@ -38,7 +38,7 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
         _maxDistance = ASource.maxDistance;
     }
 
-    private void OnValidate()
+    protected virtual void OnValidate()
     {
         ASource = ASource != null ? ASource : GetComponent<AudioSource>();
     }

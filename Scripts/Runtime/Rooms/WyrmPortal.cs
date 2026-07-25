@@ -7,7 +7,7 @@ using UnityEditor;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider))]
-public partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
+public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
 {
     protected override int MaximumCapacity => 2000;
 

@@ -1,7 +1,7 @@
 using SteamAudio;
 using UnityEngine;
 
-public partial class WyrmPhononSource : WyrmBaseSource
+public sealed partial class WyrmPhononSource : WyrmBaseSource
 {
     public Source PhononSource { get; private set; }
     private int _pluginHandle = -1;
