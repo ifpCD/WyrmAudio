@@ -35,7 +35,7 @@ public class WyrmListener : AmbiComponent<WyrmListener>
         if (CompletelyInactive)
             return false;
 
-        Transform listenerTransform = EnabledInstances[0].transform;
+        Transform listenerTransform = RegisteredInstances[0].transform;
         ListenerPosition.Value = listenerTransform.position;
         ListenerRotation.Value = listenerTransform.rotation;
         return true;

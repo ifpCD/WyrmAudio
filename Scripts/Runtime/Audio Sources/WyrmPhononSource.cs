@@ -115,4 +115,31 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
             _cachedOcclusion = occlusion;
         }
     }
+
+    public override void Play()
+    {
+        ASource.enabled = true;
+        SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, _pluginHandle);
+
+        base.Play();
+    }
+
+    public override void PlayOneShot(AudioClip clip)
+    {
+        ASource.enabled = true;
+        SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, _pluginHandle);
+
+        base.PlayOneShot(clip);
+    }
+
+    internal override bool Deactivate()
+    {
+        if (!base.Deactivate())
+            return false;
+
+        SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, -1f);
+        ASource.enabled = false;
+
+        return true;
+    }
 }

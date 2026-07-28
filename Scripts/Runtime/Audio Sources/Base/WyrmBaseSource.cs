@@ -69,12 +69,11 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
         if (track != null)
             TrackedTransform = track;
 
-        loop = bank.Loop;
-
         if (bank.PitchRandomization)
             ASource.pitch = 1f.WithVariation(bank.PitchDeviation);
 
         clip = bank.GetBodyClip();
+        loop = bank.Loop;
         Play();
     }
 

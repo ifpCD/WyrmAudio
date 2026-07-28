@@ -18,8 +18,8 @@ public class WyrmAudioSettings : ScriptableObject
     [Header("Audio Rooms")]
     public int MaxActiveRooms = 1024;
 
-    public LayerMask StaticGeometryMask = ~0;
-    public LayerMask GraphMask = ~0;
+    public LayerMask OcclusionMask = ~0;
+    public LayerMask PropagationOcclusionMask = ~0;
 
     static WyrmAudioSettings _instance = null;
 

@@ -18,7 +18,7 @@ internal static class OcclusionProcessor
             SourcePositions  = WyrmBaseSource.SourcePositions,
             UseOcclusions    = WyrmBaseSource.UseOcclusions,
             ListenerPosition = WyrmListener.ListenerPosition.Value,
-            LayerMask        = WyrmAudioSettings.Instance.StaticGeometryMask,
+            LayerMask        = WyrmAudioSettings.Instance.OcclusionMask,
             
             RaycastCommands  = raycastCommands,
         };
@@ -31,6 +31,7 @@ internal static class OcclusionProcessor
         {
             UseOcclusions    = WyrmBaseSource.UseOcclusions,
             RaycastHits      = raycastResults,
+            
             SourceOcclusions = WyrmBaseSource.TargetOcclusion01,
         };
         return resolveOcclusionJob.Schedule(sourceActiveCount, 16, raycastHandle);

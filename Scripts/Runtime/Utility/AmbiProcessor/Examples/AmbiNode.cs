@@ -7,6 +7,8 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider))]
 public partial class AmbiNode : AmbiComponent<AmbiNode>
 {
+    protected override int MaximumCapacity => 2000;
+
     // MANAGED SECTION
     public BoxCollider BoxCollider { get; private set; }
 

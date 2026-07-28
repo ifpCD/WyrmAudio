@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6201ed0986ae031429ba43a7509569bf, type: 3}
   m_Name: WyrmAudioSettings
   m_EditorClassIdentifier: WyrmAudio::WyrmAudioSettings
+  MaxActiveSources: 1024
   ActiveMixerConfigs:
   - {fileID: 11400000, guid: 43c804a2553d77442853b01dfa0714c4, type: 2}
   - {fileID: 11400000, guid: 6cc200f653e66834385ed79bb949831b, type: 2}
@@ -29,9 +30,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 70bec925372402c46a2dd3e2185bc08c, type: 2}
   - {fileID: 11400000, guid: 36c2f71b1296e374f975795f593d9f5e, type: 2}
   MaxActiveRooms: 1024
-  StaticGeometryMask:
+  OcclusionMask:
     serializedVersion: 2
-    m_Bits: 192
-  GraphMask:
+    m_Bits: 448
+  PropagationOcclusionMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64

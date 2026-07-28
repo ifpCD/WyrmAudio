@@ -6,7 +6,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-[DefaultExecutionOrder(1)]
+[DefaultExecutionOrder(10)]
 public sealed class WyrmAudioScheduler : MonoBehaviour
 {
     bool _hasFocus = true;
@@ -50,8 +50,8 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
         double currentTime = UnityEngine.AudioSettings.dspTime;
         for (int index = WyrmBaseSource.ActiveCount - 1; index >= 0; index--)
         {
-            WyrmBaseSource source = WyrmBaseSource.ActiveSources[index];
-            if (source.IsBorrowed || source.isPlaying || currentTime < source.PlaybackEndTime)
+            WyrmBaseSource source = WyrmBaseSource.RegisteredInstances[index];
+            if (source.IsBorrowed || currentTime < source.PlaybackEndTime || source.isPlaying)
                 continue;
 
             if (source.IsPooled)
@@ -67,7 +67,7 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
         var gatherSourcePositions   = new GatherSourcePositionsJob { SourcePositions = WyrmBaseSource.SourcePositions };
         JobHandle gatherHandle      = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
 
-        // we use WyrmBaseSource.SourcePositions for every calculation, so we can append it to the finalizer handle
+        // we only use WyrmBaseSource.SourcePositions for every calculation, so we can append it to the finalizer handle
         var applySourceTransforms   = new ApplySourceTransformsJob { SourcePositions = WyrmBaseSource.SourcePositions };
         JobHandle transformsHandle  = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
 
@@ -75,7 +75,9 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
 
         JobHandle occlusionHandle   = OcclusionProcessor.Schedule(gatherHandle);
 
-        JobHandle effectsDependency = JobHandle.CombineDependencies(occlusionHandle, locationHandle);
+        JobHandle propagationHandle = PropagationProcessor.Schedule(locationHandle);
+
+        JobHandle effectsDependency = JobHandle.CombineDependencies(locationHandle, occlusionHandle, propagationHandle);
 
         JobHandle effectsHandle     = EffectsMixingProcessor.Schedule(effectsDependency);
 
@@ -110,10 +112,11 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
             );
         }
 
-        // refactor
+        // audioplugin_phonon constantly overrides occlusion/transmission values even if we set them through the custom API
+        // so for now we just do this
         for (int index = 0; index < activeCount; index++)
         {
-            if (WyrmBaseSource.ActiveSources[index] is WyrmPhononSource phononSource)
+            if (WyrmBaseSource.RegisteredInstances[index] is WyrmPhononSource phononSource)
                 phononSource.SetOcclusionLevel(WyrmBaseSource.CurrentOcclusion01[index]);
         }
     }

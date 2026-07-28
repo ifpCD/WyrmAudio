@@ -9,7 +9,7 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
     protected int NativeIndex { get; private set; } = -1;
 
-    protected static T[] EnabledInstances { get; private set; }
+    internal static T[] RegisteredInstances { get; private set; }
 
     public static int ActiveCount { get; private set; }
 
@@ -31,21 +31,21 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
     protected void InitializeRegistry()
     {
-        if (EnabledInstances != null)
+        if (RegisteredInstances != null)
             return;
 
         _maximumCapacity = MaximumCapacity;
         if (_maximumCapacity <= 0)
             throw new InvalidOperationException($"{typeof(T).Name} requires a positive maximum capacity.");
 
-        EnabledInstances = new T[_maximumCapacity];
+        RegisteredInstances = new T[_maximumCapacity];
         _allocationOwner = (T)this;
         AllocateNative();
     }
 
     protected static void DisposeRegistry()
     {
-        if (EnabledInstances == null)
+        if (RegisteredInstances == null)
             return;
 
         if (ActiveCount != 0)
@@ -53,7 +53,7 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
         _allocationOwner.DeallocateNative();
         _allocationOwner = null;
-        EnabledInstances = null;
+        RegisteredInstances = null;
         _maximumCapacity = 0;
     }
 
@@ -68,7 +68,7 @@ public abstract class AmbiComponent<T> : MonoBehaviour
             throw new InvalidOperationException($"Enabled {typeof(T).Name} capacity of {_maximumCapacity} was exceeded.");
 
         NativeIndex = ActiveCount;
-        EnabledInstances[ActiveCount++] = (T)this;
+        RegisteredInstances[ActiveCount++] = (T)this;
         LoadManagedToNative();
     }
 
@@ -83,15 +83,15 @@ public abstract class AmbiComponent<T> : MonoBehaviour
 
         if (removedIndex != lastIndex)
         {
-            T movedInstance = EnabledInstances[lastIndex];
+            T movedInstance = RegisteredInstances[lastIndex];
 
-            EnabledInstances[removedIndex] = movedInstance;
+            RegisteredInstances[removedIndex] = movedInstance;
             movedInstance.NativeIndex = removedIndex;
         }
 
         RemoveNativeAtSwapBack(removedIndex, lastIndex);
 
-        EnabledInstances[lastIndex] = null;
+        RegisteredInstances[lastIndex] = null;
         NativeIndex = -1;
 
         if (ActiveCount == 0 && !RetainNativeWhenEmpty)

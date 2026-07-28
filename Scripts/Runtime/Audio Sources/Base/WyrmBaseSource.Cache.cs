@@ -15,20 +15,21 @@ public partial class WyrmBaseSource
         get => _clip;
         set
         {
-            if (_clip == value) return;
+            if (_clip == value)
+                return;
 
             _clip = value;
             ASource.clip = value;
         }
     }
 
-
     public bool loop
     {
         get => _loop;
         set
         {
-            if (_loop == value) return;
+            if (_loop == value)
+                return;
 
             _loop = value;
             ASource.loop = value;
@@ -43,7 +44,8 @@ public partial class WyrmBaseSource
         get => _volume;
         set
         {
-            if (_volume == value) return;
+            if (_volume == value)
+                return;
 
             _volume = value;
             ASource.volume = value;
@@ -55,7 +57,8 @@ public partial class WyrmBaseSource
         get => _pitch;
         set
         {
-            if (_pitch == value) return;
+            if (_pitch == value)
+                return;
 
             _pitch = value;
             ASource.pitch = value;
@@ -67,7 +70,8 @@ public partial class WyrmBaseSource
         get => _minDistance;
         set
         {
-            if (_minDistance == value) return;
+            if (_minDistance == value)
+                return;
 
             _minDistance = value;
             ASource.minDistance = value;
@@ -79,11 +83,11 @@ public partial class WyrmBaseSource
         get => _maxDistance;
         set
         {
-            if (_maxDistance == value) return;
+            if (_maxDistance == value)
+                return;
 
             _maxDistance = value;
             ASource.maxDistance = value;
-            
         }
     }
 }
