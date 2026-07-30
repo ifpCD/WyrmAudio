@@ -39,8 +39,7 @@ internal struct StatelessLerpPropagation01Job : IJobParallelFor
         float3 current = CurrentPropagationEQs01[index];
         float3 target = TargetPropagationEQs01[index];
 
-        // because we aren't normalizing Path EQ, Phonon's IIR explodes if we feed it absolute 0
-        // so we clamp it
+        // Because we aren't normalizing Path EQ - Phonon's IIR explodes if we feed it absolute 0
         CurrentPropagationEQs01[index] = math.max(math.lerp(current, target, ExpLerpFactor), math.EPSILON);
     }
 }

@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.Jobs;
 
 [DefaultExecutionOrder(10)]
-public sealed class WyrmAudioScheduler : MonoBehaviour
+public sealed partial class WyrmAudioScheduler : MonoBehaviour
 {
     bool _hasFocus = true;
 
@@ -41,7 +41,7 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
         SubmitNativeAudio();
         handle = default;
     }
-    
+
     void CullSources()
     {
         if (!_hasFocus)
@@ -57,7 +57,7 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
             if (source.IsPooled)
                 source.Return();
             else
-                source.CompletePlayback();
+                source.NotifyPlaybackCompletion();
         }
     }
 
@@ -67,7 +67,7 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
         var gatherSourcePositions   = new GatherSourcePositionsJob { SourcePositions = WyrmBaseSource.SourcePositions };
         JobHandle gatherHandle      = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
 
-        // we only use WyrmBaseSource.SourcePositions for every calculation, so we can append it to the finalizer handle
+        // we use WyrmBaseSource.SourcePositions for every job - meaning we can append this to the finalizer handle
         var applySourceTransforms   = new ApplySourceTransformsJob { SourcePositions = WyrmBaseSource.SourcePositions };
         JobHandle transformsHandle  = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
 
@@ -75,13 +75,13 @@ public sealed class WyrmAudioScheduler : MonoBehaviour
 
         JobHandle occlusionHandle   = OcclusionProcessor.Schedule(gatherHandle);
 
-        JobHandle propagationHandle = PropagationProcessor.Schedule(locationHandle);
+        JobHandle ambisonicHandle   = AmbisonicProcessor.Schedule(locationHandle);
 
-        JobHandle effectsDependency = JobHandle.CombineDependencies(locationHandle, occlusionHandle, propagationHandle);
+        JobHandle effectsDependency = JobHandle.CombineDependencies(locationHandle, occlusionHandle, ambisonicHandle);
 
-        JobHandle effectsHandle     = EffectsMixingProcessor.Schedule(effectsDependency);
+        // JobHandle effectsHandle     = EffectsMixingProcessor.Schedule(effectsDependency);
 
-        JobHandle lerpHandle        = LerpProcessor.Schedule(effectsHandle);
+        JobHandle lerpHandle        = LerpProcessor.Schedule(effectsDependency);
 
         JobHandle finalizerHandle   = JobHandle.CombineDependencies(lerpHandle, transformsHandle);
 

@@ -30,7 +30,7 @@ internal static class LerpProcessor
         // csharpier-ignore
         var lerpPropagationEqs = new StatelessLerpPropagation01Job
         {
-            TargetPropagationEQs01  = WyrmBaseSource.TargetPropagationEQ01,
+            TargetPropagationEQs01  = WyrmBaseSource.TargetAmbisonicEQ01s,
             ExpLerpFactor           = expLerpFactor,
 
             CurrentPropagationEQs01 = WyrmBaseSource.CurrentPropagationEQ01,

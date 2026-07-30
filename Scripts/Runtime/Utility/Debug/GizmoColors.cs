@@ -6,7 +6,7 @@ internal static class GizmoColors
     private const float FAINT_ALPHA    = 0.2f;
     private const float STRONG_ALPHA   = 0.8f;
 
-    internal static Color None         = new(0f,0f,0f);
+    internal static Color None         = new(0f, 0f, 0f, 0f);
 
     internal static Color FaintRed     = new(1f, 0f, 0f, FAINT_ALPHA);
     internal static Color FaintGreen   = new(0f, 1f, 0f, FAINT_ALPHA);

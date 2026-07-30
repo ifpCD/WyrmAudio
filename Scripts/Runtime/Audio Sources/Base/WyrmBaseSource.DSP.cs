@@ -43,7 +43,7 @@ public partial class WyrmBaseSource
 
     // void OnAudioFilterRead(float[] data, int channels) => ApplyVolumeDSP(data, channels);
 
-    protected void ApplyVolumeDSP(float[] data, int channels)
+    void ApplyVolumeDSP(float[] data, int channels)
     {
         float target = _targetVolume;
         float current = _currentVolume;

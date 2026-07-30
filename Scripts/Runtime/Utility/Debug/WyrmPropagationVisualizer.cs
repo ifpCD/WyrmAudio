@@ -102,6 +102,9 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
         for (int sourceIdx = 0; sourceIdx < WyrmBaseSource.ActiveCount; sourceIdx++)
         {
+            if (!WyrmBaseSource.RegisteredInstances[sourceIdx].UseAmbisonics)
+                return;
+                
             int shOffset = sourceIdx * 16;
 
             float3 rawEq = WyrmBaseSource.CurrentPropagationEQ01[sourceIdx];

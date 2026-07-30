@@ -12,13 +12,13 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
     internal bool IsPooled => Pool != null;
 
     [field: SerializeField]
-    public bool UseReflections { get; set; } = false;
+    public virtual bool UseReflections { get; set; } = false;
 
     [field: SerializeField]
-    public bool UsePropagation { get; set; } = false;
+    public virtual bool UseAmbisonics { get; set; } = false;
 
     [field: SerializeField]
-    public bool UseOcclusion { get; set; } = false;
+    public virtual bool UseOcclusion { get; set; } = false;
 
     internal void Initialize(WyrmMixerPool pool)
     {
@@ -96,7 +96,7 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
         return true;
     }
 
-    internal void CompletePlayback() => Deregister();
+    internal void NotifyPlaybackCompletion() => Deregister();
 
     // csharpier-ignore
     public virtual void ResetState()

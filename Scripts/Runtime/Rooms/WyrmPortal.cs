@@ -37,6 +37,9 @@ public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollide
 
     void OnDisable() => Deregister();
 
+    // In case transform/shape changes
+    public void NotifyChange() => LoadManagedToNative();
+
     public float _openness = 1f;
 
     [Range(0, 1)]
@@ -48,9 +51,7 @@ public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollide
             _openness = value;
 
             if (IsRegistered)
-                return;
-
-            PortalOpenness[NativeIndex] = value;
+                PortalOpenness[NativeIndex] = value;
         }
     }
 }

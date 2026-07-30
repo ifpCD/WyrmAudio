@@ -16,7 +16,7 @@ internal static class EffectsMixingProcessor
         {
             TargetOcclusion01s     = WyrmBaseSource.TargetOcclusion01,
             
-            TargetPropagationEQ01s = WyrmBaseSource.TargetPropagationEQ01,
+            TargetPropagationEQ01s = WyrmBaseSource.TargetAmbisonicEQ01s,
         };
         return downMixIfVisible.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);
     }

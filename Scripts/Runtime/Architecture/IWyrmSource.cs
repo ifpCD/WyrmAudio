@@ -4,7 +4,7 @@ using UnityEngine;
 public interface IWyrmSource
 {
     bool UseReflections { get; set; }
-    bool UsePropagation { get; set; }
+    bool UseAmbisonics { get; set; }
     bool UseOcclusion { get; set; }
 
     Transform TrackedTransform { get; set; }

@@ -22,11 +22,21 @@ public partial class WyrmBaseSource
     internal double PlaybackEndTime { get; private set; } = double.NegativeInfinity;
 
     internal static NativeArray<byte> UseOcclusions;
-    
+
     internal static TransformAccessArray SourceTransforms;
     internal static TransformAccessArray PositionTransforms;
     internal static NativeArray<float3> SourcePositions;
-    
+
+    // Ambisonic Inputs
+    internal static NativeArray<float3> InputVirtualPositions;
+    internal static NativeArray<float> InputDirectionalGains;
+    internal static NativeArray<float> InputAmbientGains;
+    internal static NativeArray<float> InputHorizontalWidths;
+    internal static NativeArray<float> InputVerticalWidths;
+    internal static NativeArray<float> InputAmbisonicEQLow01s;
+    internal static NativeArray<float> InputAmbisonicEQMid01s;
+    internal static NativeArray<float> InputAmbisonicEQHigh01s;
+
     internal static NativeArray<IntPtr> Pointers; // For Phonon
 
     // Output Scratch Buffers
@@ -34,9 +44,9 @@ public partial class WyrmBaseSource
     internal static NativeArray<RaycastHit> OcclusionHitResults;
 
     internal static NativeArray<int> SourceRoomIdentifiers;
-    
+
     internal static NativeArray<float> TargetOcclusion01;
-    internal static NativeArray<float3> TargetPropagationEQ01;
+    internal static NativeArray<float3> TargetAmbisonicEQ01s;
     internal static NativeArray<float> TargetSHCoefficients;
 
     // Stateful
@@ -89,30 +99,41 @@ public partial class WyrmBaseSource
         Register();
     }
 
-    internal void SetPlaybackEndTime(double endTime) => PlaybackEndTime = endTime + 0.1;
+    const float PLAYBACK_END_GRACE_TIME = 0.1f;
+
+    internal void SetPlaybackEndTime(double endTime) => PlaybackEndTime = endTime + PLAYBACK_END_GRACE_TIME;
 
     // csharpier-ignore
     protected sealed override void AllocateNative()
     {
-        UseOcclusions          = new(MaximumCapacity, Allocator.Persistent);
+        UseOcclusions            = new(MaximumCapacity, Allocator.Persistent);
 
-        SourceTransforms       = new(MaximumCapacity);
-        PositionTransforms     = new(MaximumCapacity);
-        SourcePositions        = new(MaximumCapacity, Allocator.Persistent);
+        SourceTransforms         = new(MaximumCapacity);
+        PositionTransforms       = new(MaximumCapacity);
+        SourcePositions          = new(MaximumCapacity, Allocator.Persistent);
 
-        Pointers               = new(MaximumCapacity, Allocator.Persistent);
+        InputVirtualPositions    = new(MaximumCapacity, Allocator.Persistent);
+        InputVerticalWidths      = new(MaximumCapacity, Allocator.Persistent);
+        InputHorizontalWidths    = new(MaximumCapacity, Allocator.Persistent);
+        InputDirectionalGains    = new(MaximumCapacity, Allocator.Persistent);
+        InputAmbientGains        = new(MaximumCapacity, Allocator.Persistent);
+        InputAmbisonicEQHigh01s   = new(MaximumCapacity, Allocator.Persistent);
+        InputAmbisonicEQMid01s   = new(MaximumCapacity, Allocator.Persistent);
+        InputAmbisonicEQLow01s  = new(MaximumCapacity, Allocator.Persistent);
 
-        OcclusionRayCommands   = new(MaximumCapacity, Allocator.Persistent);
-        OcclusionHitResults    = new(MaximumCapacity, Allocator.Persistent);
+        Pointers                 = new(MaximumCapacity, Allocator.Persistent);
 
-        SourceRoomIdentifiers  = new(MaximumCapacity, Allocator.Persistent);
+        OcclusionRayCommands     = new(MaximumCapacity, Allocator.Persistent);
+        OcclusionHitResults      = new(MaximumCapacity, Allocator.Persistent);
 
-        TargetOcclusion01      = new(MaximumCapacity, Allocator.Persistent);
-        TargetPropagationEQ01  = new(MaximumCapacity, Allocator.Persistent);
-        TargetSHCoefficients   = new(MaximumCapacity * 16, Allocator.Persistent);
+        SourceRoomIdentifiers    = new(MaximumCapacity, Allocator.Persistent);
 
-        CurrentOcclusion01     = new(MaximumCapacity, Allocator.Persistent);
-        CurrentPropagationEQ01 = new(MaximumCapacity, Allocator.Persistent);
+        TargetOcclusion01        = new(MaximumCapacity, Allocator.Persistent);
+        TargetAmbisonicEQ01s    = new(MaximumCapacity, Allocator.Persistent);
+        TargetSHCoefficients     = new(MaximumCapacity * 16, Allocator.Persistent);
+
+        CurrentOcclusion01       = new(MaximumCapacity, Allocator.Persistent);
+        CurrentPropagationEQ01   = new(MaximumCapacity, Allocator.Persistent);
     }
 
     protected sealed override void DeallocateNative()
@@ -123,6 +144,15 @@ public partial class WyrmBaseSource
         PositionTransforms.TryDispose();
         SourcePositions.TryDispose();
 
+        InputVirtualPositions.TryDispose();
+        InputVerticalWidths.TryDispose();
+        InputHorizontalWidths.TryDispose();
+        InputDirectionalGains.TryDispose();
+        InputAmbientGains.TryDispose();
+        InputAmbisonicEQHigh01s.TryDispose();
+        InputAmbisonicEQMid01s.TryDispose();
+        InputAmbisonicEQLow01s.TryDispose();
+
         Pointers.TryDispose();
 
         OcclusionRayCommands.TryDispose();
@@ -131,13 +161,14 @@ public partial class WyrmBaseSource
         SourceRoomIdentifiers.TryDispose();
 
         TargetOcclusion01.TryDispose();
-        TargetPropagationEQ01.TryDispose();
+        TargetAmbisonicEQ01s.TryDispose();
         TargetSHCoefficients.TryDispose();
-        
+
         CurrentOcclusion01.TryDispose();
         CurrentPropagationEQ01.TryDispose();
     }
 
+    // csharpier-ignore
     protected sealed override void LoadManagedToNative()
     {
         int index = NativeIndex;
@@ -145,13 +176,20 @@ public partial class WyrmBaseSource
         SourceTransforms.Add(CachedTransform);
         PositionTransforms.Add(PositionTransform);
 
-        SourcePositions[index]        = PositionTransform.position;
+        UseOcclusions[index]           = UseOcclusion.ToByte();
+        PlaybackEndTime                = double.NegativeInfinity;
 
-        UseOcclusions[index]          = UseOcclusion.ToByte();
-        PlaybackEndTime               = double.NegativeInfinity;
+        InputVirtualPositions[index]   = VirtualPosition;
+        InputVerticalWidths[index]     = VerticalWidth;
+        InputHorizontalWidths[index]   = HorizontalWidth;
+        InputDirectionalGains[index]   = DirectionalGain;
+        InputAmbientGains[index]       = AmbientGain;
+        InputAmbisonicEQHigh01s[index]  = AmbisonicEQHigh01;
+        InputAmbisonicEQMid01s[index]  = AmbisonicEQMid01;
+        InputAmbisonicEQLow01s[index] = AmbisonicEQLow01;
 
-        CurrentOcclusion01[index]     = 0f;
-        CurrentPropagationEQ01[index] = 1f;
+        CurrentOcclusion01[index]      = 0f;
+        CurrentPropagationEQ01[index]  = 1f;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
             Pointers[index] = phononSource.PhononSource.Get();
@@ -165,11 +203,17 @@ public partial class WyrmBaseSource
         if (removedIndex != lastIndex)
         {
             UseOcclusions[removedIndex]          = UseOcclusions[lastIndex];
-            SourcePositions[removedIndex]        = SourcePositions[lastIndex];
-            
+
+            InputVirtualPositions[removedIndex]   = InputVirtualPositions[lastIndex];
+            InputVerticalWidths[removedIndex]     = InputVerticalWidths[lastIndex];
+            InputHorizontalWidths[removedIndex]   = InputHorizontalWidths[lastIndex];
+            InputDirectionalGains[removedIndex]   = InputDirectionalGains[lastIndex];
+            InputAmbientGains[removedIndex]       = InputAmbientGains[lastIndex];
+            InputAmbisonicEQHigh01s[removedIndex]  = InputAmbisonicEQHigh01s[lastIndex];
+            InputAmbisonicEQMid01s[removedIndex]  = InputAmbisonicEQMid01s[lastIndex];
+            InputAmbisonicEQLow01s[removedIndex] = InputAmbisonicEQLow01s[lastIndex];
+
             Pointers[removedIndex]               = Pointers[lastIndex];
-            
-            SourceRoomIdentifiers[removedIndex]  = SourceRoomIdentifiers[lastIndex];
 
             CurrentOcclusion01[removedIndex]     = CurrentOcclusion01[lastIndex];
             CurrentPropagationEQ01[removedIndex] = CurrentPropagationEQ01[lastIndex];

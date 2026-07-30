@@ -22,8 +22,14 @@ public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollide
         labelStyle ??= new GUIStyle { alignment = TextAnchor.MiddleCenter };
         labelStyle.normal.textColor = new Color(1, 1, 1, this.GetGizmoOpacity() * .2f);
 
-        Handles.Label(transform.position, gameObject.name, labelStyle);
-
+        if (RoomA != null && RoomB != null)
+        {
+            Handles.Label(transform.position, $"{RoomA.gameObject.name} <-> {RoomB.gameObject.name}", labelStyle);
+        }
+        else
+        {
+            Handles.Label(transform.position, gameObject.name, labelStyle);
+        }
         this.DrawVolumeGizmo(false);
         DrawListenerRoomHalf();
     }
@@ -56,7 +62,7 @@ public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollide
         halfCenter.z += localZDirection * halfSize.z * .5f;
 
         Color color = new(0, .5f, .5f, .5f);
-        color.a *= this.GetGizmoOpacity();
+        color.a *= this.GetGizmoOpacity() * 0.2f;
 
         Gizmos.matrix = transform.localToWorldMatrix;
         Gizmos.color = color;
