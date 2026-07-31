@@ -12,33 +12,29 @@ internal static class AmbisonicProcessor
             return dependency;
 
         // csharpier-ignore
-        var shCoeffJob = new GenerateSHCoefficientsJob
+        var calculateEqualizationJob  = new CalculateAmbisonicEqualizationJob
         {
-            VirtualPositions = WyrmBaseSource.InputVirtualPositions,
-            VerticalWidths   = WyrmBaseSource.InputVerticalWidths,
-            HorizontalWidths = WyrmBaseSource.InputHorizontalWidths,
-            DirectionalGains = WyrmBaseSource.InputDirectionalGains,
-            AmbientGains     = WyrmBaseSource.InputAmbientGains,
+            InputAmbisonicEQHigh01s   = WyrmBaseSource.InputAmbisonicEQLow01s,
+            InputAmbisonicEQMid01s    = WyrmBaseSource.InputAmbisonicEQMid01s,
+            InputAmbisonicEQLow01s    = WyrmBaseSource.InputAmbisonicEQHigh01s,
 
-            ListenerPosition = WyrmListener.ListenerPosition,
-
-            AmbisonicOrder = SteamAudioSettings.Singleton.realTimeAmbisonicOrder,
-
-            SHCoeffs         = WyrmBaseSource.TargetSHCoefficients,
-        };
-        JobHandle shCoefficientHandle = shCoeffJob.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);
-
-        var calculateEqualizationJob = new CalculateAmbisonicEqualizationJob
-        {
-            InputAmbisonicEQHigh01s = WyrmBaseSource.InputAmbisonicEQLow01s,
-            InputAmbisonicEQMid01s = WyrmBaseSource.InputAmbisonicEQMid01s,
-            InputAmbisonicEQLow01s = WyrmBaseSource.InputAmbisonicEQHigh01s,
-
-            TargetAmbisonicEQ01s = WyrmBaseSource.TargetAmbisonicEQ01s,
+            TargetAmbisonicEQ01s      = WyrmBaseSource.TargetAmbisonicEQ01s,
         };
         JobHandle calculateEqualizationHandle = calculateEqualizationJob.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);
 
-        return JobHandle.CombineDependencies(shCoefficientHandle, calculateEqualizationHandle);
+        // csharpier-ignore
+        var shCoeffJob                = new GenerateDirectionalSHCoefficientJob
+        {
+            VirtualPositions          = WyrmBaseSource.InputVirtualPositions,
+            PathEQs                   = WyrmBaseSource.TargetAmbisonicEQ01s,
+            ListenerPosition          = WyrmListener.ListenerPosition,
+            AmbisonicOrder            = SteamAudioSettings.Singleton.realTimeAmbisonicOrder,
+
+            SHCoeffs                  = WyrmBaseSource.TargetSHCoefficients,
+        };
+        JobHandle shCoefficientHandle = shCoeffJob.Schedule(WyrmBaseSource.ActiveCount, 16, calculateEqualizationHandle);
+
+        return shCoefficientHandle;
     }
 }
 

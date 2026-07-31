@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -24,6 +25,16 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
     {
         Pool = pool;
         ASource.outputAudioMixerGroup = Pool.Config.targetMixerGroup;
+    }
+
+    protected sealed override int MaximumCapacity => _maximumSourceCapacity;
+
+    internal static void ConfigureCapacity(int maximumCapacity)
+    {
+        if (maximumCapacity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maximumCapacity));
+
+        _maximumSourceCapacity = maximumCapacity;
     }
 
     // csharpier-ignore
@@ -80,7 +91,7 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
     public void Return()
     {
         if (!IsPooled)
-            throw new System.InvalidOperationException("Only pooled Wyrm sources can be returned.");
+            throw new InvalidOperationException("Only pooled Wyrm sources can be returned.");
 
         Pool.ReturnToAvailable(this);
     }

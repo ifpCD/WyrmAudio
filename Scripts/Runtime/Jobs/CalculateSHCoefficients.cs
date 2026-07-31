@@ -4,22 +4,13 @@ using Unity.Jobs;
 using Unity.Mathematics;
 
 [BurstCompile]
-public struct GenerateSHCoefficientsJob : IJobParallelFor
+public struct GenerateDirectionalSHCoefficientJob : IJobParallelFor
 {
     [ReadOnly]
     public NativeArray<float3> VirtualPositions;
 
     [ReadOnly]
-    public NativeArray<float> DirectionalGains;
-
-    [ReadOnly]
-    public NativeArray<float> AmbientGains;
-
-    [ReadOnly]
-    public NativeArray<float> HorizontalWidths; // 0 to 1 (0 = point, 1 = wrap around)
-
-    [ReadOnly]
-    public NativeArray<float> VerticalWidths; // 0 to 1
+    public NativeArray<float3> PathEQs;
 
     [ReadOnly]
     public NativeReference<float3> ListenerPosition;
@@ -34,8 +25,7 @@ public struct GenerateSHCoefficientsJob : IJobParallelFor
     public void Execute(int i)
     {
         float3 dir = VirtualPositions[i] - ListenerPosition.Value;
-        float dist = math.length(dir);
-        float3 u = math.select(new float3(0, 0, 1), dir / dist, dist > 0.001f);
+        float3 u = math.normalizesafe(dir, float3.zero);
 
         // Phonon Mapping
         float x = u.z;
@@ -43,40 +33,33 @@ public struct GenerateSHCoefficientsJob : IJobParallelFor
         float z = u.y;
 
         int numCoeffs = (AmbisonicOrder + 1) * (AmbisonicOrder + 1);
-        int offset = i * numCoeffs;
 
-        // Spread Parameters (Convert 0-1 to Radians)
-        // We cap spread to prevent numerical issues, 0.01 to PI
-        float sigmaH = HorizontalWidths[i] * math.PI;
-        float sigmaV = VerticalWidths[i] * math.PI;
+        int offsetLow = i * numCoeffs * 3;
+        int offsetMid = offsetLow + numCoeffs;
+        int offsetHigh = offsetMid + numCoeffs;
 
-        float directionalGain = DirectionalGains[i];
+        float3 eq = PathEQs[i];
 
-        // Order 0 (Omni / Ambient)
-        // Order 0 is unaffected by width/direction, it's the base floor.
-        SHCoeffs[offset + 0] = AmbientGains[i] * SH.C0;
+        var shCoeffs = SHCoeffs;
+
+        void WriteCoeff(int coefficient, float value)
+        {
+            shCoeffs[offsetLow + coefficient] = value * eq.x;
+            shCoeffs[offsetMid + coefficient] = value * eq.y;
+            shCoeffs[offsetHigh + coefficient] = value * eq.z;
+        }
+
+        WriteCoeff(0, SH.C0);
 
         if (AmbisonicOrder == 0)
             return;
 
-        // Precompute smoothing weights per order/degree
-        // We use a simplified anisotropic smoothing kernel
-        float w_l1_h = math.exp(-(1 * 2 * (sigmaH * sigmaH)) / 2.0f);
-        float w_l1_v = math.exp(-(1 * 2 * (sigmaV * sigmaV)) / 2.0f);
-
-        // Order 1
-        // m = -1 (Y), m = 0 (Z), m = 1 (X)
-        // Scaling X and Z by horizontal width, Y by vertical
-        SHCoeffs[offset + 1] = directionalGain * w_l1_h * SH.C1 * y; // Horizontal detail
-        SHCoeffs[offset + 2] = directionalGain * w_l1_v * SH.C1 * z; // Vertical detail
-        SHCoeffs[offset + 3] = directionalGain * w_l1_h * SH.C1 * x; // Horizontal detail
+        WriteCoeff(1, SH.C1 * y);
+        WriteCoeff(2, SH.C1 * z);
+        WriteCoeff(3, SH.C1 * x);
 
         if (AmbisonicOrder == 1)
             return;
-
-        // Order 2 Smoothing Weights
-        float w_l2_h = math.exp(-(2 * 3 * (sigmaH * sigmaH)) / 2.0f);
-        float w_l2_v = math.exp(-(2 * 3 * (sigmaV * sigmaV)) / 2.0f);
 
         float xx = x * x;
         float yy = y * y;
@@ -85,26 +68,21 @@ public struct GenerateSHCoefficientsJob : IJobParallelFor
         float yz = y * z;
         float xz = x * z;
 
-        // Higher |m| = higher horizontal frequency
-        SHCoeffs[offset + 4] = directionalGain * w_l2_h * SH.C2 * xy;
-        SHCoeffs[offset + 5] = directionalGain * w_l2_h * SH.C2 * yz;
-        SHCoeffs[offset + 6] = directionalGain * w_l2_v * SH.C3 * (3.0f * zz - 1.0f);
-        SHCoeffs[offset + 7] = directionalGain * w_l2_h * SH.C2 * xz;
-        SHCoeffs[offset + 8] = directionalGain * w_l2_h * SH.C4 * (xx - yy);
+        WriteCoeff(4, SH.C2 * xy);
+        WriteCoeff(5, SH.C2 * yz);
+        WriteCoeff(6, SH.C3 * (3.0f * zz - 1.0f));
+        WriteCoeff(7, SH.C2 * xz);
+        WriteCoeff(8, SH.C4 * (xx - yy));
 
         if (AmbisonicOrder == 2)
             return;
 
-        // Order 3 Smoothing Weights
-        float w_l3_h = math.exp(-(3 * 4 * (sigmaH * sigmaH)) / 2.0f);
-        float w_l3_v = math.exp(-(3 * 4 * (sigmaV * sigmaV)) / 2.0f);
-
-        SHCoeffs[offset + 9] = directionalGain * w_l3_h * SH.C5 * y * (3.0f * xx - yy);
-        SHCoeffs[offset + 10] = directionalGain * w_l3_h * SH.C6 * x * y * z;
-        SHCoeffs[offset + 11] = directionalGain * w_l3_h * SH.C7 * y * (5.0f * zz - 1.0f);
-        SHCoeffs[offset + 12] = directionalGain * w_l3_v * SH.C8 * z * (5.0f * zz - 3.0f);
-        SHCoeffs[offset + 13] = directionalGain * w_l3_h * SH.C7 * x * (5.0f * zz - 1.0f);
-        SHCoeffs[offset + 14] = directionalGain * w_l3_h * SH.C9 * z * (xx - yy);
-        SHCoeffs[offset + 15] = directionalGain * w_l3_h * SH.C5 * x * (xx - 3.0f * yy);
+        WriteCoeff(9, SH.C5 * y * (3.0f * xx - yy));
+        WriteCoeff(10, SH.C6 * x * y * z);
+        WriteCoeff(11, SH.C7 * y * (5.0f * zz - 1.0f));
+        WriteCoeff(12, SH.C8 * z * (5.0f * zz - 3.0f));
+        WriteCoeff(13, SH.C7 * x * (5.0f * zz - 1.0f));
+        WriteCoeff(14, SH.C9 * z * (xx - yy));
+        WriteCoeff(15, SH.C5 * x * (xx - 3.0f * yy));
     }
 }

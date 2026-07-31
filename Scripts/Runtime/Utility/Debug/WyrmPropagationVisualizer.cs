@@ -107,7 +107,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
                 
             int shOffset = sourceIdx * 16;
 
-            float3 rawEq = WyrmBaseSource.CurrentPropagationEQ01[sourceIdx];
+            float3 rawEq = WyrmBaseSource.CurrentTotalAmbisonicEQ01s[sourceIdx];
             float3 safeEq = math.max(rawEq, new float3(0.001f));
 
             var shNativeArray = WyrmBaseSource.TargetSHCoefficients;

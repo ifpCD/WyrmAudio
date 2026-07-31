@@ -98,7 +98,7 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
             WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
                 activeCount,
                 (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
-                (float*)WyrmBaseSource.CurrentPropagationEQ01.GetUnsafeReadOnlyPtr(),
+                (float*)WyrmBaseSource.CurrentTotalAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
                 (float*)WyrmBaseSource.TargetSHCoefficients.GetUnsafeReadOnlyPtr(),
                 steamAudioSettings.realTimeAmbisonicOrder
             );
