@@ -1,4 +1,5 @@
 using System;
+using SaintsField.Playa;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -9,6 +10,8 @@ public partial class WyrmBaseSource
     public Transform CachedTransform { get; private set; }
 
     Transform _trackedTransform;
+
+    [ShowInInspector]
     public Transform TrackedTransform
     {
         get => _trackedTransform;

@@ -14,9 +14,9 @@ internal static class AmbisonicProcessor
         // csharpier-ignore
         var calculateEqualizationJob  = new CalculateAmbisonicEqualizationJob
         {
-            InputAmbisonicEQHigh01s   = WyrmBaseSource.InputAmbisonicEQLow01s,
+            InputAmbisonicEQLow01s   = WyrmBaseSource.InputAmbisonicEQLow01s,
             InputAmbisonicEQMid01s    = WyrmBaseSource.InputAmbisonicEQMid01s,
-            InputAmbisonicEQLow01s    = WyrmBaseSource.InputAmbisonicEQHigh01s,
+            InputAmbisonicEQHigh01s    = WyrmBaseSource.InputAmbisonicEQHigh01s,
 
             TargetAmbisonicEQ01s      = WyrmBaseSource.TargetAmbisonicEQ01s,
         };
@@ -42,19 +42,19 @@ internal static class AmbisonicProcessor
 internal struct CalculateAmbisonicEqualizationJob : IJobParallelFor
 {
     [ReadOnly]
-    public NativeArray<float> InputAmbisonicEQHigh01s;
+    public NativeArray<float> InputAmbisonicEQLow01s;
 
     [ReadOnly]
     public NativeArray<float> InputAmbisonicEQMid01s;
 
     [ReadOnly]
-    public NativeArray<float> InputAmbisonicEQLow01s;
+    public NativeArray<float> InputAmbisonicEQHigh01s;
 
     [WriteOnly]
     public NativeArray<float3> TargetAmbisonicEQ01s;
 
     public void Execute(int i)
     {
-        TargetAmbisonicEQ01s[i] = new(InputAmbisonicEQHigh01s[i], InputAmbisonicEQMid01s[i], InputAmbisonicEQLow01s[i]);
+        TargetAmbisonicEQ01s[i] = new(InputAmbisonicEQLow01s[i], InputAmbisonicEQMid01s[i], InputAmbisonicEQHigh01s[i]);
     }
 }

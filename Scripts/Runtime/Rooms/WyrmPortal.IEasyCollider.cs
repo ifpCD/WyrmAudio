@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
+public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
 {
 #if UNITY_EDITOR
     public Color OutlineColor => GizmoColors.FaintCyan;

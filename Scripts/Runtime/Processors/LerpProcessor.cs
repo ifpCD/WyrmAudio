@@ -27,6 +27,8 @@ internal static class LerpProcessor
         };
         JobHandle lerpOcclusionsHandle = lerpOcclusions.Schedule(activeCount, 16, dependency);
 
+        return lerpOcclusionsHandle;
+
         // csharpier-ignore
         var lerpPropagationEqs = new StatelessLerpPropagation01Job
         {

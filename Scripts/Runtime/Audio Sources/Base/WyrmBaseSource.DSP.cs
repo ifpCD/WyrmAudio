@@ -1,4 +1,5 @@
 using System;
+using SaintsField.Playa;
 using UnityEngine;
 
 public partial class WyrmBaseSource
@@ -13,10 +14,11 @@ public partial class WyrmBaseSource
         set => _targetVolume = Mathf.Clamp01(value);
     }
 
-    [SerializeField]
-    [Range(0, 0.1f)]
+
     float volumeTransitionTime = 0.05f;
 
+    // [ShowInInspector]
+    // [Range(0, 0.1f)]
     public float VolumeTransitionTime
     {
         get => volumeTransitionTime;

@@ -7,7 +7,7 @@ using UnityEditor;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider))]
-public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
+public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
 {
     protected override int MaximumCapacity => 2000;
 
@@ -38,7 +38,7 @@ public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollide
     void OnDisable() => Deregister();
 
     // In case transform/shape changes
-    public void NotifyChange() => LoadManagedToNative();
+    public void NotifyChange() => LoadObjectToArrays();
 
     public float _openness = 1f;
 

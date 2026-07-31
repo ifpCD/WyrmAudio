@@ -1,24 +1,32 @@
 using System;
+using SaintsField;
+using SaintsField.Playa;
 using UnityEngine;
+using UnityEngine.Audio;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(AudioSource))]
-public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
+public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSource
 {
     [HideInInspector]
-    public AudioSource ASource { get; set; }
+    internal AudioSource ASource { get; private set; }
 
+    [Header("Debug")]
     public bool IsBorrowed { get; internal set; }
+
     internal WyrmMixerPool Pool { get; private set; }
+
     internal bool IsPooled => Pool != null;
 
-    [field: SerializeField]
+    public AudioMixerGroup MixerGroup => ASource.outputAudioMixerGroup;
+
+    [ShowInInspector]
     public virtual bool UseReflections { get; set; } = false;
 
-    [field: SerializeField]
-    public virtual bool UseAmbisonics { get; set; } = false;
+    [ShowInInspector]
+    public virtual bool UseAmbisonics { get; set; } = true;
 
-    [field: SerializeField]
+    [ShowInInspector]
     public virtual bool UseOcclusion { get; set; } = false;
 
     internal void Initialize(WyrmMixerPool pool)
@@ -150,6 +158,8 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
 
         ASource.PlayOneShot(clip);
     }
+
+
 
     public virtual void PlayOneShot(AbstractWyrmBank clip) => PlayOneShot(clip.GetBodyClip());
 

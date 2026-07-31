@@ -56,13 +56,13 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         SetSpatialValue(TRANSMISSION_MID, 0.025f);
         SetSpatialValue(TRANSMISSION_HIGH, 0.025f);
 
-        SetSpatialValue(DIRECT_MIXLEVEL, 0);
+        SetSpatialValue(DIRECT_MIXLEVEL, 1f);
 
         // SetSpatialValue(REFLECTIONS_BINAURAL, 1);
         SetSpatialValue(REFLECTIONS_MIXLEVEL, 0);
         SetSpatialValue(PATHING_MIXLEVEL, 1);
 
-        SetSpatialValue(PATHING_BINAURAL, 1f); // HRTF Propagation
+        SetSpatialValue(PATHING_BINAURAL, 0); // HRTF Propagation
 
         SetSpatialValue(DIRECT_BINAURAL, 1f); // HRTF
         SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1

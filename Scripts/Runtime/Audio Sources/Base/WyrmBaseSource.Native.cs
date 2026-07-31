@@ -78,34 +78,34 @@ public partial class WyrmBaseSource
     // csharpier-ignore
     protected sealed override void AllocateNative()
     {
-        UseOcclusions             = new(MaximumCapacity, Allocator.Persistent);
+        UseOcclusions              = new(MaximumCapacity, Allocator.Persistent);
 
-        SourceTransforms          = new(MaximumCapacity);
-        PositionTransforms        = new(MaximumCapacity);
-        SourcePositions           = new(MaximumCapacity, Allocator.Persistent);
+        SourceTransforms           = new(MaximumCapacity);
+        PositionTransforms         = new(MaximumCapacity);
+        SourcePositions            = new(MaximumCapacity, Allocator.Persistent);
 
-        InputVirtualPositions     = new(MaximumCapacity, Allocator.Persistent);
-        InputVerticalWidths       = new(MaximumCapacity, Allocator.Persistent);
-        InputHorizontalWidths     = new(MaximumCapacity, Allocator.Persistent);
-        InputDirectionalGains     = new(MaximumCapacity, Allocator.Persistent);
-        InputAmbientGains         = new(MaximumCapacity, Allocator.Persistent);
-        InputAmbisonicEQHigh01s   = new(MaximumCapacity, Allocator.Persistent);
-        InputAmbisonicEQMid01s    = new(MaximumCapacity, Allocator.Persistent);
-        InputAmbisonicEQLow01s    = new(MaximumCapacity, Allocator.Persistent);
+        InputVirtualPositions      = new(MaximumCapacity, Allocator.Persistent);
+        InputVerticalWidths        = new(MaximumCapacity, Allocator.Persistent);
+        InputHorizontalWidths      = new(MaximumCapacity, Allocator.Persistent);
+        InputDirectionalGains      = new(MaximumCapacity, Allocator.Persistent);
+        InputAmbientGains          = new(MaximumCapacity, Allocator.Persistent);
+        InputAmbisonicEQHigh01s    = new(MaximumCapacity, Allocator.Persistent);
+        InputAmbisonicEQMid01s     = new(MaximumCapacity, Allocator.Persistent);
+        InputAmbisonicEQLow01s     = new(MaximumCapacity, Allocator.Persistent);
 
-        Pointers                  = new(MaximumCapacity, Allocator.Persistent);
+        Pointers                   = new(MaximumCapacity, Allocator.Persistent);
 
-        OcclusionRayCommands      = new(MaximumCapacity, Allocator.Persistent);
-        OcclusionHitResults       = new(MaximumCapacity, Allocator.Persistent);
+        OcclusionRayCommands       = new(MaximumCapacity, Allocator.Persistent);
+        OcclusionHitResults        = new(MaximumCapacity, Allocator.Persistent);
 
-        SourceRoomIdentifiers     = new(MaximumCapacity, Allocator.Persistent);
+        SourceRoomIdentifiers      = new(MaximumCapacity, Allocator.Persistent);
 
-        TargetOcclusion01         = new(MaximumCapacity, Allocator.Persistent);
-        TargetAmbisonicEQ01s      = new(MaximumCapacity, Allocator.Persistent);
-        TargetSHCoefficients      = new(MaximumCapacity * 48, Allocator.Persistent);
+        TargetOcclusion01          = new(MaximumCapacity, Allocator.Persistent);
+        TargetAmbisonicEQ01s       = new(MaximumCapacity, Allocator.Persistent);
+        TargetSHCoefficients       = new(MaximumCapacity * 48, Allocator.Persistent);
 
-        CurrentOcclusion01        = new(MaximumCapacity, Allocator.Persistent);
-        CurrentTotalAmbisonicEQ01s    = new(MaximumCapacity, Allocator.Persistent);
+        CurrentOcclusion01         = new(MaximumCapacity, Allocator.Persistent);
+        CurrentTotalAmbisonicEQ01s = new(MaximumCapacity, Allocator.Persistent);
 
         // for(var i = 0; i < MaximumCapacity; i++)
         //     TargetSHCoefficients[i] = new(1f, 1f, 1f);
@@ -144,9 +144,9 @@ public partial class WyrmBaseSource
     }
 
     // csharpier-ignore
-    protected sealed override void LoadManagedToNative()
+    protected sealed override void LoadObjectToArrays()
     {
-        int index                       = NativeIndex;
+        int index = NativeIndex;
 
         SourceTransforms.Add(CachedTransform);
         PositionTransforms.Add(PositionTransform);
@@ -173,24 +173,24 @@ public partial class WyrmBaseSource
     }
 
     // csharpier-ignore
-    sealed protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex)
+    sealed protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
     {
         if (removedIndex != lastIndex)
         {
-            UseOcclusions[removedIndex]            = UseOcclusions[lastIndex];
+            UseOcclusions[removedIndex]                = UseOcclusions[lastIndex];
 
-            InputVirtualPositions[removedIndex]    = InputVirtualPositions[lastIndex];
-            InputVerticalWidths[removedIndex]      = InputVerticalWidths[lastIndex];
-            InputHorizontalWidths[removedIndex]    = InputHorizontalWidths[lastIndex];
-            InputDirectionalGains[removedIndex]    = InputDirectionalGains[lastIndex];
-            InputAmbientGains[removedIndex]        = InputAmbientGains[lastIndex];
-            InputAmbisonicEQHigh01s[removedIndex]  = InputAmbisonicEQHigh01s[lastIndex];
-            InputAmbisonicEQMid01s[removedIndex]   = InputAmbisonicEQMid01s[lastIndex];
-            InputAmbisonicEQLow01s[removedIndex]   = InputAmbisonicEQLow01s[lastIndex];
+            InputVirtualPositions[removedIndex]        = InputVirtualPositions[lastIndex];
+            InputVerticalWidths[removedIndex]          = InputVerticalWidths[lastIndex];
+            InputHorizontalWidths[removedIndex]        = InputHorizontalWidths[lastIndex];
+            InputDirectionalGains[removedIndex]        = InputDirectionalGains[lastIndex];
+            InputAmbientGains[removedIndex]            = InputAmbientGains[lastIndex];
+            InputAmbisonicEQHigh01s[removedIndex]      = InputAmbisonicEQHigh01s[lastIndex];
+            InputAmbisonicEQMid01s[removedIndex]       = InputAmbisonicEQMid01s[lastIndex];
+            InputAmbisonicEQLow01s[removedIndex]       = InputAmbisonicEQLow01s[lastIndex];
 
-            Pointers[removedIndex]                 = Pointers[lastIndex];
+            Pointers[removedIndex]                     = Pointers[lastIndex];
 
-            CurrentOcclusion01[removedIndex]       = CurrentOcclusion01[lastIndex];
+            CurrentOcclusion01[removedIndex]           = CurrentOcclusion01[lastIndex];
             CurrentTotalAmbisonicEQ01s[removedIndex]   = CurrentTotalAmbisonicEQ01s[lastIndex];
         }
 

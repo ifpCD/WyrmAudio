@@ -22,6 +22,7 @@ public struct GenerateDirectionalSHCoefficientJob : IJobParallelFor
     [WriteOnly]
     public NativeArray<float> SHCoeffs;
 
+    // todo: index should be WyrmBaseSource.ActiveCount * 48 instead
     public void Execute(int i)
     {
         float3 dir = VirtualPositions[i] - ListenerPosition.Value;

@@ -2,7 +2,7 @@ using System;
 using Unity.Collections;
 using Unity.Mathematics;
 
-public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollider
+public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
 {
     public static NativeArray<float4x4> PortalWorldToLocal;
     public static NativeArray<float3> PortalExtents;
@@ -30,7 +30,7 @@ public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollide
     }
 
     // csharpier-ignore
-    protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex)
+    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
     {
         PortalWorldToLocal[removedIndex] = PortalWorldToLocal[lastIndex];
         PortalExtents[removedIndex]      = PortalExtents[lastIndex];
@@ -40,7 +40,7 @@ public sealed partial class WyrmPortal : AmbiComponent<WyrmPortal>, IEasyCollide
     }
 
     // csharpier-ignore
-    protected override void LoadManagedToNative()
+    protected override void LoadObjectToArrays()
     {
         if (!IsRegistered)
             return;

@@ -2,7 +2,7 @@ using System;
 using Unity.Collections;
 using Unity.Mathematics;
 
-public sealed partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyCollider
+public sealed partial class WyrmRoomShape : AmbiMonoBehaviour<WyrmRoomShape>, IEasyCollider
 {
     public static NativeArray<float4x4> ShapeWorldToLocal;
     public static NativeArray<float3> ShapeExtents;
@@ -24,7 +24,7 @@ public sealed partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyC
     }
 
     // csharpier-ignore
-    protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex)
+    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
     {
         ShapeWorldToLocal[removedIndex]          = ShapeWorldToLocal[lastIndex];
         ShapeExtents[removedIndex]               = ShapeExtents[lastIndex];
@@ -32,7 +32,7 @@ public sealed partial class WyrmRoomShape : AmbiComponent<WyrmRoomShape>, IEasyC
     }
 
     // csharpier-ignore
-    protected override void LoadManagedToNative()
+    protected override void LoadObjectToArrays()
     {
         ShapeWorldToLocal[NativeIndex]           = WorldToLocal;
         ShapeExtents[NativeIndex]                = Extents;

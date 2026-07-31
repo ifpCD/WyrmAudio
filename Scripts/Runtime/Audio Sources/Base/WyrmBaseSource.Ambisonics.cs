@@ -1,16 +1,18 @@
+using SaintsField.Playa;
 using UnityEngine;
 
-public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
+public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSource
 {
     Vector3 _virtualPosition = new();
     float _verticalWidth = 0f;
     float _horizontalWidth = 0f;
     float _directionalGain = 1f;
     float _ambientGain = 1f;
-    float _ambisonicEQHigh01 = 1f;
-    float _ambisonicEQMid01 = 1f;
     float _ambisonicEQLow01 = 1f;
+    float _ambisonicEQMid01 = 1f;
+    float _ambisonicEQHigh01 = 1f;
 
+    [ShowInInspector]
     public Vector3 VirtualPosition
     {
         get => _virtualPosition;
@@ -86,21 +88,25 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
         }
     }
 
+    [ShowInInspector]
+    [Range(0, 1f)]
     public float AmbisonicEQLow01
     {
-        get => _ambisonicEQHigh01;
+        get => _ambisonicEQLow01;
         set
         {
-            if (_ambisonicEQHigh01 == value)
+            if (_ambisonicEQLow01 == value)
                 return;
 
-            _ambisonicEQHigh01 = value;
+            _ambisonicEQLow01 = value;
 
             if (IsRegistered)
                 InputAmbisonicEQLow01s[NativeIndex] = value;
         }
     }
 
+    [ShowInInspector]
+    [Range(0, 1f)]
     public float AmbisonicEQMid01
     {
         get => _ambisonicEQMid01;
@@ -116,15 +122,17 @@ public partial class WyrmBaseSource : AmbiComponent<WyrmBaseSource>, IWyrmSource
         }
     }
 
+    [ShowInInspector]
+    [Range(0, 1f)]
     public float AmbisonicEQHigh01
     {
-        get => _ambisonicEQLow01;
+        get => _ambisonicEQHigh01;
         set
         {
-            if (_ambisonicEQLow01 == value)
+            if (_ambisonicEQHigh01 == value)
                 return;
 
-            _ambisonicEQLow01 = value;
+            _ambisonicEQHigh01 = value;
 
             if (IsRegistered)
                 InputAmbisonicEQHigh01s[NativeIndex] = value;

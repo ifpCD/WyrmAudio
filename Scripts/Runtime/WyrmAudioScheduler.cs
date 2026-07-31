@@ -91,26 +91,6 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
     static unsafe void SubmitNativeAudio()
     {
         int activeCount = WyrmBaseSource.ActiveCount;
-        SteamAudioSettings steamAudioSettings = SteamAudioSettings.Singleton;
-
-        if (steamAudioSettings != null)
-        {
-            WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
-                activeCount,
-                (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
-                (float*)WyrmBaseSource.CurrentTotalAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
-                (float*)WyrmBaseSource.TargetSHCoefficients.GetUnsafeReadOnlyPtr(),
-                steamAudioSettings.realTimeAmbisonicOrder
-            );
-
-            WyrmPhononCustomAPI.iplSourceSetCustomDirectBatch(
-                activeCount,
-                (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
-                (float3*)WyrmBaseSource.SourcePositions.GetUnsafeReadOnlyPtr(),
-                null,
-                null
-            );
-        }
 
         // audioplugin_phonon constantly overrides occlusion/transmission values even if we set them through the custom API
         // so for now we just do this
@@ -119,5 +99,25 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
             if (WyrmBaseSource.RegisteredInstances[index] is WyrmPhononSource phononSource)
                 phononSource.SetOcclusionLevel(WyrmBaseSource.CurrentOcclusion01[index]);
         }
+
+        SteamAudioSettings steamAudioSettings = SteamAudioSettings.Singleton;
+        if (steamAudioSettings == null)
+            return;
+
+        WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
+            activeCount,
+            (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
+            (float*)WyrmBaseSource.CurrentTotalAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
+            (float*)WyrmBaseSource.TargetSHCoefficients.GetUnsafeReadOnlyPtr(),
+            steamAudioSettings.realTimeAmbisonicOrder
+        );
+
+        WyrmPhononCustomAPI.iplSourceSetCustomDirectBatch(
+            activeCount,
+            (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
+            (float3*)WyrmBaseSource.SourcePositions.GetUnsafeReadOnlyPtr(),
+            null,
+            null
+        );
     }
 }

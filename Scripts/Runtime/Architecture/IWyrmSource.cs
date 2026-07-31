@@ -24,7 +24,7 @@ public interface IWyrmSource
     GameObject gameObject { get; }
 
     // AudioSource
-    AudioSource ASource { get; set; }
+    // AudioSource ASource { get; set; }
     AudioClip clip { get; set; }
     bool loop { get; set; }
     float volume { get; set; }

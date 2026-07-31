@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Jobs;
 
 [RequireComponent(typeof(AudioListener))]
-public class WyrmListener : AmbiComponent<WyrmListener>
+public class WyrmListener : AmbiMonoBehaviour<WyrmListener>
 {
     protected override int MaximumCapacity => 1;
 
@@ -41,11 +41,11 @@ public class WyrmListener : AmbiComponent<WyrmListener>
         return true;
     }
 
-    protected override void LoadManagedToNative()
+    protected override void LoadObjectToArrays()
     {
         ListenerRoomIdentifier.Value = -1;
         Synchronize();
     }
 
-    protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex) { }
+    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex) { }
 }

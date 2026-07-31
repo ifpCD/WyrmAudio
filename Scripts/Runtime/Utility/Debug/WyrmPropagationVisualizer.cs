@@ -1,10 +1,15 @@
+using Codice.Client.BaseCommands;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Audio;
 
 [DefaultExecutionOrder(200)]
 public class WyrmPropagationVisualizer : MonoBehaviour
 {
     public bool enableVisualization = true;
+
+    public AudioMixerGroup TargetMixerGroup = null;
+
     public float sensitivity = 25.0f;
 
     public float baseRadius = 2.0f;
@@ -88,11 +93,20 @@ public class WyrmPropagationVisualizer : MonoBehaviour
         if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive)
             return;
 
+        if (SteamAudio.SteamAudioSettings.Singleton == null)
+            return;
+
         if (_shMaterial == null || _sphereMesh == null)
             InitializeResources();
 
-        int order = SteamAudio.SteamAudioSettings.Singleton != null ? SteamAudio.SteamAudioSettings.Singleton.realTimeAmbisonicOrder : 1;
-        order = math.clamp(order, 0, 3);
+        IterateOverSources();
+        SetShaderData();
+    }
+
+    void IterateOverSources()
+    {
+        int order = SteamAudio.SteamAudioSettings.Singleton.realTimeAmbisonicOrder;
+
         int numCoeffs = (order + 1) * (order + 1);
 
         for (int i = 0; i < 16; i++)
@@ -103,26 +117,33 @@ public class WyrmPropagationVisualizer : MonoBehaviour
         for (int sourceIdx = 0; sourceIdx < WyrmBaseSource.ActiveCount; sourceIdx++)
         {
             if (!WyrmBaseSource.RegisteredInstances[sourceIdx].UseAmbisonics)
-                return;
-                
+                continue;
+
+            if (TargetMixerGroup != null)
+            {
+                var sourceMixerGroup = WyrmBaseSource.RegisteredInstances[sourceIdx].ASource.outputAudioMixerGroup;
+                if (sourceMixerGroup != TargetMixerGroup)
+                    continue;
+            }
+
             int shOffset = sourceIdx * 16;
 
             float3 rawEq = WyrmBaseSource.CurrentTotalAmbisonicEQ01s[sourceIdx];
-            float3 safeEq = math.max(rawEq, new float3(0.001f));
-
-            var shNativeArray = WyrmBaseSource.TargetSHCoefficients;
 
             for (int c = 0; c < numCoeffs; c++)
             {
-                float shValue = shNativeArray[shOffset + c];
+                float shValue = WyrmBaseSource.TargetSHCoefficients[shOffset + c];
 
                 _accumulatedSH[c].w += shValue;
-                _accumulatedSH[c].x += shValue * safeEq.x;
-                _accumulatedSH[c].y += shValue * safeEq.y;
-                _accumulatedSH[c].z += shValue * safeEq.z;
+                _accumulatedSH[c].x += shValue * rawEq.x;
+                _accumulatedSH[c].y += shValue * rawEq.y;
+                _accumulatedSH[c].z += shValue * rawEq.z;
             }
         }
+    }
 
+    void SetShaderData()
+    {
         _propBlock.SetVectorArray(SH_COEFFS_ID, _accumulatedSH);
         _propBlock.SetFloat(BASE_RADIUS_ID, baseRadius);
         _propBlock.SetFloat(DEFORM_SCALE_ID, deformationScale);

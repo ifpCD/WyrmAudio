@@ -3,7 +3,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-public partial class AmbiNode : AmbiComponent<AmbiNode>
+public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>
 {
     internal static TransformAccessArray Transforms;
 
@@ -43,7 +43,7 @@ public partial class AmbiNode : AmbiComponent<AmbiNode>
     }
 
     // User should write the two methods below in order to deal with custom indices, matrices, etc.
-    protected override void RemoveNativeAtSwapBack(int removedIndex, int lastIndex)
+    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
     {
         if (removedIndex != lastIndex)
             NodeExtents[removedIndex] = NodeExtents[lastIndex];
@@ -51,7 +51,7 @@ public partial class AmbiNode : AmbiComponent<AmbiNode>
         Transforms.RemoveAtSwapBack(removedIndex);
     }
 
-    protected override void LoadManagedToNative()
+    protected override void LoadObjectToArrays()
     {
         NodeExtents[NativeIndex] = ColliderExtents;
         Transforms.Add(transform);

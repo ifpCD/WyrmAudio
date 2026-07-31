@@ -5,7 +5,7 @@ using UnityEngine;
 // User written
 [AmbiSynchronizable]
 [RequireComponent(typeof(BoxCollider))]
-public partial class AmbiNode : AmbiComponent<AmbiNode>
+public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>
 {
     protected override int MaximumCapacity => 2000;
 

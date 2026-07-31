@@ -25,6 +25,36 @@ internal static class HaltonSequence
         }
     }
 
+    public static void GenerateSphereVolumeSamples(SphereCollider sphere, int numSamples, List<Vector3> samples)
+    {
+        samples.Clear();
+
+        float radius = sphere.radius;
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float u = RadicalInverse(2, i);
+            float v = RadicalInverse(3, i);
+            float w = RadicalInverse(5, i);
+
+            float r = radius * Mathf.Pow(u, 1.0f / 3.0f);
+            float theta = 2.0f * Mathf.PI * v;
+
+            float phi = Mathf.Acos(1.0f - 2.0f * w);
+
+            // csharpier-ignore
+            Vector3 local = new(
+                r * Mathf.Sin(phi) * Mathf.Cos(theta),
+                r * Mathf.Cos(phi),
+                r * Mathf.Sin(phi) * Mathf.Sin(theta)
+            );
+
+            local += sphere.center;
+
+            samples.Add(sphere.transform.TransformPoint(local));
+        }
+    }
+
     public static float RadicalInverse(int p, int i)
     {
         float inv = 1.0f / p;
