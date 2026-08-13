@@ -6,6 +6,13 @@ internal static class HaltonSequence
 {
     public static void GenerateBoxVolumeSamples(BoxCollider box, int numSamples, List<Vector3> samples)
     {
+        Vector3 size = box.size;
+
+        GenerateBoxVolumeSamples(size, numSamples, samples);
+    }
+
+    public static void GenerateBoxVolumeSamples(Vector3 size, int numSamples, List<Vector3> samples)
+    {
         samples.Clear();
         for (int i = 0; i < numSamples; ++i)
         {
@@ -14,22 +21,25 @@ internal static class HaltonSequence
             float w = RadicalInverse(5, i);
 
             Vector3 local = new(
-                Mathf.Lerp(-box.size.x * 0.5f, box.size.x * 0.5f, u),
-                Mathf.Lerp(-box.size.y * 0.5f, box.size.y * 0.5f, v),
-                Mathf.Lerp(-box.size.z * 0.5f, box.size.z * 0.5f, w)
+                Mathf.Lerp(-size.x * 0.5f, size.x * 0.5f, u),
+                Mathf.Lerp(-size.y * 0.5f, size.y * 0.5f, v),
+                Mathf.Lerp(-size.z * 0.5f, size.z * 0.5f, w)
             );
 
-            local += box.center;
-
-            samples.Add(box.transform.TransformPoint(local));
+            samples.Add(local);
         }
     }
 
     public static void GenerateSphereVolumeSamples(SphereCollider sphere, int numSamples, List<Vector3> samples)
     {
-        samples.Clear();
-
         float radius = sphere.radius;
+
+        GenerateSphereVolumeSamples(radius, numSamples, samples);
+    }
+
+    public static void GenerateSphereVolumeSamples(float radius, int numSamples, List<Vector3> samples)
+    {
+        samples.Clear();
 
         for (int i = 0; i < numSamples; ++i)
         {
@@ -49,9 +59,7 @@ internal static class HaltonSequence
                 r * Mathf.Sin(phi) * Mathf.Sin(theta)
             );
 
-            local += sphere.center;
-
-            samples.Add(sphere.transform.TransformPoint(local));
+            samples.Add(local);
         }
     }
 

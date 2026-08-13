@@ -9,7 +9,7 @@ using UnityEditor;
 [RequireComponent(typeof(BoxCollider))]
 public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
 {
-    protected override int MaximumCapacity => 2000;
+    protected override int AllocatedCapacity => 2000;
 
     [field: SerializeField]
     public BoxCollider BoxCollider { get; private set; }
@@ -38,7 +38,7 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     void OnDisable() => Deregister();
 
     // In case transform/shape changes
-    public void NotifyChange() => LoadObjectToArrays();
+    public void NotifyChange() => SoASync();
 
     public float _openness = 1f;
 
@@ -48,10 +48,13 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         get => _openness;
         set
         {
+            if (_openness == value)
+                return;
+
             _openness = value;
 
             if (IsRegistered)
-                PortalOpenness[NativeIndex] = value;
+                PortalOpenness[SoAIndex] = value;
         }
     }
 }

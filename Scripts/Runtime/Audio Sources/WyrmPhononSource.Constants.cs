@@ -29,8 +29,8 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
     const int REFLECTIONS_MIXLEVEL         = 25;
     const int PATHING_BINAURAL             = 26;
     const int PATHING_MIXLEVEL             = 27;
-    const int SIMULATION_OUTPUTS_PTR_LOW   = 28;
-    const int SIMULATION_OUTPUTS_PTR_HIGH  = 29;
+    const int SIMULATION_OUTPUTS_PTR_LOW   = 28; // deprecated
+    const int SIMULATION_OUTPUTS_PTR_HIGH  = 29; // deprecated
     const int DIRECT_BINAURAL              = 30;
     const int SIMULATION_OUTPUTS_HANDLE    = 31;
     const int PERSPECTIVE_CORRECTION       = 32;

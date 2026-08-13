@@ -11,9 +11,9 @@ public sealed partial class WyrmRoomShape : AmbiMonoBehaviour<WyrmRoomShape>, IE
     // csharpier-ignore
     protected override void AllocateNative()
     {
-        ShapeWorldToLocal                        = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        ShapeExtents                             = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        ShapeRoomIdentifier                      = new(length: MaximumCapacity, allocator: Allocator.Persistent);
+        ShapeWorldToLocal                        = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        ShapeExtents                             = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        ShapeRoomIdentifier                      = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
@@ -34,8 +34,8 @@ public sealed partial class WyrmRoomShape : AmbiMonoBehaviour<WyrmRoomShape>, IE
     // csharpier-ignore
     protected override void LoadObjectToArrays()
     {
-        ShapeWorldToLocal[NativeIndex]           = WorldToLocal;
-        ShapeExtents[NativeIndex]                = Extents;
-        ShapeRoomIdentifier[NativeIndex]         = RoomIdentifier;
+        ShapeWorldToLocal[SoAIndex]           = WorldToLocal;
+        ShapeExtents[SoAIndex]                = Extents;
+        ShapeRoomIdentifier[SoAIndex]         = RoomIdentifier;
     }
 }

@@ -18,8 +18,6 @@ public interface IWyrmSource
 
     Transform CachedTransform { get; }
 
-    float TargetVolume { get; set; }
-
     // MonoBehaviour
     GameObject gameObject { get; }
 

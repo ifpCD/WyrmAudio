@@ -4,7 +4,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 
 [BurstCompile]
-public struct GenerateDirectionalSHCoefficientJob : IJobParallelFor
+public struct GenerateDirectionalSHJob : IJobParallelFor
 {
     [ReadOnly]
     public NativeArray<float3> VirtualPositions;
@@ -13,7 +13,7 @@ public struct GenerateDirectionalSHCoefficientJob : IJobParallelFor
     public NativeArray<float3> PathEQs;
 
     [ReadOnly]
-    public NativeReference<float3> ListenerPosition;
+    public float3 ListenerPosition;
 
     [ReadOnly]
     public int AmbisonicOrder;
@@ -22,10 +22,9 @@ public struct GenerateDirectionalSHCoefficientJob : IJobParallelFor
     [WriteOnly]
     public NativeArray<float> SHCoeffs;
 
-    // todo: index should be WyrmBaseSource.ActiveCount * 48 instead
-    public void Execute(int i)
+    public void Execute(int sourceIndex)
     {
-        float3 dir = VirtualPositions[i] - ListenerPosition.Value;
+        float3 dir = VirtualPositions[sourceIndex] - ListenerPosition;
         float3 u = math.normalizesafe(dir, float3.zero);
 
         // Phonon Mapping
@@ -35,11 +34,11 @@ public struct GenerateDirectionalSHCoefficientJob : IJobParallelFor
 
         int numCoeffs = (AmbisonicOrder + 1) * (AmbisonicOrder + 1);
 
-        int offsetLow = i * numCoeffs * 3;
+        int offsetLow = sourceIndex * numCoeffs * 3;
         int offsetMid = offsetLow + numCoeffs;
         int offsetHigh = offsetMid + numCoeffs;
 
-        float3 eq = PathEQs[i];
+        float3 eq = PathEQs[sourceIndex];
 
         var shCoeffs = SHCoeffs;
 
@@ -50,18 +49,15 @@ public struct GenerateDirectionalSHCoefficientJob : IJobParallelFor
             shCoeffs[offsetHigh + coefficient] = value * eq.z;
         }
 
+        // 0th Order
         WriteCoeff(0, SH.C0);
 
-        if (AmbisonicOrder == 0)
-            return;
-
+        // 1st Order
         WriteCoeff(1, SH.C1 * y);
         WriteCoeff(2, SH.C1 * z);
         WriteCoeff(3, SH.C1 * x);
 
-        if (AmbisonicOrder == 1)
-            return;
-
+        // 2nd Order
         float xx = x * x;
         float yy = y * y;
         float zz = z * z;
@@ -75,9 +71,7 @@ public struct GenerateDirectionalSHCoefficientJob : IJobParallelFor
         WriteCoeff(7, SH.C2 * xz);
         WriteCoeff(8, SH.C4 * (xx - yy));
 
-        if (AmbisonicOrder == 2)
-            return;
-
+        // 3rd Order
         WriteCoeff(9, SH.C5 * y * (3.0f * xx - yy));
         WriteCoeff(10, SH.C6 * x * y * z);
         WriteCoeff(11, SH.C7 * y * (5.0f * zz - 1.0f));

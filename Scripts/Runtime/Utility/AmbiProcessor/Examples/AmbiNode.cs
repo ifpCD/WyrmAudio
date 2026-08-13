@@ -7,19 +7,19 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider))]
 public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>
 {
-    protected override int MaximumCapacity => 2000;
+    protected override int AllocatedCapacity => 2000;
 
     // MANAGED SECTION
     public BoxCollider BoxCollider { get; private set; }
 
     public Vector3 Position
     {
-        get => Positions.GetOrDefault(NativeIndex);
+        get => Positions.GetOrDefault(SoAIndex);
     }
 
     public Quaternion Rotation
     {
-        get => Quaternions.GetOrDefault(NativeIndex);
+        get => Quaternions.GetOrDefault(SoAIndex);
     }
 
     void OnValidate()
@@ -31,5 +31,5 @@ public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>
     public Vector3 ColliderExtents => BoxCollider.size * 0.5f;
 
     [ShowInInspector]
-    public bool IsInRoom => IsInRooms.GetOrDefault(NativeIndex).ToBool();
+    public bool IsInRoom => IsInRooms.GetOrDefault(SoAIndex).ToBool();
 }

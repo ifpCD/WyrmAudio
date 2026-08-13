@@ -23,12 +23,12 @@ public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>
     // csharpier-ignore
     protected override void AllocateNative()
     {
-        NodeExtents    = new(length: MaximumCapacity, allocator: Allocator.Persistent);
+        NodeExtents    = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
         ListenerRoomID = new(allocator: Allocator.Persistent);
-        IsInRooms      = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        Positions      = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        Quaternions    = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        Transforms     = new(capacity: MaximumCapacity);
+        IsInRooms      = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        Positions      = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        Quaternions    = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        Transforms     = new(capacity: AllocatedCapacity);
     }
 
     // Should be auto-generated
@@ -53,7 +53,7 @@ public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>
 
     protected override void LoadObjectToArrays()
     {
-        NodeExtents[NativeIndex] = ColliderExtents;
+        NodeExtents[SoAIndex] = ColliderExtents;
         Transforms.Add(transform);
     }
 }

@@ -9,7 +9,10 @@ internal struct GatherSourcePositionsJob : IJobParallelForTransform
     [WriteOnly]
     public NativeArray<float3> SourcePositions;
 
-    public void Execute(int index, TransformAccess transform) => SourcePositions[index] = transform.position;
+    public void Execute(int index, TransformAccess transform)
+    {
+        SourcePositions[index] = transform.position;
+    }
 }
 
 [BurstCompile]
@@ -18,5 +21,8 @@ internal struct ApplySourceTransformsJob : IJobParallelForTransform
     [ReadOnly]
     public NativeArray<float3> SourcePositions;
 
-    public void Execute(int index, TransformAccess transform) => transform.position = SourcePositions[index];
+    public void Execute(int index, TransformAccess transform)
+    {
+        transform.position = SourcePositions[index];
+    }
 }

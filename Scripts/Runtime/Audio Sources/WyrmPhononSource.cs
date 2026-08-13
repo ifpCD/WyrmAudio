@@ -31,6 +31,8 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
             PhononSource.AddToSimulator(SteamAudioManager.Simulator);
             _pluginHandle = API.iplUnityAddSource(PhononSource.Get());
         }
+        else
+            return;
 
         SetSpatialValue(APPLY_DISTANCEATTENUATION, 1f);
         SetSpatialValue(APPLY_AIRABSORPTION, 1f);
@@ -62,11 +64,11 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         SetSpatialValue(REFLECTIONS_MIXLEVEL, 0);
         SetSpatialValue(PATHING_MIXLEVEL, 1);
 
-        SetSpatialValue(PATHING_BINAURAL, 0); // HRTF Propagation
+        SetSpatialValue(PATHING_BINAURAL, 0f); // HRTF Propagation
 
         SetSpatialValue(DIRECT_BINAURAL, 1f); // HRTF
         SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
-        SetSpatialValue(PERSPECTIVE_CORRECTION, 1f);
+        // SetSpatialValue(PERSPECTIVE_CORRECTION, 1f);
 
         // SetSpatialValue(NORMALIZE_PATHING_EQ, 1f); // we explode without this when we feed 0,0,0 propagation eq
 
@@ -108,12 +110,12 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
     // Candidate for custom batch api
     public void SetOcclusionLevel(float occlusion)
     {
-        if (Mathf.Abs(_cachedOcclusion - occlusion) > 0.01f)
-        {
-            SetSpatialValue(OCCLUSION, occlusion);
-            // SetSpatialValue(REFLECTIONS_MIXLEVEL, occlusion);
-            _cachedOcclusion = occlusion;
-        }
+        if (_cachedOcclusion == occlusion)
+            return;
+
+        _cachedOcclusion = occlusion;
+        SetSpatialValue(OCCLUSION, occlusion);
+        // SetSpatialValue(REFLECTIONS_MIXLEVEL, occlusion);
     }
 
     public override void Play()

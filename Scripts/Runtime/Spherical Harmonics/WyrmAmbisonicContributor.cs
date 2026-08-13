@@ -1,13 +1,6 @@
-using Unity.Collections;
-using UnityEngine;
-
-public partial class WyrmOcclusionMask
+public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
 {
-    protected override int AllocatedCapacity => 8000;
-
-    public static NativeArray<byte> SampleCounts;
-
-    public static NativeArray<float> TargetOcclusionValue01s;
+    protected override int AllocatedCapacity => throw new System.NotImplementedException();
 
     protected override void AllocateNative()
     {

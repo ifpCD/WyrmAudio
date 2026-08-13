@@ -27,7 +27,7 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
     public virtual bool UseAmbisonics { get; set; } = true;
 
     [ShowInInspector]
-    public virtual bool UseOcclusion { get; set; } = false;
+    public virtual bool UseOcclusion { get; set; } = true;
 
     internal void Initialize(WyrmMixerPool pool)
     {
@@ -35,7 +35,7 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
         ASource.outputAudioMixerGroup = Pool.Config.targetMixerGroup;
     }
 
-    protected sealed override int MaximumCapacity => _maximumSourceCapacity;
+    protected sealed override int AllocatedCapacity => _maximumSourceCapacity;
 
     internal static void ConfigureCapacity(int maximumCapacity)
     {
@@ -48,8 +48,6 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
     // csharpier-ignore
     protected virtual void Awake()
     {
-        CalculateVolumeAlpha();
-
         ASource         = this.EnsureReference(ASource);
         CachedTransform = transform;
         _clip           = ASource.clip;
@@ -60,16 +58,10 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
         _maxDistance    = ASource.maxDistance;
     }
 
-    protected virtual void OnValidate() { }
+    protected virtual void OnValidate() => SoASync();
 
     public virtual void Play(AudioClip clip, Transform track = null, float? volume = null)
     {
-        if (volume.HasValue)
-        {
-            TargetVolume = volume.Value;
-            _currentVolume = volume.Value;
-        }
-
         if (track != null)
             TrackedTransform = track;
 
@@ -79,12 +71,6 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
 
     public virtual void Play(AbstractWyrmBank bank, Transform track = null, float? volume = null)
     {
-        if (volume.HasValue)
-        {
-            TargetVolume = volume.Value;
-            _currentVolume = volume.Value;
-        }
-
         if (track != null)
             TrackedTransform = track;
 
@@ -121,7 +107,6 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
     public virtual void ResetState()
     {
         TrackedTransform = null;
-        TargetVolume     = 1f;
         volume           = 1f;
         loop             = false;
         pitch            = 1f;

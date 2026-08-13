@@ -4,11 +4,24 @@ using UnityEngine;
 
 public partial class WyrmBaseSource
 {
+    [Header("Audio Source")]
+    
+    [SerializeField]
     private AudioClip _clip;
+
+    [SerializeField]
     private bool _loop;
+
+    [SerializeField]
     private float _volume;
+
+    [SerializeField]
     private float _pitch;
+
+    [SerializeField]
     private float _minDistance;
+
+    [SerializeField]
     private float _maxDistance;
 
     public AudioClip clip

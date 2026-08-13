@@ -1,5 +1,6 @@
 using System;
 using SteamAudio;
+using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -51,7 +52,12 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
         for (int index = WyrmBaseSource.ActiveCount - 1; index >= 0; index--)
         {
             WyrmBaseSource source = WyrmBaseSource.RegisteredInstances[index];
-            if (source.IsBorrowed || currentTime < source.PlaybackEndTime || source.isPlaying)
+
+            if (source.IsBorrowed || currentTime < source.PlaybackEndTime)
+                continue;
+
+            // interop cost, so we do this last after checking C# values
+            if (source.isPlaying)
                 continue;
 
             if (source.IsPooled)

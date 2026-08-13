@@ -23,11 +23,11 @@ internal static class AmbisonicProcessor
         JobHandle calculateEqualizationHandle = calculateEqualizationJob.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);
 
         // csharpier-ignore
-        var shCoeffJob                = new GenerateDirectionalSHCoefficientJob
+        var shCoeffJob                = new GenerateDirectionalSHJob
         {
             VirtualPositions          = WyrmBaseSource.InputVirtualPositions,
             PathEQs                   = WyrmBaseSource.TargetAmbisonicEQ01s,
-            ListenerPosition          = WyrmListener.ListenerPosition,
+            ListenerPosition          = WyrmListener.ListenerPosition.Value,
             AmbisonicOrder            = SteamAudioSettings.Singleton.realTimeAmbisonicOrder,
 
             SHCoeffs                  = WyrmBaseSource.TargetSHCoefficients,

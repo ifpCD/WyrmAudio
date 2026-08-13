@@ -7,13 +7,14 @@ using UnityEditor;
 
 public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
 {
-#if UNITY_EDITOR
     public Color OutlineColor => GizmoColors.FaintCyan;
     public Color OutlineSelected => GizmoColors.Cyan;
 
     public Color VolumeSelected => new(0, .1f, 1f, .05f);
 
     public Color VolumeColor { get; set; } = GizmoColors.None;
+
+#if UNITY_EDITOR
 
     GUIStyle labelStyle;
 

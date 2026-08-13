@@ -9,9 +9,9 @@ public partial class WyrmBaseSource
 {
     public Transform CachedTransform { get; private set; }
 
+    [SerializeField]
     Transform _trackedTransform;
 
-    [ShowInInspector]
     public Transform TrackedTransform
     {
         get => _trackedTransform;
@@ -23,7 +23,7 @@ public partial class WyrmBaseSource
             _trackedTransform = value;
 
             if (IsRegistered)
-                PositionTransforms[NativeIndex] = PositionTransform;
+                PositionTransforms[SoAIndex] = PositionTransform;
         }
     }
 

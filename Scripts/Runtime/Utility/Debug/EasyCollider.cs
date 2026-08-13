@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+
 #pragma warning disable IDE1006 // Naming Styles
 
 public interface IEasyCollider
@@ -22,7 +24,7 @@ public interface IEasyCollider
     Color VolumeSelected { get; }
 }
 
-[System.Serializable]
+[Serializable]
 public class EasyColliderState
 {
     public float VolumePadding = 0.01f;
@@ -45,6 +47,7 @@ public class EasyColliderState
 
 public static class EasyColliderExtensions
 {
+#if UNITY_EDITOR
     public static void UpdateCollider(this IEasyCollider self)
     {
         if (!self.BottomLeft || !self.TopRight || self.BoxCollider == null)
@@ -78,7 +81,6 @@ public static class EasyColliderExtensions
         self.UpdateCollider();
     }
 
-#if UNITY_EDITOR
     public static bool ValidateCollider(this IEasyCollider self)
     {
         if (!self.BottomLeft || !self.TopRight)

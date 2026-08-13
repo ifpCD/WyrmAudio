@@ -9,7 +9,7 @@ using UnityEditor;
 [RequireComponent(typeof(BoxCollider))]
 public sealed partial class WyrmRoomShape : AmbiMonoBehaviour<WyrmRoomShape>, IEasyCollider
 {
-    protected override int MaximumCapacity => 2000;
+    protected override int AllocatedCapacity => 2000;
 
     [field: SerializeField]
     public BoxCollider BoxCollider { get; private set; }
@@ -37,15 +37,16 @@ public sealed partial class WyrmRoomShape : AmbiMonoBehaviour<WyrmRoomShape>, IE
     public int sampleCount = 32;
 
     [HideInInspector]
-    public List<Vector3> samplesContainer;
+    public List<Vector3> _haltonBuffer = new(32);
 
-#if UNITY_EDITOR
     public Color OutlineColor => GizmoColors.FaintYellow;
     public Color OutlineSelected => GizmoColors.Yellow;
 
     public Color VolumeSelected => new(0, .1f, 1f, .05f);
 
     public Color VolumeColor { get; set; } = Color.clear;
+
+#if UNITY_EDITOR
 
     GUIStyle labelStyle;
 
@@ -61,25 +62,26 @@ public sealed partial class WyrmRoomShape : AmbiMonoBehaviour<WyrmRoomShape>, IE
 
     void OnDrawGizmosSelected()
     {
-        if (samplesContainer != null)
-        {
-            Gizmos.color = Color.green;
-
-            foreach (var p in samplesContainer)
-                Gizmos.DrawSphere(p, .04f);
-        }
-
         this.DrawVolumeGizmo(true);
+
+        if (_haltonBuffer == null)
+            return;
+
+        Gizmos.color = Color.grey;
+
+        var matrix = transform.localToWorldMatrix;
+
+        foreach (var p in _haltonBuffer)
+            Gizmos.DrawSphere(matrix.MultiplyPoint3x4(p), .04f);
     }
 
     void OnValidate()
     {
-        if (BoxCollider == null)
-            BoxCollider = GetComponent<BoxCollider>();
+        BoxCollider = this.EnsureReference(BoxCollider);
+
         this.ValidateCollider();
 
-        samplesContainer ??= new List<Vector3>();
-        HaltonSequence.GenerateBoxVolumeSamples(BoxCollider, sampleCount, samplesContainer);
+        HaltonSequence.GenerateBoxVolumeSamples(BoxCollider, sampleCount, _haltonBuffer);
     }
 
     void Update()

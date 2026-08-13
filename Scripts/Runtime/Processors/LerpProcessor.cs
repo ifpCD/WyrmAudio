@@ -5,7 +5,7 @@ using UnityEngine;
 
 internal static class LerpProcessor
 {
-    [BurstCompile]
+    // [BurstCompile]
     public static float GetExpLerpFactor(float lerpSpeed) => 1f - math.exp(-lerpSpeed * Time.deltaTime);
 
     public static JobHandle Schedule(JobHandle dependency)

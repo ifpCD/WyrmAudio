@@ -21,8 +21,6 @@ public partial class WyrmPoolController : MonoBehaviour
     internal Transform CachedTransform { get; private set; }
     internal bool IsDisposed { get; private set; }
 
-    bool _nativeInitialized;
-
     void Awake()
     {
         CachedTransform = transform;
@@ -59,7 +57,6 @@ public partial class WyrmPoolController : MonoBehaviour
             );
 
         WyrmBaseSource.ConfigureCapacity(settings.MaxActiveSources);
-        _nativeInitialized = true;
 
         _pools = new PoolEntry[configCount];
         for (int i = 0; i < configCount; i++)
@@ -74,8 +71,7 @@ public partial class WyrmPoolController : MonoBehaviour
         IsDisposed = true;
         _pools = Array.Empty<PoolEntry>();
 
-        if (_nativeInitialized)
-            WyrmBaseSource.ShutdownNative();
+        WyrmBaseSource.Dispose();
     }
 
     static WyrmMixerPool GetPool(AudioMixerGroup mixerGroup)
@@ -87,8 +83,6 @@ public partial class WyrmPoolController : MonoBehaviour
                 return entry.Pool;
         }
 
-        throw new InvalidOperationException(
-            $"Mixer Group {mixerGroup.name} does not have an active Wyrm mixer configuration."
-        );
+        throw new InvalidOperationException($"Mixer Group {mixerGroup.name} does not have an active Wyrm mixer configuration.");
     }
 }

@@ -55,11 +55,8 @@ public partial class WyrmBaseSource
 
     protected sealed override bool RetainNativeWhenEmpty => true;
 
-    internal static void ShutdownNative()
+    internal static void Dispose()
     {
-        while (ActiveCount != 0)
-            RegisteredInstances[ActiveCount - 1].Deregister();
-
         DisposeRegistry();
         _maximumSourceCapacity = 0;
     }
@@ -78,34 +75,34 @@ public partial class WyrmBaseSource
     // csharpier-ignore
     protected sealed override void AllocateNative()
     {
-        UseOcclusions              = new(MaximumCapacity, Allocator.Persistent);
+        UseOcclusions              = new(AllocatedCapacity, Allocator.Persistent);
 
-        SourceTransforms           = new(MaximumCapacity);
-        PositionTransforms         = new(MaximumCapacity);
-        SourcePositions            = new(MaximumCapacity, Allocator.Persistent);
+        SourceTransforms           = new(AllocatedCapacity);
+        PositionTransforms         = new(AllocatedCapacity);
+        SourcePositions            = new(AllocatedCapacity, Allocator.Persistent);
 
-        InputVirtualPositions      = new(MaximumCapacity, Allocator.Persistent);
-        InputVerticalWidths        = new(MaximumCapacity, Allocator.Persistent);
-        InputHorizontalWidths      = new(MaximumCapacity, Allocator.Persistent);
-        InputDirectionalGains      = new(MaximumCapacity, Allocator.Persistent);
-        InputAmbientGains          = new(MaximumCapacity, Allocator.Persistent);
-        InputAmbisonicEQHigh01s    = new(MaximumCapacity, Allocator.Persistent);
-        InputAmbisonicEQMid01s     = new(MaximumCapacity, Allocator.Persistent);
-        InputAmbisonicEQLow01s     = new(MaximumCapacity, Allocator.Persistent);
+        InputVirtualPositions      = new(AllocatedCapacity, Allocator.Persistent);
+        InputVerticalWidths        = new(AllocatedCapacity, Allocator.Persistent);
+        InputHorizontalWidths      = new(AllocatedCapacity, Allocator.Persistent);
+        InputDirectionalGains      = new(AllocatedCapacity, Allocator.Persistent);
+        InputAmbientGains          = new(AllocatedCapacity, Allocator.Persistent);
+        InputAmbisonicEQHigh01s    = new(AllocatedCapacity, Allocator.Persistent);
+        InputAmbisonicEQMid01s     = new(AllocatedCapacity, Allocator.Persistent);
+        InputAmbisonicEQLow01s     = new(AllocatedCapacity, Allocator.Persistent);
 
-        Pointers                   = new(MaximumCapacity, Allocator.Persistent);
+        Pointers                   = new(AllocatedCapacity, Allocator.Persistent);
 
-        OcclusionRayCommands       = new(MaximumCapacity, Allocator.Persistent);
-        OcclusionHitResults        = new(MaximumCapacity, Allocator.Persistent);
+        OcclusionRayCommands       = new(AllocatedCapacity, Allocator.Persistent);
+        OcclusionHitResults        = new(AllocatedCapacity, Allocator.Persistent);
 
-        SourceRoomIdentifiers      = new(MaximumCapacity, Allocator.Persistent);
+        SourceRoomIdentifiers      = new(AllocatedCapacity, Allocator.Persistent);
 
-        TargetOcclusion01          = new(MaximumCapacity, Allocator.Persistent);
-        TargetAmbisonicEQ01s       = new(MaximumCapacity, Allocator.Persistent);
-        TargetSHCoefficients       = new(MaximumCapacity * 48, Allocator.Persistent);
+        TargetOcclusion01          = new(AllocatedCapacity, Allocator.Persistent);
+        TargetAmbisonicEQ01s       = new(AllocatedCapacity, Allocator.Persistent);
+        TargetSHCoefficients       = new(AllocatedCapacity * 48, Allocator.Persistent);
 
-        CurrentOcclusion01         = new(MaximumCapacity, Allocator.Persistent);
-        CurrentTotalAmbisonicEQ01s = new(MaximumCapacity, Allocator.Persistent);
+        CurrentOcclusion01         = new(AllocatedCapacity, Allocator.Persistent);
+        CurrentTotalAmbisonicEQ01s = new(AllocatedCapacity, Allocator.Persistent);
 
         // for(var i = 0; i < MaximumCapacity; i++)
         //     TargetSHCoefficients[i] = new(1f, 1f, 1f);
@@ -146,7 +143,7 @@ public partial class WyrmBaseSource
     // csharpier-ignore
     protected sealed override void LoadObjectToArrays()
     {
-        int index = NativeIndex;
+        int index = SoAIndex;
 
         SourceTransforms.Add(CachedTransform);
         PositionTransforms.Add(PositionTransform);

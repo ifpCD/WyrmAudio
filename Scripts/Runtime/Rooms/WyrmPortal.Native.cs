@@ -13,11 +13,11 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     // csharpier-ignore
     protected override void AllocateNative()
     {
-        PortalWorldToLocal               = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        PortalExtents                    = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        PortalRoomA                      = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        PortalRoomB                      = new(length: MaximumCapacity, allocator: Allocator.Persistent);
-        PortalOpenness                   = new(length: MaximumCapacity, allocator: Allocator.Persistent);
+        PortalWorldToLocal               = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalExtents                    = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalRoomA                      = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalRoomB                      = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalOpenness                   = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
@@ -42,13 +42,10 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     // csharpier-ignore
     protected override void LoadObjectToArrays()
     {
-        if (!IsRegistered)
-            return;
-
-        PortalWorldToLocal[NativeIndex]  = WorldToLocal;
-        PortalExtents[NativeIndex]       = Extents;
-        PortalRoomA[NativeIndex]         = RoomA != null ? RoomA.RoomIdentifier : -1;
-        PortalRoomB[NativeIndex]         = RoomB != null ? RoomB.RoomIdentifier : -1;
-        PortalOpenness[NativeIndex]      = Openness;
+        PortalWorldToLocal[SoAIndex]  = WorldToLocal;
+        PortalExtents[SoAIndex]       = Extents;
+        PortalRoomA[SoAIndex]         = RoomA != null ? RoomA.RoomIdentifier : -1;
+        PortalRoomB[SoAIndex]         = RoomB != null ? RoomB.RoomIdentifier : -1;
+        PortalOpenness[SoAIndex]      = Openness;
     }
 }

@@ -6,21 +6,21 @@ using UnityEngine.Jobs;
 [RequireComponent(typeof(AudioListener))]
 public class WyrmListener : AmbiMonoBehaviour<WyrmListener>
 {
-    protected override int MaximumCapacity => 1;
+    protected override int AllocatedCapacity => 1;
 
     public static NativeReference<int> ListenerRoomIdentifier;
     public static NativeReference<float3> ListenerPosition;
     public static NativeReference<quaternion> ListenerRotation;
 
-    void OnEnable()                        => Register();
+    void OnEnable() => Register();
 
-    void OnDisable()                       => Deregister();
+    void OnDisable() => Deregister();
 
     protected override void AllocateNative()
     {
-        ListenerRoomIdentifier             = new(allocator: Allocator.Persistent);
-        ListenerPosition                   = new(allocator: Allocator.Persistent);
-        ListenerRotation                   = new(allocator: Allocator.Persistent);
+        ListenerRoomIdentifier = new(allocator: Allocator.Persistent);
+        ListenerPosition = new(allocator: Allocator.Persistent);
+        ListenerRotation = new(allocator: Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
@@ -30,15 +30,14 @@ public class WyrmListener : AmbiMonoBehaviour<WyrmListener>
         ListenerRotation.TryDispose();
     }
 
-    internal static bool Synchronize()
+    internal static void Synchronize()
     {
         if (CompletelyInactive)
-            return false;
+            return;
 
         Transform listenerTransform = RegisteredInstances[0].transform;
         ListenerPosition.Value = listenerTransform.position;
         ListenerRotation.Value = listenerTransform.rotation;
-        return true;
     }
 
     protected override void LoadObjectToArrays()

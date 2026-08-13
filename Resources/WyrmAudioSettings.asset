@@ -26,9 +26,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9af1831aa6db71b4fb33145bd18d8d9e, type: 2}
   - {fileID: 11400000, guid: ced2a72630d8bf54f8d861b883a72ce6, type: 2}
   - {fileID: 11400000, guid: 1ce6a5656d0f1a14dac7c14d5e904c5c, type: 2}
+  - {fileID: 11400000, guid: cbf9856ee57c4b14a84ad0e073c55a12, type: 2}
   - {fileID: 11400000, guid: 436f3b1e77cd5d4479feaad333926c62, type: 2}
   - {fileID: 11400000, guid: 70bec925372402c46a2dd3e2185bc08c, type: 2}
   - {fileID: 11400000, guid: df5b9c5cd42e28140b502ae2da71ae86, type: 2}
+  - {fileID: 11400000, guid: cbdfb01d87e84ff41ab09c4f5c224b8d, type: 2}
   - {fileID: 11400000, guid: 36c2f71b1296e374f975795f593d9f5e, type: 2}
   MaxActiveRooms: 1024
   OcclusionMask:

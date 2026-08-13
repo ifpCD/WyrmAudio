@@ -3,16 +3,38 @@ using UnityEngine;
 
 public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSource
 {
+    [Header("Spherical Harmonics")]
+    [SerializeField]
     Vector3 _virtualPosition = new();
+
+    [SerializeField]
+    [Range(0, 1)]
     float _verticalWidth = 0f;
+
+    [SerializeField]
+    [Range(0, 1)]
     float _horizontalWidth = 0f;
+
+    [SerializeField]
+    [Range(0, 5)]
     float _directionalGain = 1f;
+
+    [SerializeField]
+    [Range(0, 5)]
     float _ambientGain = 1f;
+
+    [SerializeField]
+    [Range(0, 1)]
     float _ambisonicEQLow01 = 1f;
+
+    [SerializeField]
+    [Range(0, 1)]
     float _ambisonicEQMid01 = 1f;
+
+    [SerializeField]
+    [Range(0, 1)]
     float _ambisonicEQHigh01 = 1f;
 
-    [ShowInInspector]
     public Vector3 VirtualPosition
     {
         get => _virtualPosition;
@@ -24,7 +46,7 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
             _virtualPosition = value;
 
             if (IsRegistered)
-                InputVirtualPositions[NativeIndex] = value;
+                InputVirtualPositions[SoAIndex] = value;
         }
     }
 
@@ -39,7 +61,7 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
             _verticalWidth = value;
 
             if (IsRegistered)
-                InputVerticalWidths[NativeIndex] = value;
+                InputVerticalWidths[SoAIndex] = value;
         }
     }
 
@@ -54,7 +76,7 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
             _horizontalWidth = value;
 
             if (IsRegistered)
-                InputHorizontalWidths[NativeIndex] = value;
+                InputHorizontalWidths[SoAIndex] = value;
         }
     }
 
@@ -69,7 +91,7 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
             _directionalGain = value;
 
             if (IsRegistered)
-                InputDirectionalGains[NativeIndex] = value;
+                InputDirectionalGains[SoAIndex] = value;
         }
     }
 
@@ -84,12 +106,10 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
             _ambientGain = value;
 
             if (IsRegistered)
-                InputAmbientGains[NativeIndex] = value;
+                InputAmbientGains[SoAIndex] = value;
         }
     }
 
-    [ShowInInspector]
-    [Range(0, 1f)]
     public float AmbisonicEQLow01
     {
         get => _ambisonicEQLow01;
@@ -101,12 +121,10 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
             _ambisonicEQLow01 = value;
 
             if (IsRegistered)
-                InputAmbisonicEQLow01s[NativeIndex] = value;
+                InputAmbisonicEQLow01s[SoAIndex] = value;
         }
     }
 
-    [ShowInInspector]
-    [Range(0, 1f)]
     public float AmbisonicEQMid01
     {
         get => _ambisonicEQMid01;
@@ -118,12 +136,10 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
             _ambisonicEQMid01 = value;
 
             if (IsRegistered)
-                InputAmbisonicEQMid01s[NativeIndex] = value;
+                InputAmbisonicEQMid01s[SoAIndex] = value;
         }
     }
 
-    [ShowInInspector]
-    [Range(0, 1f)]
     public float AmbisonicEQHigh01
     {
         get => _ambisonicEQHigh01;
@@ -135,7 +151,7 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
             _ambisonicEQHigh01 = value;
 
             if (IsRegistered)
-                InputAmbisonicEQHigh01s[NativeIndex] = value;
+                InputAmbisonicEQHigh01s[SoAIndex] = value;
         }
     }
 }
