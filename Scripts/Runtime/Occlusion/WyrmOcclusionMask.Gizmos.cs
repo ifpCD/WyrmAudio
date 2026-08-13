@@ -1,7 +1,4 @@
-using System.Collections.Generic;
-using UnityEditor.PackageManager.UI;
 using UnityEngine;
-using UnityEngine.SocialPlatforms;
 
 public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 {
@@ -16,38 +13,46 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
         if (_type == OcclusionMaskType.SphericalHalton)
         {
-            Gizmos.color = Color.antiqueWhite;
+            Gizmos.color = WyrmColor.FaintWhite;
             Gizmos.DrawWireSphere(cachedTransformPosition, Radius);
         }
 
-        if (_occlusionSamples == null)
+        if (_sampleBuffer == null)
             return;
 
         var matrix = Matrix4x4.TRS(cachedTransformPosition, Quaternion.identity, cachedTransform.lossyScale);
 
-        for (int i = 0; i < _occlusionSamples.Count; i++)
+        for (int i = 0; i < _sampleBuffer.Count; i++)
         {
-            var sample = _occlusionSamples[i];
+            var sample = _sampleBuffer[i];
 
             var localPos = sample.LocalPosition;
             var worldPos = matrix.MultiplyPoint3x4(localPos);
 
+            Color SampleColor = WyrmColor.Gray;
+            Color LineColor = WyrmColor.FaintGray;
+
             if (sample.IsRegistered)
             {
                 var isOccluded = OcclusionSample.IsOccluded[i].ToBool();
-                var IsDiscarded = OcclusionSample.IsDiscarded[i].ToBool();
+                var isDiscarded = OcclusionSample.IsDiscarded[i].ToBool();
 
-                if (sample.Discardable && IsDiscarded)
-                    Gizmos.color = Color.grey;
-                else if (isOccluded)
-                    Gizmos.color = Color.red;
-                else
-                    Gizmos.color = Color.green;
+                if (!isDiscarded && isOccluded)
+                {
+                    SampleColor = WyrmColor.Red;
+                    LineColor = WyrmColor.FaintRed;
+                }
+                else if (!isDiscarded && !isOccluded)
+                {
+                    SampleColor = WyrmColor.Green;
+                    LineColor = WyrmColor.FaintGreen;
+                }
             }
-            else
-                Gizmos.color = Color.grey;
 
+            Gizmos.color = SampleColor;
             Gizmos.DrawSphere(worldPos, VIS_OCC_SAMPLE_RADIUS);
+
+            Gizmos.color = LineColor;
 
             if (sample.Discardable)
                 Gizmos.DrawLine(cachedTransformPosition, worldPos);
@@ -55,7 +60,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
             if (WyrmListener.CompletelyInactive)
                 continue;
 
-            Gizmos.DrawLine(localPos, WyrmListener.ListenerPosition.Value);
+            Gizmos.DrawLine(worldPos, WyrmListener.ListenerPosition.Value);
         }
     }
 }

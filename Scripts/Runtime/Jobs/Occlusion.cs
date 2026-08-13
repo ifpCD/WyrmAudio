@@ -17,7 +17,7 @@ public struct GenerateSourceRaycastCommands : IJobParallelFor
     public float3 ListenerPosition;
 
     [ReadOnly]
-    public int LayerMask;
+    public QueryParameters QueryParameters;
 
     [WriteOnly]
     public NativeArray<RaycastCommand> RaycastCommands;
@@ -37,7 +37,7 @@ public struct GenerateSourceRaycastCommands : IJobParallelFor
         if (dist > 0.001f)
         {
             float3 dirNorm = dir / dist;
-            RaycastCommands[index] = new RaycastCommand(src, dirNorm, new QueryParameters(LayerMask, false, QueryTriggerInteraction.Ignore), dist);
+            RaycastCommands[index] = new RaycastCommand(src, dirNorm, QueryParameters, dist);
         }
         else
         {
@@ -60,6 +60,7 @@ public struct ResolveOcclusionJob : IJobParallelFor
 
     public void Execute(int index)
     {
-        SourceOcclusions[index] = UseOcclusions[index] != 0 && RaycastHits[index].distance > 0f ? 0f : 1f;
+        bool occluded = UseOcclusions[index] != 0 && RaycastHits[index].distance > 0f;
+        SourceOcclusions[index] = math.select(1f, 0f, occluded);
     }
 }

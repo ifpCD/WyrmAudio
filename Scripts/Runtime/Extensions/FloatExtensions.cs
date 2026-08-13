@@ -1,9 +1,8 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public static class FloatExtensions
 {
-    public static float WithVariation(this float value, float amount = 0.05f)
-    {
-        return value + Random.Range(-amount, amount);
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float WithVariation(this float value, float amount = 0.05f) => value + Random.Range(-amount, amount);
 }

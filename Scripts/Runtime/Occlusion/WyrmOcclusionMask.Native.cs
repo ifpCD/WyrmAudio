@@ -5,27 +5,22 @@ public partial class WyrmOcclusionMask
 {
     protected override int AllocatedCapacity => 8000;
 
-    public static NativeArray<byte> SampleCounts;
-
     public static NativeArray<float> TargetOcclusionValue01s;
 
+    // csharpier-ignore
     protected override void AllocateNative()
     {
-        throw new System.NotImplementedException();
+        TargetOcclusionValue01s = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
     {
-        throw new System.NotImplementedException();
+        TargetOcclusionValue01s.TryDispose();
     }
 
-    protected override void LoadObjectToArrays()
-    {
-        throw new System.NotImplementedException();
-    }
+    // csharpier-ignore
+    protected override void LoadObjectToArrays() { }
 
-    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
-    {
-        throw new System.NotImplementedException();
-    }
+    // csharpier-ignore
+    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex) { }
 }

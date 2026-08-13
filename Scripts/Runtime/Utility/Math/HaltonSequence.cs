@@ -4,16 +4,16 @@ using UnityEngine;
 
 internal static class HaltonSequence
 {
-    public static void GenerateBoxVolumeSamples(BoxCollider box, int numSamples, List<Vector3> samples)
+    public static void GenerateBoxVolumeSamples(BoxCollider box, int numSamples, List<Vector3> haltonBuffer)
     {
         Vector3 size = box.size;
 
-        GenerateBoxVolumeSamples(size, numSamples, samples);
+        GenerateBoxVolumeSamples(size, numSamples, haltonBuffer);
     }
 
-    public static void GenerateBoxVolumeSamples(Vector3 size, int numSamples, List<Vector3> samples)
+    public static void GenerateBoxVolumeSamples(Vector3 size, int numSamples, List<Vector3> haltonBuffer)
     {
-        samples.Clear();
+        haltonBuffer.Clear();
         for (int i = 0; i < numSamples; ++i)
         {
             float u = RadicalInverse(2, i);
@@ -26,20 +26,20 @@ internal static class HaltonSequence
                 Mathf.Lerp(-size.z * 0.5f, size.z * 0.5f, w)
             );
 
-            samples.Add(local);
+            haltonBuffer.Add(local);
         }
     }
 
-    public static void GenerateSphereVolumeSamples(SphereCollider sphere, int numSamples, List<Vector3> samples)
+    public static void GenerateSphereVolumeSamples(SphereCollider sphere, int numSamples, List<Vector3> haltonBuffer)
     {
         float radius = sphere.radius;
 
-        GenerateSphereVolumeSamples(radius, numSamples, samples);
+        GenerateSphereVolumeSamples(radius, numSamples, haltonBuffer);
     }
 
-    public static void GenerateSphereVolumeSamples(float radius, int numSamples, List<Vector3> samples)
+    public static void GenerateSphereVolumeSamples(float radius, int numSamples, List<Vector3> haltonBuffer)
     {
-        samples.Clear();
+        haltonBuffer.Clear();
 
         for (int i = 0; i < numSamples; ++i)
         {
@@ -59,7 +59,7 @@ internal static class HaltonSequence
                 r * Mathf.Sin(phi) * Mathf.Sin(theta)
             );
 
-            samples.Add(local);
+            haltonBuffer.Add(local);
         }
     }
 

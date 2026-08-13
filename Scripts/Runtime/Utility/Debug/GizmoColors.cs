@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // csharpier-ignore
-internal static class GizmoColors
+internal static class WyrmColor
 {
     private const float FAINT_ALPHA    = 0.2f;
     private const float STRONG_ALPHA   = 0.8f;

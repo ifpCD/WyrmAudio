@@ -19,9 +19,9 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
     float Radius => _size / 2;
 
-    List<Vector3> _haltonBuffer = new(64);
+    readonly List<Vector3> _generatedPositionsBuffer = new(64);
 
-    List<OcclusionSample> _occlusionSamples = new(64);
+    readonly List<OcclusionSample> _sampleBuffer = new(64);
 
     void OnEnable()
     {
@@ -31,29 +31,35 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
     void OnDisable()
     {
-        Deregister();
         DeregisterSamples();
+        Deregister();
     }
 
     void OnValidate()
     {
+        DeregisterSamples();
         RebuildSampleBuffer();
         RegisterSamples();
+        
         SoASync();
     }
 
     void RebuildSampleBuffer()
     {
-        _occlusionSamples.Clear();
+        _sampleBuffer.Clear();
+        _generatedPositionsBuffer.Clear();
 
-        if (_type is OcclusionMaskType.SphericalHalton)
+        if (_type is OcclusionMaskType.SphericalHalton or OcclusionMaskType.Singular)
         {
-            HaltonSequence.GenerateSphereVolumeSamples(Radius, _sampleCount, _haltonBuffer);
+            if (_type is OcclusionMaskType.SphericalHalton)
+                HaltonSequence.GenerateSphereVolumeSamples(Radius, _sampleCount, _generatedPositionsBuffer);
+            else
+                _generatedPositionsBuffer.Add(Vector3.zero);
 
-            for (var i = 0; i < _sampleCount; i++)
+            for (var i = 0; i < _generatedPositionsBuffer.Count; i++)
             {
-                var newSample = new OcclusionSample { LocalPosition = _haltonBuffer[i] };
-                _occlusionSamples.Add(newSample);
+                var newSample = new OcclusionSample { LocalPosition = _generatedPositionsBuffer[i] };
+                _sampleBuffer.Add(newSample);
             }
         }
     }
@@ -63,7 +69,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
         if (!IsRegistered)
             return;
 
-        foreach (var sample in _occlusionSamples)
+        foreach (var sample in _sampleBuffer)
         {
             sample.Register();
             OcclusionSample.MaskOwnerIndices[sample.SoAIndex] = SoAIndex;
@@ -72,11 +78,11 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
     void DeregisterSamples()
     {
-        foreach (var sample in _occlusionSamples)
-        {
+        if (!IsRegistered)
+            return;
+
+        foreach (var sample in _sampleBuffer)
             sample.Deregister();
-            OcclusionSample.MaskOwnerIndices[sample.SoAIndex] = SoAIndex;
-        }
     }
 }
 

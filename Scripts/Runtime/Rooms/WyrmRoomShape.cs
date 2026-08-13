@@ -39,8 +39,8 @@ public sealed partial class WyrmRoomShape : AmbiMonoBehaviour<WyrmRoomShape>, IE
     [HideInInspector]
     public List<Vector3> _haltonBuffer = new(32);
 
-    public Color OutlineColor => GizmoColors.FaintYellow;
-    public Color OutlineSelected => GizmoColors.Yellow;
+    public Color OutlineColor => WyrmColor.FaintYellow;
+    public Color OutlineSelected => WyrmColor.Yellow;
 
     public Color VolumeSelected => new(0, .1f, 1f, .05f);
 

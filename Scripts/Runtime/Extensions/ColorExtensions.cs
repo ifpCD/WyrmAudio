@@ -4,8 +4,8 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-public static class BoolExtensions
+public static class ColorExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte ToByte(this bool value) => Convert.ToByte(value);
+    public static Color WithAlpha(this Color color, float alpha) => new(color.r, color.g, color.b, alpha);
 }
