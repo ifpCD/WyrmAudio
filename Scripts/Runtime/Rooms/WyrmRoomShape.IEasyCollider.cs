@@ -8,8 +8,7 @@ public sealed partial class WyrmRoomShape
 
     public Color Volume { get; set; } = Color.clear;
 
-    GUIStyle labelStyle;
-
+#if WYRMAUDIO_VISUALIZATION_ENABLED
     void OnDrawGizmos()
     {
         if (!WyrmListener.CompletelyInactive)
@@ -36,6 +35,7 @@ public sealed partial class WyrmRoomShape
         foreach (var p in _haltonBuffer)
             Gizmos.DrawSphere(matrix.MultiplyPoint3x4(p), .04f);
     }
+#endif
 
     void OnValidate()
     {

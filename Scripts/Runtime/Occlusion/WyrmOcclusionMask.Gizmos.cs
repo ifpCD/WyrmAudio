@@ -6,9 +6,11 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 {
     const float VIS_OCC_SAMPLE_RADIUS = 0.02f;
 
+#if WYRMAUDIO_VISUALIZATION_ENABLED
     // void OnDrawGizmos() => DrawOcclusionGizmo();
 
     // void OnDrawGizmosSelected() => DrawOcclusionGizmo();
+#endif
 
     public void DrawOcclusionGizmo()
     {

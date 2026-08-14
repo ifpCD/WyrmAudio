@@ -1,6 +1,4 @@
 #if UNITY_EDITOR
-using System.Text;
-using UnityEditor;
 using UnityEngine;
 
 public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
@@ -12,6 +10,7 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     Color OpenColor = Color.green;
     Color ClosedColor = Color.red;
 
+#if WYRMAUDIO_VISUALIZATION_ENABLED
     void OnDrawGizmos()
     {
         Outline = Color.Lerp(ClosedColor, OpenColor, Openness);
@@ -30,9 +29,10 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
             header = gameObject.name;
         }
 
-        this.DrawVolumeGizmo(false, $"{header}\n{Openness.ToString("F2")}");
+        this.DrawVolumeGizmo(false, $"{header}\n{Openness:F2}");
         // DrawListenerRoomHalf();
     }
+#endif
 
     void DrawListenerRoomHalf()
     {
