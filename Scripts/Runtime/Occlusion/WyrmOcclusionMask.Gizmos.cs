@@ -1,10 +1,14 @@
+#if UNITY_EDITOR
 using UnityEngine;
+using UnityEditor;
 
 public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 {
     const float VIS_OCC_SAMPLE_RADIUS = 0.02f;
 
-    void OnDrawGizmosSelected() => DrawOcclusionGizmo();
+    // void OnDrawGizmos() => DrawOcclusionGizmo();
+
+    // void OnDrawGizmosSelected() => DrawOcclusionGizmo();
 
     public void DrawOcclusionGizmo()
     {
@@ -30,30 +34,26 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
             var localPos = sample.LocalPosition;
             var worldPos = localToWorldNoRotation.MultiplyPoint3x4(localPos);
 
-            Color SampleColor = WyrmColor.Gray;
-            Color LineColor = WyrmColor.FaintGray;
+            Color SampleColor = Color.gray;
 
             if (sample.IsRegistered)
             {
-                var isOccluded = WyrmOcclusionSample.IsOccluded[i];
-                var isDiscarded = WyrmOcclusionSample.IsDiscarded[i];
+                var isOccluded = WyrmOcclusionSample.IsOccluded[sample.SoAIndex];
+                var isDiscarded = WyrmOcclusionSample.IsDiscarded[sample.SoAIndex];
 
                 if (!isDiscarded && isOccluded)
                 {
-                    SampleColor = WyrmColor.Red;
-                    LineColor = WyrmColor.FaintRed;
+                    SampleColor = Color.red;
                 }
                 else if (!isDiscarded && !isOccluded)
                 {
-                    SampleColor = WyrmColor.Green;
-                    LineColor = WyrmColor.FaintGreen;
+                    SampleColor = Color.green;
                 }
             }
 
-            Gizmos.color = SampleColor;
+            Gizmos.color = SampleColor.WithAlpha(0.8f);
             Gizmos.DrawSphere(worldPos, VIS_OCC_SAMPLE_RADIUS);
-
-            Gizmos.color = LineColor;
+            Gizmos.color = SampleColor.WithAlpha(0.2f);
 
             if (sample.Discardable)
                 Gizmos.DrawLine(tPosition, worldPos);
@@ -65,3 +65,4 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
         }
     }
 }
+#endif

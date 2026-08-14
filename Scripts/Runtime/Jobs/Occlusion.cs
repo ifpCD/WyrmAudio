@@ -3,7 +3,19 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.Jobs;
+
+[BurstCompile]
+internal struct GatherMaskTransformsJob : IJobParallelForTransform
+{
+    [WriteOnly]
+    public NativeArray<float4x4> LocalToWorlds;
+
+    public void Execute(int index, TransformAccess transform)
+    {
+        LocalToWorlds[index] = transform.localToWorldMatrix;
+    }
+}
 
 [BurstCompile]
 public struct GenerateDiscardCommands : IJobParallelFor
@@ -31,14 +43,7 @@ public struct GenerateDiscardCommands : IJobParallelFor
 
     public void Execute(int sampleIndex)
     {
-        if (!SampleIsDiscardable[sampleIndex])
-        {
-            SampleDiscardCommands[sampleIndex] = default;
-            return;
-        }
-
         var maskIndex = SampleToMask[sampleIndex];
-
         var sampleLocalPos = SampleLocalPositions[sampleIndex];
 
         float4x4 maskLocalToWorld = MaskLocalToWorlds[maskIndex];
@@ -46,14 +51,26 @@ public struct GenerateDiscardCommands : IJobParallelFor
         float3 maskLossyScale = maskLocalToWorld.GetLossyScale();
 
         float3 sampleWorldPos = maskWorldPos + sampleLocalPos * maskLossyScale;
-
         SampleWorldPositions[sampleIndex] = sampleWorldPos;
+
+        if (!SampleIsDiscardable[sampleIndex])
+        {
+            SampleDiscardCommands[sampleIndex] = default;
+            return;
+        }
 
         float3 dir = sampleWorldPos - maskWorldPos;
         float dist = math.length(dir);
-        float3 dirNorm = dir / dist;
 
-        SampleDiscardCommands[sampleIndex] = new RaycastCommand(maskWorldPos, dirNorm, QueryParameters, dist);
+        if (dist > 1e-5f)
+        {
+            float3 dirNorm = dir / dist;
+            SampleDiscardCommands[sampleIndex] = new RaycastCommand(maskWorldPos, dirNorm, QueryParameters, dist);
+        }
+        else
+        {
+            SampleDiscardCommands[sampleIndex] = default;
+        }
     }
 }
 
@@ -73,29 +90,33 @@ public struct GenerateOcclusionCommands : IJobParallelFor
     public NativeArray<RaycastHit> SampleDiscardResults;
 
     [WriteOnly]
-    public NativeArray<bool> SampleIsDiscarded; // for visualization
+    public NativeArray<bool> SampleIsDiscarded;
 
     [WriteOnly]
     public NativeArray<RaycastCommand> SampleOcclusionCommands;
 
     public void Execute(int sampleIndex)
     {
-        bool isDiscarded = SampleDiscardResults[sampleIndex].distance > 0f;
-
+        bool isDiscarded = SampleDiscardResults[sampleIndex].distance > 0;
         SampleIsDiscarded[sampleIndex] = isDiscarded;
 
         float3 listenerWorldPos = ListenerPosition.Value;
         float3 sampleWorldPos = SampleWorldPositions[sampleIndex];
 
-        SampleWorldPositions[sampleIndex] = sampleWorldPos;
-
-        float3 dir = sampleWorldPos - listenerWorldPos;
-        float dist = math.length(dir);
-        float3 dirNorm = dir / dist;
-
         if (!isDiscarded)
         {
-            SampleOcclusionCommands[sampleIndex] = new RaycastCommand(listenerWorldPos, dirNorm, QueryParameters, dist);
+            float3 dir = sampleWorldPos - listenerWorldPos;
+            float dist = math.length(dir);
+
+            if (dist > 1e-5f)
+            {
+                float3 dirNorm = dir / dist;
+                SampleOcclusionCommands[sampleIndex] = new RaycastCommand(listenerWorldPos, dirNorm, QueryParameters, dist);
+            }
+            else
+            {
+                SampleOcclusionCommands[sampleIndex] = default;
+            }
         }
         else
         {
@@ -105,10 +126,13 @@ public struct GenerateOcclusionCommands : IJobParallelFor
 }
 
 [BurstCompile]
-public struct ResolveMaskOcclusionValue : IJobParallelFor
+public struct ResolveMaskOcclusionValueJob : IJob
 {
     [ReadOnly]
-    public NativeArray<RaycastResult> OcclusionResults;
+    public NativeArray<RaycastHit> SampleOcclusionResults;
+
+    [ReadOnly]
+    public NativeArray<bool> SampleIsDiscarded;
 
     [ReadOnly]
     public NativeArray<int> SampleToMask;
@@ -117,26 +141,84 @@ public struct ResolveMaskOcclusionValue : IJobParallelFor
     public NativeArray<float> SampleWeights;
 
     [ReadOnly]
-    public NativeArray<int> MaskSampleCounts;
+    public int SampleActiveCount;
 
     [ReadOnly]
-    public NativeArray<RaycastHit> SampleOcclusionResults;
+    public int MaskActiveCount;
+
+    public NativeArray<float> MaskTargetOcclusion01s;
+
+    public NativeArray<float> MaskTotalSampleWeight;
+    public NativeArray<float> MaskOccludedSampleWeight;
 
     [WriteOnly]
     public NativeArray<bool> SampleIsOccluded;
 
+    public void Execute()
+    {
+        MaskTotalSampleWeight.SubFill(0, MaskActiveCount);
+        MaskOccludedSampleWeight.SubFill(0, MaskActiveCount);
+
+        for (int sampleIndex = 0; sampleIndex < SampleActiveCount; sampleIndex++)
+        {
+            int maskIndex = SampleToMask[sampleIndex];
+            if (maskIndex < 0 || maskIndex >= MaskActiveCount)
+                continue;
+
+            bool isDiscarded = SampleIsDiscarded[sampleIndex];
+
+            if (isDiscarded)
+                continue;
+
+            float weight = SampleWeights[sampleIndex];
+            MaskTotalSampleWeight[maskIndex] += weight;
+
+            bool isOccluded = SampleOcclusionResults[sampleIndex].distance > 0f;
+            SampleIsOccluded[sampleIndex] = isOccluded;
+
+            if (isOccluded)
+            {
+                MaskOccludedSampleWeight[maskIndex] += weight;
+            }
+        }
+
+        for (int maskIndex = 0; maskIndex < MaskActiveCount; maskIndex++)
+        {
+            float totalWeight = MaskTotalSampleWeight[maskIndex];
+            MaskTargetOcclusion01s[maskIndex] = totalWeight > 0f ? math.saturate(MaskOccludedSampleWeight[maskIndex] / totalWeight) : 1f;
+        }
+    }
+}
+
+[BurstCompile]
+public struct ApplyMaskOcclusionToSourceJob : IJobParallelFor
+{
+    [ReadOnly]
+    public NativeArray<int> SourceToMaskIndex;
+
+    [ReadOnly]
+    public NativeArray<byte> UseOcclusions;
+
+    [ReadOnly]
     public NativeArray<float> MaskTargetOcclusion01s;
 
-    public void Execute(int sampleIndex)
+    public NativeArray<float> TargetOcclusion01;
+
+    public void Execute(int sourceIndex)
     {
-        bool isOccluded = SampleOcclusionResults[sampleIndex].distance > 0f;
+        if (UseOcclusions[sourceIndex] == 0)
+        {
+            TargetOcclusion01[sourceIndex] = 0f;
+            return;
+        }
 
-        SampleIsOccluded[sampleIndex] = isOccluded;
+        int maskIndex = SourceToMaskIndex[sourceIndex];
+        if (maskIndex < 0)
+        {
+            TargetOcclusion01[sourceIndex] = 0f;
+            return;
+        }
 
-        // factor in the total non-discarded count of samples
-        float sampleOccContributionToMask = SampleWeights[sampleIndex];
-
-        int maskIndex = SampleToMask[sampleIndex];
-        MaskTargetOcclusion01s[maskIndex] += sampleOccContributionToMask;
+        TargetOcclusion01[sourceIndex] = 1f - MaskTargetOcclusion01s[maskIndex];
     }
 }

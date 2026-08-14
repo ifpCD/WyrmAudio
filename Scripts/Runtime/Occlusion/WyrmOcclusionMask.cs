@@ -19,12 +19,15 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
     float Radius => _size / 2;
 
-    readonly List<Vector3> _generatedPositionsBuffer = new(64);
+    readonly List<Vector3> _generatedPositionsBuffer = new(MAX_SAMPLE_COUNT);
 
-    readonly List<WyrmOcclusionSample> _sampleBuffer = new(64);
+    readonly List<WyrmOcclusionSample> _sampleBuffer = new(MAX_SAMPLE_COUNT);
 
     void OnEnable()
     {
+        if (_sampleBuffer.Count == 0)
+            RebuildSampleBuffer();
+            
         Register();
         RegisterSamples();
     }
@@ -40,7 +43,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
         DeregisterSamples();
         RebuildSampleBuffer();
         RegisterSamples();
-        
+
         SoASync();
     }
 

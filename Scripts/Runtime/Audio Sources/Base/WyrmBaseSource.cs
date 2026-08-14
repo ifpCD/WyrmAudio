@@ -48,6 +48,9 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
     // csharpier-ignore
     protected virtual void Awake()
     {
+        if (UseOcclusion)
+            Mask        = this.EnsureReference(Mask);
+            
         ASource         = this.EnsureReference(ASource);
         CachedTransform = transform;
         _clip           = ASource.clip;
@@ -143,8 +146,6 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
 
         ASource.PlayOneShot(clip);
     }
-
-
 
     public virtual void PlayOneShot(AbstractWyrmBank clip) => PlayOneShot(clip.GetBodyClip());
 

@@ -1,44 +1,37 @@
-using System;
-using Unity.Mathematics;
-using UnityEngine;
 #if UNITY_EDITOR
+using System.Text;
 using UnityEditor;
-#endif
+using UnityEngine;
 
 public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
 {
-    public Color OutlineColor => WyrmColor.FaintCyan;
-    public Color OutlineSelected => WyrmColor.Cyan;
-
-    public Color VolumeSelected => new(0, .1f, 1f, .05f);
-
-    public Color VolumeColor { get; set; } = WyrmColor.None;
-
-#if UNITY_EDITOR
-
+    public Color Outline { get; set; } = Color.cyan;
+    public Color Volume => Color.clear;
     GUIStyle labelStyle;
+
+    Color OpenColor = Color.green;
+    Color ClosedColor = Color.red;
 
     void OnDrawGizmos()
     {
+        Outline = Color.Lerp(ClosedColor, OpenColor, Openness);
+
         labelStyle ??= new GUIStyle { alignment = TextAnchor.MiddleCenter };
         labelStyle.normal.textColor = new Color(1, 1, 1, this.GetGizmoOpacity() * .2f);
 
+        string header;
+
         if (RoomA != null && RoomB != null)
         {
-            Handles.Label(transform.position, $"{RoomA.gameObject.name} <-> {RoomB.gameObject.name}", labelStyle);
+            header = $"{RoomA.gameObject.name} <-> {RoomB.gameObject.name}";
         }
         else
         {
-            Handles.Label(transform.position, gameObject.name, labelStyle);
+            header = gameObject.name;
         }
-        this.DrawVolumeGizmo(false);
-        DrawListenerRoomHalf();
-    }
 
-    void OnDrawGizmosSelected()
-    {
-        this.DrawVolumeGizmo(true);
-        DrawListenerRoomHalf();
+        this.DrawVolumeGizmo(false, $"{header}\n{Openness.ToString("F2")}");
+        // DrawListenerRoomHalf();
     }
 
     void DrawListenerRoomHalf()
@@ -62,11 +55,10 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         Vector3 halfCenter = BoxCollider.center;
         halfCenter.z += localZDirection * halfSize.z * .5f;
 
-        Color color = new(0, .5f, .5f, .5f);
-        color.a *= this.GetGizmoOpacity() * 0.2f;
+        float alpha = this.GetGizmoOpacity() * 0.2f;
 
         Gizmos.matrix = transform.localToWorldMatrix;
-        Gizmos.color = color;
+        Gizmos.color = Color.cyan.WithAlpha(alpha);
         Gizmos.DrawCube(halfCenter, halfSize);
     }
 
@@ -78,5 +70,5 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         BoxCollider.enabled = false;
         this.ValidateCollider();
     }
-#endif
 }
+#endif

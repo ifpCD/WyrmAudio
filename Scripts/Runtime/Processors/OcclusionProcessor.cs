@@ -1,59 +1,87 @@
 using Unity.Burst;
 using Unity.Jobs;
 using UnityEngine;
+using UnityEngine.Jobs;
 
 internal static class OcclusionProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive || WyrmOcclusionMask.CompletelyInactive)
+        int maskActiveCount = WyrmOcclusionMask.ActiveCount;
+        int sampleActiveCount = WyrmOcclusionSample.ActiveCount;
+        int sourceActiveCount = WyrmBaseSource.ActiveCount;
+
+        if (sourceActiveCount == 0 || WyrmListener.CompletelyInactive || maskActiveCount == 0 || sampleActiveCount == 0)
             return dependency;
 
-        int sampleActiveCount = WyrmOcclusionSample.ActiveCount;
-
-        WyrmOcclusionSample.IsDiscarded.SubFill(false, sampleActiveCount);
-
-        var CommandsSubBuffer = WyrmBaseSource.RaycastCommandsBuffer.GetSubArray(0, sampleActiveCount);
-        var ResultsSubBuffer = WyrmBaseSource.HitResultsBuffer.GetSubArray(0, sampleActiveCount);
+        var CommandsSubBuffer = WyrmOcclusionSample.RaycastCommandBuffer.GetSubArray(0, sampleActiveCount);
+        var ResultsSubBuffer = WyrmOcclusionSample.RaycastResultBuffer.GetSubArray(0, sampleActiveCount);
 
         var layerMask = WyrmAudioSettings.Instance.OcclusionMask;
         var queryParameters = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
 
-        // csharpier-ignore
-        var genDiscardCommandsJob             = new GenerateDiscardCommands
-        {
-            SampleToMask                      = WyrmOcclusionSample.SampleToMask,
-            SampleLocalPositions              = WyrmOcclusionSample.LocalPositions,
-            MaskLocalToWorlds                 = WyrmOcclusionMask.LocalToWorlds,
-            QueryParameters                   = queryParameters,
+        var gatherMasksJob = new GatherMaskTransformsJob { LocalToWorlds = WyrmOcclusionMask.LocalToWorlds };
+        JobHandle gatherMasksHandle = gatherMasksJob.Schedule(WyrmOcclusionMask.MaskTransforms, dependency);
 
-            SampleWorldPositions              = WyrmOcclusionSample.WorldPositions,
-            SampleDiscardCommands             = CommandsSubBuffer,
+        // csharpier-ignore
+        var genDiscardCommandsJob = new GenerateDiscardCommands
+        {
+            SampleToMask          = WyrmOcclusionSample.SampleToMask,
+            SampleLocalPositions  = WyrmOcclusionSample.InputLocalPositions,
+            MaskLocalToWorlds     = WyrmOcclusionMask.LocalToWorlds,
+            SampleIsDiscardable   = WyrmOcclusionSample.InputDiscardable,
+            QueryParameters       = queryParameters,
+
+            SampleWorldPositions  = WyrmOcclusionSample.WorldPositions,
+            SampleDiscardCommands = CommandsSubBuffer,
         };
-        JobHandle genDiscardCommandsHandle = genDiscardCommandsJob.Schedule(sampleActiveCount, 16, dependency);
+        JobHandle genDiscardCommandsHandle = genDiscardCommandsJob.Schedule(sampleActiveCount, 16, gatherMasksHandle);
 
         JobHandle discardResultsHandle = RaycastCommand.ScheduleBatch(CommandsSubBuffer, ResultsSubBuffer, 16, genDiscardCommandsHandle);
 
         // csharpier-ignore
-        var genOcclusionCommandsJob           = new GenerateOcclusionCommands
+        var genOcclusionCommandsJob = new GenerateOcclusionCommands
         {
-            SampleWorldPositions              = WyrmOcclusionSample.WorldPositions,
-            ListenerPosition                  = WyrmListener.ListenerPosition,
-            QueryParameters                   = queryParameters,
-            SampleDiscardResults              = ResultsSubBuffer,
+            SampleWorldPositions    = WyrmOcclusionSample.WorldPositions,
+            ListenerPosition        = WyrmListener.ListenerPosition,
+            QueryParameters         = queryParameters,
+            SampleDiscardResults    = ResultsSubBuffer,
 
-            SampleOcclusionCommands           = CommandsSubBuffer,
-            SampleIsDiscarded                 = WyrmOcclusionSample.IsDiscarded,
+            SampleOcclusionCommands = CommandsSubBuffer,
+            SampleIsDiscarded       = WyrmOcclusionSample.IsDiscarded,
         };
         JobHandle genOcclusionCommandsHandle = genOcclusionCommandsJob.Schedule(sampleActiveCount, 16, discardResultsHandle);
 
         JobHandle occlusionResultHandle = RaycastCommand.ScheduleBatch(CommandsSubBuffer, ResultsSubBuffer, 16, genOcclusionCommandsHandle);
 
-        // depend on occlusionResultHandle
-        // calculate each masks TargetOcclusionValue01s via
-        // figuring out how much each sample weighs in the outcome (sample/non-discarded sample count * sample's weight)
-        // then accumulate value of each non-discarded sample, and make sure that it's in 0f to 1f range.
+        // csharpier-ignore
+        var resolveJob = new ResolveMaskOcclusionValueJob
+        {
+            SampleOcclusionResults   = ResultsSubBuffer,
+            SampleIsDiscarded        = WyrmOcclusionSample.IsDiscarded,
+            SampleToMask             = WyrmOcclusionSample.SampleToMask,
+            SampleWeights            = WyrmOcclusionSample.InputWeights,
+            SampleActiveCount        = sampleActiveCount,
+            MaskActiveCount          = maskActiveCount,
+            MaskTotalSampleWeight    = WyrmOcclusionMask.TotalSampleWeight,
+            MaskOccludedSampleWeight = WyrmOcclusionMask.OccludedSampleWeight,
 
-        return occlusionResultHandle;
+            MaskTargetOcclusion01s   = WyrmOcclusionMask.TargetOcclusionValue01s,
+            SampleIsOccluded         = WyrmOcclusionSample.IsOccluded,
+        };
+        JobHandle resolveHandle = resolveJob.Schedule(occlusionResultHandle);
+
+        // csharpier-ignore
+        var applyJob = new ApplyMaskOcclusionToSourceJob
+        {
+            SourceToMaskIndex      = WyrmBaseSource.OcclusionMaskIndex,
+            UseOcclusions          = WyrmBaseSource.UseOcclusions,
+            MaskTargetOcclusion01s = WyrmOcclusionMask.TargetOcclusionValue01s,
+
+            TargetOcclusion01      = WyrmBaseSource.TargetOcclusion01,
+        };
+        JobHandle applyHandle = applyJob.Schedule(sourceActiveCount, 32, resolveHandle);
+
+        return applyHandle;
     }
 }

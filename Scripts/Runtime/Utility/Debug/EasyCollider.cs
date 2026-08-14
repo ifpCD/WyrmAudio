@@ -17,11 +17,10 @@ public interface IEasyCollider
 
     EasyColliderState State { get; }
 
-    Color OutlineColor { get; }
-    Color VolumeColor { get; set; }
-
-    Color OutlineSelected { get; }
-    Color VolumeSelected { get; }
+#if UNITY_EDITOR
+    Color Volume { get; }
+    Color Outline { get; }
+#endif
 }
 
 [Serializable]
@@ -41,8 +40,24 @@ public class EasyColliderState
     [HideInInspector]
     public Quaternion LastRotation;
 
-    public float NearDistance = 5f;
-    public float FarDistance = 20f;
+#if UNITY_EDITOR
+    [NonSerialized]
+    private GUIStyle _textStyle;
+
+    public GUIStyle TextStyle
+    {
+        get
+        {
+            _textStyle ??= new GUIStyle
+            {
+                alignment = TextAnchor.MiddleCenter,
+                normal = new GUIStyleState { textColor = Color.white },
+            };
+
+            return _textStyle;
+        }
+    }
+#endif
 }
 
 public static class EasyColliderExtensions
@@ -106,17 +121,26 @@ public static class EasyColliderExtensions
 
     public static float GetGizmoOpacity(this IEasyCollider self)
     {
-        if (SceneView.currentDrawingSceneView == null)
+        var cam = Camera.current;
+
+        if (cam == null)
             return 1f;
 
-        Camera cam = SceneView.currentDrawingSceneView.camera;
+        var settings = WyrmAudioSettings.Instance;
+        if (settings == null)
+            return 1f;
 
         float distance = Vector3.Distance(cam.transform.position, self.transform.position);
 
-        return Mathf.Lerp(1f, 0.1f, Mathf.InverseLerp(self.State.NearDistance, self.State.FarDistance, distance));
+        if (distance > settings.CutoffDistance)
+            return 0f;
+            
+        float t = Mathf.InverseLerp(settings.NearDistance, settings.FarDistance, distance);
+
+        return Mathf.Lerp(1f, 0.1f, t);
     }
 
-    public static void DrawVolumeGizmo(this IEasyCollider self, bool selected)
+    public static void DrawVolumeGizmo(this IEasyCollider self, bool selected, string label = default)
     {
         if (self.BottomLeft == null || self.TopRight == null || self.BoxCollider == null)
             return;
@@ -126,19 +150,32 @@ public static class EasyColliderExtensions
         Vector3 center = self.BoxCollider.center;
         Vector3 size = self.BoxCollider.size;
 
-        float alpha = self.GetGizmoOpacity();
+        float gizmoAlpha = self.GetGizmoOpacity();
 
-        Color outline = selected ? self.OutlineSelected : self.OutlineColor;
-        Color volume = selected ? self.VolumeSelected : self.VolumeColor;
+        Color outline = selected ? self.Outline.WithAlpha(0.8f) : self.Outline.WithAlpha(0.2f);
+        Color volume = selected ? self.Volume.WithAlpha(0.8f) : self.Volume.WithAlpha(0.2f);
 
-        outline.a *= alpha;
-        volume.a *= alpha;
+        outline.a *= gizmoAlpha;
+        volume.a *= gizmoAlpha;
 
-        Gizmos.color = outline;
-        Gizmos.DrawWireCube(center, size);
+        if (outline.a != 0f)
+        {
+            Gizmos.color = outline;
+            Gizmos.DrawWireCube(center, size);
+        }
 
-        Gizmos.color = volume;
-        Gizmos.DrawCube(center, size);
+        // if (volume.a != 0f)
+        // {
+        //     Gizmos.color = volume;
+        //     Gizmos.DrawCube(center, size);
+        // }
+
+        if (label != default)
+        {
+            var pos = self.transform.localToWorldMatrix.MultiplyPoint3x4(center);
+            self.State.TextStyle.normal.textColor = self.State.TextStyle.normal.textColor.WithAlpha(gizmoAlpha);
+            Handles.Label(pos, label, self.State.TextStyle);
+        }
     }
 #endif
 }

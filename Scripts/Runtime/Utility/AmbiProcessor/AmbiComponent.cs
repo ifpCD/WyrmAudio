@@ -113,7 +113,7 @@ public abstract class AmbiMonoBehaviour<T> : MonoBehaviour
     static int _maximumCapacity;
     static T _allocationOwner;
 
-    const int INACTIVE = -1;
+    public const int INACTIVE = -1;
 
     internal int SoAIndex { get; private set; } = INACTIVE;
 

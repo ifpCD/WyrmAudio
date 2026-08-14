@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -26,14 +25,30 @@ public class WyrmAudioSettings : ScriptableObject
 
     static WyrmAudioSettings _instance = null;
 
+    [Header("Visualization")]
+    public float CutoffDistance => FarDistance + 5f;
+
+    [Range(1, 20)]
+    public float NearDistance = 5f;
+
+    [Range(5, 50)]
+    public float FarDistance = 20;
+
+    void OnValidate()
+    {
+        FarDistance = Mathf.Max(NearDistance + 0.5f, FarDistance);
+    }
+
     public static WyrmAudioSettings Instance
     {
         get
         {
-            if (_instance != null) return _instance;
+            if (_instance != null)
+                return _instance;
 
             _instance = Resources.Load<WyrmAudioSettings>("WyrmAudioSettings");
-            if (_instance != null) return _instance;
+            if (_instance != null)
+                return _instance;
 
             _instance = CreateInstance<WyrmAudioSettings>();
             _instance.name = "WyrmAudioSettings";

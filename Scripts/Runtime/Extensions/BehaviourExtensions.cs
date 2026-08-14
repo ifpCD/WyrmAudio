@@ -8,6 +8,6 @@ public static class BehaviourExtensions
         if (reference != null)
             return reference;
 
-        return component.GetComponent<T>();
+        return component.GetComponent<T>() ?? component.gameObject.AddComponent<T>();
     }
 }

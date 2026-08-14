@@ -5,7 +5,7 @@ public partial class WyrmBaseSource
     [SerializeField]
     WyrmOcclusionMask _mask;
 
-    WyrmOcclusionMask Mask
+    internal WyrmOcclusionMask Mask
     {
         get => _mask;
         set
@@ -15,19 +15,8 @@ public partial class WyrmBaseSource
 
             _mask = value;
 
-            if (value == null)
-                return;
-
-            // if (IsRegistered)
+            if (IsRegistered)
+                OcclusionMaskIndex[SoAIndex] = (value != null && value.IsRegistered) ? value.SoAIndex : -1;
         }
-    }
-
-    void EnsureMask()
-    {
-        if (!UseOcclusion)
-            return;
-
-        if (Mask != null)
-            return;
     }
 }

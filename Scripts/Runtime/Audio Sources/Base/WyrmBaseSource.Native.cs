@@ -43,12 +43,9 @@ public partial class WyrmBaseSource
     internal static NativeArray<IntPtr> Pointers; // For Phonon
 
     // Output Scratch Buffers
-    internal static NativeArray<RaycastCommand> RaycastCommandsBuffer;
-    internal static NativeArray<RaycastHit> HitResultsBuffer;
-
     internal static NativeArray<int> SourceRoomIDs;
 
-    internal static NativeArray<int> SourceToOcclusionMaskIndex;
+    internal static NativeArray<int> OcclusionMaskIndex;
 
     internal static NativeArray<float> TargetOcclusion01;
     internal static NativeArray<float3> TargetAmbisonicEQ01s;
@@ -70,6 +67,10 @@ public partial class WyrmBaseSource
     {
         CachedTransform.position = position;
         _trackedTransform = trackedTransform;
+
+        if (UseOcclusion)
+            Mask = this.EnsureReference(Mask);
+
         Register();
     }
 
@@ -100,10 +101,10 @@ public partial class WyrmBaseSource
 
         Pointers                                       = new(AllocatedCapacity, Allocator.Persistent);
 
-        RaycastCommandsBuffer                           = new(AllocatedCapacity, Allocator.Persistent);
-        HitResultsBuffer                            = new(AllocatedCapacity, Allocator.Persistent);
-
         SourceRoomIDs                                  = new(AllocatedCapacity, Allocator.Persistent);
+
+        OcclusionMaskIndex                                   = new(AllocatedCapacity, Allocator.Persistent);
+
 
         TargetOcclusion01                              = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicEQ01s                           = new(AllocatedCapacity, Allocator.Persistent);
@@ -135,10 +136,9 @@ public partial class WyrmBaseSource
 
         Pointers.TryDispose();
 
-        RaycastCommandsBuffer.TryDispose();
-        HitResultsBuffer.TryDispose();
-
         SourceRoomIDs.TryDispose();
+
+        OcclusionMaskIndex.TryDispose();
 
         TargetOcclusion01.TryDispose();
         TargetAmbisonicEQ01s.TryDispose();
@@ -169,6 +169,8 @@ public partial class WyrmBaseSource
         CurrentOcclusion01[SoAIndex]                      = 0f;
         CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
+        OcclusionMaskIndex[SoAIndex]                      = Mask != null && Mask.IsRegistered ? Mask.SoAIndex : WyrmOcclusionMask.INACTIVE;
+
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
             Pointers[SoAIndex]                            = phononSource.PhononSource.Get();
         else
@@ -195,6 +197,8 @@ public partial class WyrmBaseSource
 
             CurrentOcclusion01[removedIndex]           = CurrentOcclusion01[lastIndex];
             CurrentAmbisonicEQ01s[removedIndex]        = CurrentAmbisonicEQ01s[lastIndex];
+
+            OcclusionMaskIndex[removedIndex] = OcclusionMaskIndex[lastIndex];
         }
 
         SourceTransforms.RemoveAtSwapBack(removedIndex);
