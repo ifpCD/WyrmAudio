@@ -39,6 +39,25 @@ public class WyrmAudioSettings : ScriptableObject
         FarDistance = Mathf.Max(NearDistance + 0.5f, FarDistance);
     }
 
+#if UNITY_EDITOR
+    [System.NonSerialized]
+    private static GUIStyle _gizmoTextStyle;
+
+    public static GUIStyle TextStyle
+    {
+        get
+        {
+            _gizmoTextStyle ??= new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = new GUIStyleState { textColor = Color.white },
+            };
+
+            return _gizmoTextStyle;
+        }
+    }
+#endif
+
     public static WyrmAudioSettings Instance
     {
         get
