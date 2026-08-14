@@ -151,12 +151,6 @@ public abstract class AmbiMonoBehaviour<T> : MonoBehaviour
         AllocateNative();
     }
 
-    protected void SoASync()
-    {
-        if (IsRegistered)
-            LoadObjectToArrays();
-    }
-
     protected static void DisposeRegistry()
     {
         if (RegisteredInstances == null)

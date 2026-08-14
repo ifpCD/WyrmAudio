@@ -3,17 +3,17 @@ using UnityEngine;
 public partial class WyrmBaseSource
 {
     [SerializeField]
-    WyrmOcclusionMask _mask;
+    WyrmOcclusionMask _occlusionMask;
 
-    internal WyrmOcclusionMask Mask
+    internal WyrmOcclusionMask OcclusionMask
     {
-        get => _mask;
+        get => _occlusionMask;
         set
         {
-            if (_mask == value)
+            if (_occlusionMask == value)
                 return;
 
-            _mask = value;
+            _occlusionMask = value;
 
             if (IsRegistered)
                 OcclusionMaskIndex[SoAIndex] = (value != null && value.IsRegistered) ? value.SoAIndex : -1;

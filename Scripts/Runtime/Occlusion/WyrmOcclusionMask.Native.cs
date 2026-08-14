@@ -29,7 +29,7 @@ public partial class WyrmOcclusionMask
     {
         TotalSampleWeight.TryDispose();
         OccludedSampleWeight.TryDispose();
-        
+
         TargetOcclusionValue01s.TryDispose();
         LocalToWorlds.TryDispose();
         MaskTransforms.TryDispose();
@@ -38,9 +38,17 @@ public partial class WyrmOcclusionMask
     // csharpier-ignore
     protected override void LoadObjectToArrays()
     {
-        TargetOcclusionValue01s[SoAIndex] = 0f;
-        LocalToWorlds[SoAIndex]           = transform.localToWorldMatrix;
+        SoASync();
         MaskTransforms.Add(transform);
+    }
+
+    void SoASync()
+    {
+        if (!IsRegistered)
+            return;
+
+        TargetOcclusionValue01s[SoAIndex] = 0f;
+        LocalToWorlds[SoAIndex] = transform.localToWorldMatrix;
     }
 
     protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)

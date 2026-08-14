@@ -20,13 +20,15 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
 
     public AudioMixerGroup MixerGroup => ASource.outputAudioMixerGroup;
 
-    [ShowInInspector]
+    [Header("Spatial Features")]
+    
+    [field: SerializeField]
     public virtual bool UseReflections { get; set; } = false;
 
-    [ShowInInspector]
+    [field: SerializeField]
     public virtual bool UseAmbisonics { get; set; } = true;
 
-    [ShowInInspector]
+    [field: SerializeField]
     public virtual bool UseOcclusion { get; set; } = true;
 
     internal void Initialize(WyrmMixerPool pool)
@@ -49,8 +51,8 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
     protected virtual void Awake()
     {
         if (UseOcclusion)
-            Mask        = this.EnsureReference(Mask);
-            
+            OcclusionMask        = this.EnsureReference(OcclusionMask);
+
         ASource         = this.EnsureReference(ASource);
         CachedTransform = transform;
         _clip           = ASource.clip;

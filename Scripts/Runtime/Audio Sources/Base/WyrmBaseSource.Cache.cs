@@ -5,7 +5,6 @@ using UnityEngine;
 public partial class WyrmBaseSource
 {
     [Header("Audio Source")]
-    
     [SerializeField]
     private AudioClip _clip;
 
@@ -13,9 +12,11 @@ public partial class WyrmBaseSource
     private bool _loop;
 
     [SerializeField]
+    [Range(0, 1)]
     private float _volume;
 
     [SerializeField]
+    [Range(-3, 3)]
     private float _pitch;
 
     [SerializeField]

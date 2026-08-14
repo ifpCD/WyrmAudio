@@ -69,7 +69,7 @@ public partial class WyrmBaseSource
         _trackedTransform = trackedTransform;
 
         if (UseOcclusion)
-            Mask = this.EnsureReference(Mask);
+            OcclusionMask = this.EnsureReference(OcclusionMask);
 
         Register();
     }
@@ -148,11 +148,18 @@ public partial class WyrmBaseSource
         CurrentAmbisonicEQ01s.TryDispose();
     }
 
-    // csharpier-ignore
     protected sealed override void LoadObjectToArrays()
     {
+        SoASync();
         SourceTransforms.Add(CachedTransform);
         PositionTransforms.Add(PositionTransform);
+    }
+
+    // csharpier-ignore
+    void SoASync()
+    {
+        if (!IsRegistered)
+            return;
 
         UseOcclusions[SoAIndex]                           = UseOcclusion.ToByte();
         PlaybackEndTime                                   = double.NegativeInfinity;
@@ -169,7 +176,7 @@ public partial class WyrmBaseSource
         CurrentOcclusion01[SoAIndex]                      = 0f;
         CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
-        OcclusionMaskIndex[SoAIndex]                      = Mask != null && Mask.IsRegistered ? Mask.SoAIndex : WyrmOcclusionMask.INACTIVE;
+        OcclusionMaskIndex[SoAIndex]                      = OcclusionMask != null && OcclusionMask.IsRegistered ? OcclusionMask.SoAIndex : WyrmOcclusionMask.INACTIVE;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
             Pointers[SoAIndex]                            = phononSource.PhononSource.Get();

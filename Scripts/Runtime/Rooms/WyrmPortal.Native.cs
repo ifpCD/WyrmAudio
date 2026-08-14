@@ -39,9 +39,16 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         PortalOpenness[removedIndex]     = PortalOpenness[lastIndex];
     }
 
-    // csharpier-ignore
     protected override void LoadObjectToArrays()
     {
+        SoASync();
+    }
+
+    // csharpier-ignore
+    void SoASync()
+    {
+        if (!IsRegistered)
+            return;
         PortalWorldToLocal[SoAIndex]  = WorldToLocal;
         PortalExtents[SoAIndex]       = Extents;
         PortalRoomA[SoAIndex]         = RoomA != null ? RoomA.RoomIdentifier : -1;

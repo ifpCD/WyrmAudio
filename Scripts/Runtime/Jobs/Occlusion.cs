@@ -212,13 +212,8 @@ public struct ApplyMaskOcclusionToSourceJob : IJobParallelFor
             return;
         }
 
+        // mask is guaranteed before source registers
         int maskIndex = SourceToMaskIndex[sourceIndex];
-        if (maskIndex < 0)
-        {
-            TargetOcclusion01[sourceIndex] = 0f;
-            return;
-        }
-
         TargetOcclusion01[sourceIndex] = 1f - MaskTargetOcclusion01s[maskIndex];
     }
 }

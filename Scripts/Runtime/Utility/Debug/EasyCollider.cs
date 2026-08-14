@@ -119,7 +119,9 @@ public static class EasyColliderExtensions
         return true;
     }
 
-    public static float GetGizmoOpacity(this IEasyCollider self)
+    public static float GetGizmoOpacity(this IEasyCollider self) => GetGizmoOpacity(self.transform.position);
+
+    public static float GetGizmoOpacity(Vector3 gizmoPos)
     {
         var cam = Camera.current;
 
@@ -130,7 +132,7 @@ public static class EasyColliderExtensions
         if (settings == null)
             return 1f;
 
-        float distance = Vector3.Distance(cam.transform.position, self.transform.position);
+        float distance = Vector3.Distance(cam.transform.position, gizmoPos);
 
         if (distance > settings.CutoffDistance)
             return 0f;
