@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Jobs;
@@ -60,5 +62,21 @@ public static class NativeExtensions
             return;
 
         array[index] = value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Fill<T>(this NativeArray<T> array, T value)
+        where T : struct
+    {
+        for (int i = 0; i < array.Length; i++)
+            array[i] = value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void SubFill<T>(this NativeArray<T> array, T value, int length)
+        where T : struct
+    {
+        for (int i = 0; i < length; i++)
+            array[i] = value;
     }
 }

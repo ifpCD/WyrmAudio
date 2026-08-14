@@ -70,11 +70,20 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
     // csharpier-ignore
     static JobHandle ScheduleFrame()
     {
-        var gatherSourcePositions   = new GatherSourcePositionsJob { SourcePositions = WyrmBaseSource.SourcePositions };
+        var gatherSourcePositions   = new GatherSourcePositionsJob
+        {
+            Positions               = WyrmBaseSource.Positions,
+            Rotations               = WyrmBaseSource.Rotations,
+            LocalToWorlds           = WyrmBaseSource.LocalToWorlds
+        };
         JobHandle gatherHandle      = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
 
         // we use WyrmBaseSource.SourcePositions for every job - meaning we can append this to the finalizer handle
-        var applySourceTransforms   = new ApplySourceTransformsJob { SourcePositions = WyrmBaseSource.SourcePositions };
+        var applySourceTransforms   = new ApplySourceTransformsJob
+        {
+            Positions               = WyrmBaseSource.Positions,
+            Rotations               = WyrmBaseSource.Rotations,
+        };
         JobHandle transformsHandle  = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
 
         JobHandle locationHandle    = LocationProcessor.Schedule(gatherHandle);
@@ -113,15 +122,15 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
         WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
             activeCount,
             (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
-            (float*)WyrmBaseSource.CurrentTotalAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
-            (float*)WyrmBaseSource.TargetSHCoefficients.GetUnsafeReadOnlyPtr(),
+            (float*)WyrmBaseSource.CurrentAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
+            (float*)WyrmBaseSource.TargetSH.GetUnsafeReadOnlyPtr(),
             steamAudioSettings.realTimeAmbisonicOrder
         );
 
         WyrmPhononCustomAPI.iplSourceSetCustomDirectBatch(
             activeCount,
             (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
-            (float3*)WyrmBaseSource.SourcePositions.GetUnsafeReadOnlyPtr(),
+            (float3*)WyrmBaseSource.LocalToWorlds.GetUnsafeReadOnlyPtr(),
             null,
             null
         );

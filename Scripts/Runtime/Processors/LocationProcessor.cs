@@ -42,9 +42,9 @@ internal static class LocationProcessor
             PortalRoomB           = WyrmPortal.PortalRoomB,
             PortalCount           = WyrmPortal.ActiveCount,
 
-            SourcePositions       = WyrmBaseSource.SourcePositions,
+            SourcePositions       = WyrmBaseSource.Positions,
 
-            SourceRoomIdentifiers = WyrmBaseSource.SourceRoomIdentifiers,
+            SourceRoomIdentifiers = WyrmBaseSource.SourceRoomIDs,
         };
         JobHandle sourcesHandle = locateSources.Schedule(sourceCount, 16, dependency);
 

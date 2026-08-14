@@ -30,7 +30,7 @@ internal static class AmbisonicProcessor
             ListenerPosition          = WyrmListener.ListenerPosition.Value,
             AmbisonicOrder            = SteamAudioSettings.Singleton.realTimeAmbisonicOrder,
 
-            SHCoeffs                  = WyrmBaseSource.TargetSHCoefficients,
+            SHCoeffs                  = WyrmBaseSource.TargetSH,
         };
         JobHandle shCoefficientHandle = shCoeffJob.Schedule(WyrmBaseSource.ActiveCount, 16, calculateEqualizationHandle);
 

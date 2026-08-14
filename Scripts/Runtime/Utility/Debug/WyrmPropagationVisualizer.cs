@@ -127,11 +127,11 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
             int shOffset = sourceIdx * 16;
 
-            float3 rawEq = WyrmBaseSource.CurrentTotalAmbisonicEQ01s[sourceIdx];
+            float3 rawEq = WyrmBaseSource.CurrentAmbisonicEQ01s[sourceIdx];
 
             for (int c = 0; c < numCoeffs; c++)
             {
-                float shValue = WyrmBaseSource.TargetSHCoefficients[shOffset + c];
+                float shValue = WyrmBaseSource.TargetSH[shOffset + c];
 
                 _accumulatedSH[c].w += shValue;
                 _accumulatedSH[c].x += shValue * rawEq.x;

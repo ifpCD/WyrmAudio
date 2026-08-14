@@ -2,23 +2,21 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
-public partial class OcclusionSample
+public partial class WyrmOcclusionSample
 {
     protected override int AllocatedCapacity => 8000 * WyrmOcclusionMask.MAX_SAMPLE_COUNT;
 
     public static NativeArray<float> InputWeights;
-    public static NativeArray<byte> InputDiscardable;
-    public static NativeArray<byte> InputLODGroup;
+    public static NativeArray<bool> InputDiscardable;
+    public static NativeArray<bool> InputLODGroup;
 
-    public static NativeArray<int> MaskOwnerIndices;
+    public static NativeArray<int> SampleToMask;
 
-    public static NativeArray<float3> LocalPositions;
+    public static NativeArray<float3> LocalPositions; // offset from the mask
+    public static NativeArray<float3> WorldPositions; // calculated during discard raycast command generation passge
 
-    public static NativeArray<byte> IsOccluded;
-    public static NativeArray<byte> IsDiscarded;
-
-    public static NativeReference<int> DiscardRaycastCount;
-    public static NativeReference<int> OcclusionRaycastCount;
+    public static NativeArray<bool> IsOccluded;
+    public static NativeArray<bool> IsDiscarded;
 
     public static NativeArray<RaycastCommand> RaycastCommandBuffer;
     public static NativeArray<RaycastHit> RaycastResultBuffer;
@@ -26,19 +24,16 @@ public partial class OcclusionSample
     // csharpier-ignore
     protected override void AllocateNative()
     {
-
         InputWeights                         = new(AllocatedCapacity, Allocator.Persistent);
         InputDiscardable                     = new(AllocatedCapacity, Allocator.Persistent);
 
-        MaskOwnerIndices                     = new(AllocatedCapacity, Allocator.Persistent);
+        SampleToMask                         = new(AllocatedCapacity, Allocator.Persistent);
 
         LocalPositions                       = new(AllocatedCapacity, Allocator.Persistent);
+        WorldPositions                       = new(AllocatedCapacity, Allocator.Persistent);
 
         IsOccluded                           = new(AllocatedCapacity, Allocator.Persistent);
         IsDiscarded                          = new(AllocatedCapacity, Allocator.Persistent);
-
-        DiscardRaycastCount                  = new(Allocator.Persistent);
-        OcclusionRaycastCount                = new(Allocator.Persistent);
 
         RaycastCommandBuffer                 = new(AllocatedCapacity, Allocator.Persistent);
         RaycastResultBuffer                  = new(AllocatedCapacity, Allocator.Persistent);
@@ -49,15 +44,13 @@ public partial class OcclusionSample
         InputWeights.TryDispose();
         InputDiscardable.TryDispose();
 
-        MaskOwnerIndices.TryDispose();
+        SampleToMask.TryDispose();
 
         LocalPositions.TryDispose();
+        WorldPositions.TryDispose();
 
         IsOccluded.TryDispose();
         IsDiscarded.TryDispose();
-
-        DiscardRaycastCount.TryDispose();
-        OcclusionRaycastCount.TryDispose();
 
         RaycastCommandBuffer.TryDispose();
         RaycastResultBuffer.TryDispose();
@@ -69,7 +62,8 @@ public partial class OcclusionSample
         LocalPositions[SoAIndex]             = LocalPosition;
         InputWeights[SoAIndex]               = Weight;
 
-        InputDiscardable[SoAIndex]           = Discardable.ToByte();
+        InputDiscardable[SoAIndex]           = Discardable;
+        InputDiscardable[SoAIndex]           = Discardable;
     }
 
     // csharpier-ignore
@@ -78,7 +72,8 @@ public partial class OcclusionSample
         InputWeights[removedIndex]           = InputWeights[lastIndex];
         InputDiscardable[removedIndex]       = InputDiscardable[lastIndex];
 
-        MaskOwnerIndices[removedIndex]       = MaskOwnerIndices[lastIndex];
+        SampleToMask[removedIndex]              = SampleToMask[lastIndex];
+
         LocalPositions[removedIndex]         = LocalPositions[lastIndex];
     }
 }

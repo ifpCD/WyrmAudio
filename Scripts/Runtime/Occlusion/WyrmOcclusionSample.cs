@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public partial class OcclusionSample : AmbiBase<OcclusionSample>
+public partial class WyrmOcclusionSample : AmbiBase<WyrmOcclusionSample>
 {
     public Vector3 LocalPosition = Vector3.zero;
 
@@ -11,5 +11,5 @@ public partial class OcclusionSample : AmbiBase<OcclusionSample>
 
     public int LODGroup = 0;
 
-    ~OcclusionSample() => Deregister();
+    ~WyrmOcclusionSample() => Deregister();
 }

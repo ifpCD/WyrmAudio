@@ -1,4 +1,5 @@
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 public partial class WyrmOcclusionMask
@@ -6,6 +7,10 @@ public partial class WyrmOcclusionMask
     protected override int AllocatedCapacity => 8000;
 
     public static NativeArray<float> TargetOcclusionValue01s;
+    
+    public static NativeArray<float4x4> LocalToWorlds;
+    public static NativeArray<float3> WorldPositions;
+    public static NativeArray<float3> LossyScales;
 
     // csharpier-ignore
     protected override void AllocateNative()

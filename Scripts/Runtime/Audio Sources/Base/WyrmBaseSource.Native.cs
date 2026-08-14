@@ -25,7 +25,10 @@ public partial class WyrmBaseSource
 
     internal static TransformAccessArray SourceTransforms;
     internal static TransformAccessArray PositionTransforms;
-    internal static NativeArray<float3> SourcePositions;
+
+    internal static NativeArray<float3> Positions;
+    internal static NativeArray<quaternion> Rotations;
+    internal static NativeArray<float4x4> LocalToWorlds;
 
     // Ambisonic Inputs
     internal static NativeArray<float3> InputVirtualPositions;
@@ -40,18 +43,20 @@ public partial class WyrmBaseSource
     internal static NativeArray<IntPtr> Pointers; // For Phonon
 
     // Output Scratch Buffers
-    internal static NativeArray<RaycastCommand> OcclusionRayCommands;
-    internal static NativeArray<RaycastHit> OcclusionHitResults;
+    internal static NativeArray<RaycastCommand> RaycastCommandsBuffer;
+    internal static NativeArray<RaycastHit> HitResultsBuffer;
 
-    internal static NativeArray<int> SourceRoomIdentifiers;
+    internal static NativeArray<int> SourceRoomIDs;
+
+    internal static NativeArray<int> SourceToOcclusionMaskIndex;
 
     internal static NativeArray<float> TargetOcclusion01;
     internal static NativeArray<float3> TargetAmbisonicEQ01s;
-    internal static NativeArray<float> TargetSHCoefficients;
+    internal static NativeArray<float> TargetSH;
 
     // Stateful
     internal static NativeArray<float> CurrentOcclusion01;
-    internal static NativeArray<float3> CurrentTotalAmbisonicEQ01s;
+    internal static NativeArray<float3> CurrentAmbisonicEQ01s;
 
     protected sealed override bool RetainNativeWhenEmpty => true;
 
@@ -75,37 +80,37 @@ public partial class WyrmBaseSource
     // csharpier-ignore
     protected sealed override void AllocateNative()
     {
-        UseOcclusions              = new(AllocatedCapacity, Allocator.Persistent);
+        UseOcclusions                                  = new(AllocatedCapacity, Allocator.Persistent);
 
-        SourceTransforms           = new(AllocatedCapacity);
-        PositionTransforms         = new(AllocatedCapacity);
-        SourcePositions            = new(AllocatedCapacity, Allocator.Persistent);
+        SourceTransforms                               = new(AllocatedCapacity);
+        PositionTransforms                             = new(AllocatedCapacity);
 
-        InputVirtualPositions      = new(AllocatedCapacity, Allocator.Persistent);
-        InputVerticalWidths        = new(AllocatedCapacity, Allocator.Persistent);
-        InputHorizontalWidths      = new(AllocatedCapacity, Allocator.Persistent);
-        InputDirectionalGains      = new(AllocatedCapacity, Allocator.Persistent);
-        InputAmbientGains          = new(AllocatedCapacity, Allocator.Persistent);
-        InputAmbisonicEQHigh01s    = new(AllocatedCapacity, Allocator.Persistent);
-        InputAmbisonicEQMid01s     = new(AllocatedCapacity, Allocator.Persistent);
-        InputAmbisonicEQLow01s     = new(AllocatedCapacity, Allocator.Persistent);
+        Positions                                      = new(AllocatedCapacity, Allocator.Persistent);
+        Rotations                                      = new(AllocatedCapacity, Allocator.Persistent);
+        LocalToWorlds                                  = new(AllocatedCapacity, Allocator.Persistent);
 
-        Pointers                   = new(AllocatedCapacity, Allocator.Persistent);
+        InputVirtualPositions                          = new(AllocatedCapacity, Allocator.Persistent);
+        InputVerticalWidths                            = new(AllocatedCapacity, Allocator.Persistent);
+        InputHorizontalWidths                          = new(AllocatedCapacity, Allocator.Persistent);
+        InputDirectionalGains                          = new(AllocatedCapacity, Allocator.Persistent);
+        InputAmbientGains                              = new(AllocatedCapacity, Allocator.Persistent);
+        InputAmbisonicEQHigh01s                        = new(AllocatedCapacity, Allocator.Persistent);
+        InputAmbisonicEQMid01s                         = new(AllocatedCapacity, Allocator.Persistent);
+        InputAmbisonicEQLow01s                         = new(AllocatedCapacity, Allocator.Persistent);
 
-        OcclusionRayCommands       = new(AllocatedCapacity, Allocator.Persistent);
-        OcclusionHitResults        = new(AllocatedCapacity, Allocator.Persistent);
+        Pointers                                       = new(AllocatedCapacity, Allocator.Persistent);
 
-        SourceRoomIdentifiers      = new(AllocatedCapacity, Allocator.Persistent);
+        RaycastCommandsBuffer                           = new(AllocatedCapacity, Allocator.Persistent);
+        HitResultsBuffer                            = new(AllocatedCapacity, Allocator.Persistent);
 
-        TargetOcclusion01          = new(AllocatedCapacity, Allocator.Persistent);
-        TargetAmbisonicEQ01s       = new(AllocatedCapacity, Allocator.Persistent);
-        TargetSHCoefficients       = new(AllocatedCapacity * 48, Allocator.Persistent);
+        SourceRoomIDs                                  = new(AllocatedCapacity, Allocator.Persistent);
 
-        CurrentOcclusion01         = new(AllocatedCapacity, Allocator.Persistent);
-        CurrentTotalAmbisonicEQ01s = new(AllocatedCapacity, Allocator.Persistent);
+        TargetOcclusion01                              = new(AllocatedCapacity, Allocator.Persistent);
+        TargetAmbisonicEQ01s                           = new(AllocatedCapacity, Allocator.Persistent);
+        TargetSH                                       = new(AllocatedCapacity * 48, Allocator.Persistent);
 
-        // for(var i = 0; i < MaximumCapacity; i++)
-        //     TargetSHCoefficients[i] = new(1f, 1f, 1f);
+        CurrentOcclusion01                             = new(AllocatedCapacity, Allocator.Persistent);
+        CurrentAmbisonicEQ01s                          = new(AllocatedCapacity, Allocator.Persistent);
     }
 
     protected sealed override void DeallocateNative()
@@ -114,7 +119,10 @@ public partial class WyrmBaseSource
 
         SourceTransforms.TryDispose();
         PositionTransforms.TryDispose();
-        SourcePositions.TryDispose();
+
+        Positions.TryDispose();
+        Rotations.TryDispose();
+        LocalToWorlds.TryDispose();
 
         InputVirtualPositions.TryDispose();
         InputVerticalWidths.TryDispose();
@@ -127,46 +135,44 @@ public partial class WyrmBaseSource
 
         Pointers.TryDispose();
 
-        OcclusionRayCommands.TryDispose();
-        OcclusionHitResults.TryDispose();
+        RaycastCommandsBuffer.TryDispose();
+        HitResultsBuffer.TryDispose();
 
-        SourceRoomIdentifiers.TryDispose();
+        SourceRoomIDs.TryDispose();
 
         TargetOcclusion01.TryDispose();
         TargetAmbisonicEQ01s.TryDispose();
-        TargetSHCoefficients.TryDispose();
+        TargetSH.TryDispose();
 
         CurrentOcclusion01.TryDispose();
-        CurrentTotalAmbisonicEQ01s.TryDispose();
+        CurrentAmbisonicEQ01s.TryDispose();
     }
 
     // csharpier-ignore
     protected sealed override void LoadObjectToArrays()
     {
-        int index = SoAIndex;
-
         SourceTransforms.Add(CachedTransform);
         PositionTransforms.Add(PositionTransform);
 
-        UseOcclusions[index]            = UseOcclusion.ToByte();
-        PlaybackEndTime                 = double.NegativeInfinity;
+        UseOcclusions[SoAIndex]                           = UseOcclusion.ToByte();
+        PlaybackEndTime                                   = double.NegativeInfinity;
 
-        InputVirtualPositions[index]    = VirtualPosition;
-        InputVerticalWidths[index]      = VerticalWidth;
-        InputHorizontalWidths[index]    = HorizontalWidth;
-        InputDirectionalGains[index]    = DirectionalGain;
-        InputAmbientGains[index]        = AmbientGain;
-        InputAmbisonicEQHigh01s[index]  = AmbisonicEQHigh01;
-        InputAmbisonicEQMid01s[index]   = AmbisonicEQMid01;
-        InputAmbisonicEQLow01s[index]   = AmbisonicEQLow01;
+        InputVirtualPositions[SoAIndex]                   = VirtualPosition;
+        InputVerticalWidths[SoAIndex]                     = VerticalWidth;
+        InputHorizontalWidths[SoAIndex]                   = HorizontalWidth;
+        InputDirectionalGains[SoAIndex]                   = DirectionalGain;
+        InputAmbientGains[SoAIndex]                       = AmbientGain;
+        InputAmbisonicEQHigh01s[SoAIndex]                 = AmbisonicEQHigh01;
+        InputAmbisonicEQMid01s[SoAIndex]                  = AmbisonicEQMid01;
+        InputAmbisonicEQLow01s[SoAIndex]                  = AmbisonicEQLow01;
 
-        CurrentOcclusion01[index]       = 0f;
-        CurrentTotalAmbisonicEQ01s[index]   = 1f;
+        CurrentOcclusion01[SoAIndex]                      = 0f;
+        CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
-            Pointers[index]             = phononSource.PhononSource.Get();
+            Pointers[SoAIndex]                            = phononSource.PhononSource.Get();
         else
-            Pointers[index]             = IntPtr.Zero;
+            Pointers[SoAIndex]                            = IntPtr.Zero;
     }
 
     // csharpier-ignore
@@ -188,7 +194,7 @@ public partial class WyrmBaseSource
             Pointers[removedIndex]                     = Pointers[lastIndex];
 
             CurrentOcclusion01[removedIndex]           = CurrentOcclusion01[lastIndex];
-            CurrentTotalAmbisonicEQ01s[removedIndex]   = CurrentTotalAmbisonicEQ01s[lastIndex];
+            CurrentAmbisonicEQ01s[removedIndex]        = CurrentAmbisonicEQ01s[lastIndex];
         }
 
         SourceTransforms.RemoveAtSwapBack(removedIndex);

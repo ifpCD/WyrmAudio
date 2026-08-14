@@ -21,7 +21,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
     readonly List<Vector3> _generatedPositionsBuffer = new(64);
 
-    readonly List<OcclusionSample> _sampleBuffer = new(64);
+    readonly List<WyrmOcclusionSample> _sampleBuffer = new(64);
 
     void OnEnable()
     {
@@ -58,7 +58,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
             for (var i = 0; i < _generatedPositionsBuffer.Count; i++)
             {
-                var newSample = new OcclusionSample { LocalPosition = _generatedPositionsBuffer[i] };
+                var newSample = new WyrmOcclusionSample { LocalPosition = _generatedPositionsBuffer[i] };
                 _sampleBuffer.Add(newSample);
             }
         }
@@ -72,7 +72,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
         foreach (var sample in _sampleBuffer)
         {
             sample.Register();
-            OcclusionSample.MaskOwnerIndices[sample.SoAIndex] = SoAIndex;
+            WyrmOcclusionSample.SampleToMask[sample.SoAIndex] = SoAIndex;
         }
     }
 

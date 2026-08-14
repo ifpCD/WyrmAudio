@@ -8,34 +8,35 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
     public void DrawOcclusionGizmo()
     {
-        var cachedTransform = transform;
-        var cachedTransformPosition = cachedTransform.position;
+        var t = transform;
+        var tPosition = t.position;
+        var tLossyScale = t.lossyScale;
 
         if (_type == OcclusionMaskType.SphericalHalton)
         {
             Gizmos.color = WyrmColor.FaintWhite;
-            Gizmos.DrawWireSphere(cachedTransformPosition, Radius);
+            Gizmos.DrawWireSphere(tPosition, Radius);
         }
 
         if (_sampleBuffer == null)
             return;
 
-        var matrix = Matrix4x4.TRS(cachedTransformPosition, Quaternion.identity, cachedTransform.lossyScale);
+        var localToWorldNoRotation = Matrix4x4.TRS(tPosition, Quaternion.identity, tLossyScale);
 
         for (int i = 0; i < _sampleBuffer.Count; i++)
         {
             var sample = _sampleBuffer[i];
 
             var localPos = sample.LocalPosition;
-            var worldPos = matrix.MultiplyPoint3x4(localPos);
+            var worldPos = localToWorldNoRotation.MultiplyPoint3x4(localPos);
 
             Color SampleColor = WyrmColor.Gray;
             Color LineColor = WyrmColor.FaintGray;
 
             if (sample.IsRegistered)
             {
-                var isOccluded = OcclusionSample.IsOccluded[i].ToBool();
-                var isDiscarded = OcclusionSample.IsDiscarded[i].ToBool();
+                var isOccluded = WyrmOcclusionSample.IsOccluded[i];
+                var isDiscarded = WyrmOcclusionSample.IsDiscarded[i];
 
                 if (!isDiscarded && isOccluded)
                 {
@@ -55,7 +56,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
             Gizmos.color = LineColor;
 
             if (sample.Discardable)
-                Gizmos.DrawLine(cachedTransformPosition, worldPos);
+                Gizmos.DrawLine(tPosition, worldPos);
 
             if (WyrmListener.CompletelyInactive)
                 continue;

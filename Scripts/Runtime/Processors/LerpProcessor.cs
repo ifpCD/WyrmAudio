@@ -35,7 +35,7 @@ internal static class LerpProcessor
             TargetPropagationEQs01  = WyrmBaseSource.TargetAmbisonicEQ01s,
             ExpLerpFactor           = expLerpFactor,
 
-            CurrentPropagationEQs01 = WyrmBaseSource.CurrentTotalAmbisonicEQ01s,
+            CurrentPropagationEQs01 = WyrmBaseSource.CurrentAmbisonicEQ01s,
         };
         JobHandle lerpPropagationEqsHandle = lerpPropagationEqs.Schedule(activeCount, 16, dependency);
 

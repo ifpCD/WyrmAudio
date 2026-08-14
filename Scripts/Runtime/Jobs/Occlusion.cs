@@ -3,64 +3,140 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 [BurstCompile]
-public struct GenerateSourceRaycastCommands : IJobParallelFor
+public struct GenerateDiscardCommands : IJobParallelFor
 {
     [ReadOnly]
-    public NativeArray<float3> SourcePositions;
+    public NativeArray<int> SampleToMask;
 
     [ReadOnly]
-    public NativeArray<byte> UseOcclusions;
+    public NativeArray<float3> SampleLocalPositions;
 
     [ReadOnly]
-    public float3 ListenerPosition;
+    public NativeArray<float4x4> MaskLocalToWorlds;
+
+    [ReadOnly]
+    public NativeArray<bool> SampleIsDiscardable;
 
     [ReadOnly]
     public QueryParameters QueryParameters;
 
     [WriteOnly]
-    public NativeArray<RaycastCommand> RaycastCommands;
+    public NativeArray<float3> SampleWorldPositions;
 
-    public void Execute(int index)
+    [WriteOnly]
+    public NativeArray<RaycastCommand> SampleDiscardCommands;
+
+    public void Execute(int sampleIndex)
     {
-        if (UseOcclusions[index] == 0)
+        if (!SampleIsDiscardable[sampleIndex])
         {
-            RaycastCommands[index] = new RaycastCommand();
+            SampleDiscardCommands[sampleIndex] = default;
             return;
         }
 
-        float3 src = SourcePositions[index];
-        float3 dir = ListenerPosition - src;
-        float dist = math.length(dir);
+        var maskIndex = SampleToMask[sampleIndex];
 
-        if (dist > 0.001f)
+        var sampleLocalPos = SampleLocalPositions[sampleIndex];
+
+        float4x4 maskLocalToWorld = MaskLocalToWorlds[maskIndex];
+        float3 maskWorldPos = maskLocalToWorld.GetPosition();
+        float3 maskLossyScale = maskLocalToWorld.GetLossyScale();
+
+        float3 sampleWorldPos = maskWorldPos + sampleLocalPos * maskLossyScale;
+
+        SampleWorldPositions[sampleIndex] = sampleWorldPos;
+
+        float3 dir = sampleWorldPos - maskWorldPos;
+        float dist = math.length(dir);
+        float3 dirNorm = dir / dist;
+
+        SampleDiscardCommands[sampleIndex] = new RaycastCommand(maskWorldPos, dirNorm, QueryParameters, dist);
+    }
+}
+
+[BurstCompile]
+public struct GenerateOcclusionCommands : IJobParallelFor
+{
+    [ReadOnly]
+    public NativeArray<float3> SampleWorldPositions;
+
+    [ReadOnly]
+    public NativeReference<float3> ListenerPosition;
+
+    [ReadOnly]
+    public QueryParameters QueryParameters;
+
+    [ReadOnly]
+    public NativeArray<RaycastHit> SampleDiscardResults;
+
+    [WriteOnly]
+    public NativeArray<bool> SampleIsDiscarded; // for visualization
+
+    [WriteOnly]
+    public NativeArray<RaycastCommand> SampleOcclusionCommands;
+
+    public void Execute(int sampleIndex)
+    {
+        bool isDiscarded = SampleDiscardResults[sampleIndex].distance > 0f;
+
+        SampleIsDiscarded[sampleIndex] = isDiscarded;
+
+        float3 listenerWorldPos = ListenerPosition.Value;
+        float3 sampleWorldPos = SampleWorldPositions[sampleIndex];
+
+        SampleWorldPositions[sampleIndex] = sampleWorldPos;
+
+        float3 dir = sampleWorldPos - listenerWorldPos;
+        float dist = math.length(dir);
+        float3 dirNorm = dir / dist;
+
+        if (!isDiscarded)
         {
-            float3 dirNorm = dir / dist;
-            RaycastCommands[index] = new RaycastCommand(src, dirNorm, QueryParameters, dist);
+            SampleOcclusionCommands[sampleIndex] = new RaycastCommand(listenerWorldPos, dirNorm, QueryParameters, dist);
         }
         else
         {
-            RaycastCommands[index] = new RaycastCommand();
+            SampleOcclusionCommands[sampleIndex] = default;
         }
     }
 }
 
 [BurstCompile]
-public struct ResolveOcclusionJob : IJobParallelFor
+public struct ResolveMaskOcclusionValue : IJobParallelFor
 {
     [ReadOnly]
-    public NativeArray<RaycastHit> RaycastHits;
+    public NativeArray<RaycastResult> OcclusionResults;
 
     [ReadOnly]
-    public NativeArray<byte> UseOcclusions;
+    public NativeArray<int> SampleToMask;
+
+    [ReadOnly]
+    public NativeArray<float> SampleWeights;
+
+    [ReadOnly]
+    public NativeArray<int> MaskSampleCounts;
+
+    [ReadOnly]
+    public NativeArray<RaycastHit> SampleOcclusionResults;
 
     [WriteOnly]
-    public NativeArray<float> SourceOcclusions;
+    public NativeArray<bool> SampleIsOccluded;
 
-    public void Execute(int index)
+    public NativeArray<float> MaskTargetOcclusion01s;
+
+    public void Execute(int sampleIndex)
     {
-        bool occluded = UseOcclusions[index] != 0 && RaycastHits[index].distance > 0f;
-        SourceOcclusions[index] = math.select(1f, 0f, occluded);
+        bool isOccluded = SampleOcclusionResults[sampleIndex].distance > 0f;
+
+        SampleIsOccluded[sampleIndex] = isOccluded;
+
+        // factor in the total non-discarded count of samples
+        float sampleOccContributionToMask = SampleWeights[sampleIndex];
+
+        int maskIndex = SampleToMask[sampleIndex];
+        MaskTargetOcclusion01s[maskIndex] += sampleOccContributionToMask;
     }
 }

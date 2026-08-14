@@ -1,3 +1,4 @@
+using Unity.Burst;
 using Unity.Jobs;
 using UnityEngine;
 
@@ -5,37 +6,54 @@ internal static class OcclusionProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive)
+        if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive || WyrmOcclusionMask.CompletelyInactive)
             return dependency;
 
-        int sourceActiveCount = WyrmBaseSource.ActiveCount;
-        var raycastCommands = WyrmBaseSource.OcclusionRayCommands.GetSubArray(0, sourceActiveCount);
-        var raycastResults = WyrmBaseSource.OcclusionHitResults.GetSubArray(0, sourceActiveCount);
+        int sampleActiveCount = WyrmOcclusionSample.ActiveCount;
 
-        var queryParameters = new QueryParameters(WyrmAudioSettings.Instance.OcclusionMask, false, QueryTriggerInteraction.Ignore);
+        WyrmOcclusionSample.IsDiscarded.SubFill(false, sampleActiveCount);
 
-        // csharpier-ignore
-        var prepareRaycastsJob = new GenerateSourceRaycastCommands
-        {
-            SourcePositions  = WyrmBaseSource.SourcePositions,
-            UseOcclusions    = WyrmBaseSource.UseOcclusions,
-            ListenerPosition = WyrmListener.ListenerPosition.Value,
-            QueryParameters  = queryParameters,
+        var CommandsSubBuffer = WyrmBaseSource.RaycastCommandsBuffer.GetSubArray(0, sampleActiveCount);
+        var ResultsSubBuffer = WyrmBaseSource.HitResultsBuffer.GetSubArray(0, sampleActiveCount);
 
-            RaycastCommands  = raycastCommands,
-        };
-        JobHandle prepareRaycastsHandle = prepareRaycastsJob.Schedule(sourceActiveCount, 16, dependency);
-
-        JobHandle raycastHandle = RaycastCommand.ScheduleBatch(raycastCommands, raycastResults, 16, prepareRaycastsHandle);
+        var layerMask = WyrmAudioSettings.Instance.OcclusionMask;
+        var queryParameters = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
 
         // csharpier-ignore
-        var resolveOcclusionJob = new ResolveOcclusionJob
+        var genDiscardCommandsJob             = new GenerateDiscardCommands
         {
-            UseOcclusions    = WyrmBaseSource.UseOcclusions,
-            RaycastHits      = raycastResults,
+            SampleToMask                      = WyrmOcclusionSample.SampleToMask,
+            SampleLocalPositions              = WyrmOcclusionSample.LocalPositions,
+            MaskLocalToWorlds                 = WyrmOcclusionMask.LocalToWorlds,
+            QueryParameters                   = queryParameters,
 
-            SourceOcclusions = WyrmBaseSource.TargetOcclusion01,
+            SampleWorldPositions              = WyrmOcclusionSample.WorldPositions,
+            SampleDiscardCommands             = CommandsSubBuffer,
         };
-        return resolveOcclusionJob.Schedule(sourceActiveCount, 16, raycastHandle);
+        JobHandle genDiscardCommandsHandle = genDiscardCommandsJob.Schedule(sampleActiveCount, 16, dependency);
+
+        JobHandle discardResultsHandle = RaycastCommand.ScheduleBatch(CommandsSubBuffer, ResultsSubBuffer, 16, genDiscardCommandsHandle);
+
+        // csharpier-ignore
+        var genOcclusionCommandsJob           = new GenerateOcclusionCommands
+        {
+            SampleWorldPositions              = WyrmOcclusionSample.WorldPositions,
+            ListenerPosition                  = WyrmListener.ListenerPosition,
+            QueryParameters                   = queryParameters,
+            SampleDiscardResults              = ResultsSubBuffer,
+
+            SampleOcclusionCommands           = CommandsSubBuffer,
+            SampleIsDiscarded                 = WyrmOcclusionSample.IsDiscarded,
+        };
+        JobHandle genOcclusionCommandsHandle = genOcclusionCommandsJob.Schedule(sampleActiveCount, 16, discardResultsHandle);
+
+        JobHandle occlusionResultHandle = RaycastCommand.ScheduleBatch(CommandsSubBuffer, ResultsSubBuffer, 16, genOcclusionCommandsHandle);
+
+        // depend on occlusionResultHandle
+        // calculate each masks TargetOcclusionValue01s via
+        // figuring out how much each sample weighs in the outcome (sample/non-discarded sample count * sample's weight)
+        // then accumulate value of each non-discarded sample, and make sure that it's in 0f to 1f range.
+
+        return occlusionResultHandle;
     }
 }
