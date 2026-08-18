@@ -5,9 +5,7 @@ using UnityEngine.Audio;
 [DefaultExecutionOrder(200)]
 public class WyrmPropagationVisualizer : MonoBehaviour
 {
-    public bool enableVisualization = true;
-
-    public AudioMixerGroup TargetMixerGroup = null;
+    public AudioMixerGroup targetMixerGroup = null;
 
     public float sensitivity = 25.0f;
 
@@ -86,7 +84,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!enableVisualization || !Application.isPlaying)
+        if (!Application.isPlaying)
             return;
 
         if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive)
@@ -115,13 +113,14 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
         for (int sourceIdx = 0; sourceIdx < WyrmBaseSource.ActiveCount; sourceIdx++)
         {
-            if (!WyrmBaseSource.RegisteredInstances[sourceIdx].UseAmbisonics)
+            var instance = WyrmBaseSource.RegisteredInstances[sourceIdx];
+            if (!instance.UseAmbisonics)
                 continue;
 
-            if (TargetMixerGroup != null)
+            if (targetMixerGroup != null)
             {
-                var sourceMixerGroup = WyrmBaseSource.RegisteredInstances[sourceIdx].ASource.outputAudioMixerGroup;
-                if (sourceMixerGroup != TargetMixerGroup)
+                var sourceMixerGroup = instance.ASource.outputAudioMixerGroup;
+                if (sourceMixerGroup != targetMixerGroup)
                     continue;
             }
 
@@ -131,7 +130,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
             for (int c = 0; c < numCoeffs; c++)
             {
-                float shValue = WyrmBaseSource.TargetSH[shOffset + c];
+                float shValue = WyrmBaseSource.TargetAmbisonic[shOffset + c];
 
                 _accumulatedSH[c].w += shValue;
                 _accumulatedSH[c].x += shValue * rawEq.x;

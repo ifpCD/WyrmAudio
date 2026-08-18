@@ -111,8 +111,10 @@ public class WyrmMixerPool
     {
         bool successful = TryReserve(out WyrmBaseSource reservedSource, _controller.CachedTransform.position, null);
         source = reservedSource;
+        
         if (successful)
             reservedSource.IsBorrowed = true;
+
         return successful;
     }
 }

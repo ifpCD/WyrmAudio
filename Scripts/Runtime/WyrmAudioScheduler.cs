@@ -12,9 +12,9 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
 {
     bool _hasFocus = true;
 
-    void OnApplicationFocus(bool hasFocus) => _hasFocus = hasFocus;
-
     JobHandle handle = default;
+
+    void OnApplicationFocus(bool hasFocus) => _hasFocus = hasFocus;
 
     void Update()
     {
@@ -112,7 +112,7 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
         for (int index = 0; index < activeCount; index++)
         {
             if (WyrmBaseSource.RegisteredInstances[index] is WyrmPhononSource phononSource)
-                phononSource.SetOcclusionLevel(WyrmBaseSource.CurrentOcclusion01[index]);
+                phononSource.OcclusionValue = WyrmBaseSource.CurrentOcclusion01[index];
         }
 
         SteamAudioSettings steamAudioSettings = SteamAudioSettings.Singleton;
@@ -121,16 +121,16 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
 
         WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
             activeCount,
-            (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
+            (IntPtr*)WyrmBaseSource.SpatializerPointers.GetUnsafeReadOnlyPtr(),
             (float*)WyrmBaseSource.CurrentAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
-            (float*)WyrmBaseSource.TargetSH.GetUnsafeReadOnlyPtr(),
+            (float*)WyrmBaseSource.TargetAmbisonic.GetUnsafeReadOnlyPtr(),
             steamAudioSettings.realTimeAmbisonicOrder
         );
 
         WyrmPhononCustomAPI.iplSourceSetCustomDirectBatch(
             activeCount,
-            (IntPtr*)WyrmBaseSource.Pointers.GetUnsafeReadOnlyPtr(),
-            (float3*)WyrmBaseSource.LocalToWorlds.GetUnsafeReadOnlyPtr(),
+            (IntPtr*)WyrmBaseSource.SpatializerPointers.GetUnsafeReadOnlyPtr(),
+            (float3*)WyrmBaseSource.Positions.GetUnsafeReadOnlyPtr(),
             null,
             null
         );

@@ -197,7 +197,7 @@ public struct ApplyMaskOcclusionToSourceJob : IJobParallelFor
     public NativeArray<int> SourceToMaskIndex;
 
     [ReadOnly]
-    public NativeArray<byte> UseOcclusions;
+    public NativeArray<bool> UseOcclusions;
 
     [ReadOnly]
     public NativeArray<float> MaskTargetOcclusion01s;
@@ -206,13 +206,13 @@ public struct ApplyMaskOcclusionToSourceJob : IJobParallelFor
 
     public void Execute(int sourceIndex)
     {
-        if (UseOcclusions[sourceIndex] == 0)
+        if (!UseOcclusions[sourceIndex])
         {
             TargetOcclusion01[sourceIndex] = 0f;
             return;
         }
 
-        // mask is guaranteed before source registers
+        // mask is guaranteed if the source is registered
         int maskIndex = SourceToMaskIndex[sourceIndex];
         TargetOcclusion01[sourceIndex] = 1f - MaskTargetOcclusion01s[maskIndex];
     }

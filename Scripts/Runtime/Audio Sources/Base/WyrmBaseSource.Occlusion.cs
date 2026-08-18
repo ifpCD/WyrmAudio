@@ -3,6 +3,22 @@ using UnityEngine;
 public partial class WyrmBaseSource
 {
     [SerializeField]
+    [Range(0f, 1f)]
+    protected float _occlusionValue = 0f;
+
+    public virtual float OcclusionValue
+    {
+        get => _occlusionValue;
+        set
+        {
+            if (_occlusionValue == value)
+                return;
+
+            _occlusionValue = value;
+        }
+    }
+
+    [SerializeField]
     WyrmOcclusionMask _occlusionMask;
 
     internal WyrmOcclusionMask OcclusionMask
@@ -16,7 +32,9 @@ public partial class WyrmBaseSource
             _occlusionMask = value;
 
             if (IsRegistered)
-                OcclusionMaskIndex[SoAIndex] = (value != null && value.IsRegistered) ? value.SoAIndex : -1;
+                OcclusionMaskIndices[SoAIndex] = OcclusionMaskIndex;
         }
     }
+
+    internal int OcclusionMaskIndex => IsRegistered && UseOcclusion ? OcclusionMask.SoAIndex : WyrmOcclusionMask.INACTIVE;
 }

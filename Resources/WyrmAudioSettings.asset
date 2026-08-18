@@ -39,3 +39,6 @@ MonoBehaviour:
   PropagationOcclusionMask:
     serializedVersion: 2
     m_Bits: 64
+  NearDistance: 5
+  FarDistance: 20
+  OcclusionLerpSpeed: 11

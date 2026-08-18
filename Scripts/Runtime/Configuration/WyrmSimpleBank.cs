@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UIElements;
 
 [CreateAssetMenu(menuName = "Wyrm Audio/Wyrm Simple Bank")]
 public class WyrmSimpleBank : AbstractWyrmBank

@@ -74,7 +74,7 @@ internal static class OcclusionProcessor
         // csharpier-ignore
         var applyJob = new ApplyMaskOcclusionToSourceJob
         {
-            SourceToMaskIndex      = WyrmBaseSource.OcclusionMaskIndex,
+            SourceToMaskIndex      = WyrmBaseSource.OcclusionMaskIndices,
             UseOcclusions          = WyrmBaseSource.UseOcclusions,
             MaskTargetOcclusion01s = WyrmOcclusionMask.TargetOcclusionValue01s,
 

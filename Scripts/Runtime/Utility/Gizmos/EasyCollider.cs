@@ -39,25 +39,6 @@ public class EasyColliderState
 
     [HideInInspector]
     public Quaternion LastRotation;
-
-#if UNITY_EDITOR
-    [NonSerialized]
-    private GUIStyle _textStyle;
-
-    public GUIStyle TextStyle
-    {
-        get
-        {
-            _textStyle ??= new GUIStyle
-            {
-                alignment = TextAnchor.MiddleCenter,
-                normal = new GUIStyleState { textColor = Color.white },
-            };
-
-            return _textStyle;
-        }
-    }
-#endif
 }
 
 public static class EasyColliderExtensions
@@ -136,7 +117,7 @@ public static class EasyColliderExtensions
 
         if (distance > settings.CutoffDistance)
             return 0f;
-            
+
         float t = Mathf.InverseLerp(settings.NearDistance, settings.FarDistance, distance);
 
         return Mathf.Lerp(1f, 0.1f, t);
@@ -147,7 +128,7 @@ public static class EasyColliderExtensions
         if (self.BottomLeft == null || self.TopRight == null || self.BoxCollider == null)
             return;
 
-        Gizmos.matrix = self.transform.localToWorldMatrix;
+        Handles.matrix = self.transform.localToWorldMatrix;
 
         Vector3 center = self.BoxCollider.center;
         Vector3 size = self.BoxCollider.size;
@@ -162,8 +143,8 @@ public static class EasyColliderExtensions
 
         if (outline.a != 0f)
         {
-            Gizmos.color = outline;
-            Gizmos.DrawWireCube(center, size);
+            Handles.color = outline;
+            Handles.DrawWireCube(center, size);
         }
 
         // if (volume.a != 0f)
@@ -174,9 +155,8 @@ public static class EasyColliderExtensions
 
         if (label != default)
         {
-            var pos = self.transform.localToWorldMatrix.MultiplyPoint3x4(center);
-            self.State.TextStyle.normal.textColor = self.State.TextStyle.normal.textColor.WithAlpha(gizmoAlpha);
-            Handles.Label(pos, label, self.State.TextStyle);
+            WyrmAudioSettings.TextStyle.normal.textColor = WyrmAudioSettings.TextStyle.normal.textColor.WithAlpha(gizmoAlpha);
+            Handles.Label(Vector3.zero, label, WyrmAudioSettings.TextStyle);
         }
     }
 #endif

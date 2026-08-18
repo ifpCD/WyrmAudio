@@ -3,8 +3,21 @@ using UnityEngine;
 
 public sealed partial class WyrmPhononSource : WyrmBaseSource
 {
+    const int INACTIVE_SPATIALIZER_POINTER = -1;
     public Source PhononSource { get; private set; }
-    private int _pluginHandle = -1;
+    private int _pluginHandle = INACTIVE_SPATIALIZER_POINTER;
+
+    public override float OcclusionValue
+    {
+        set
+        {
+            if (_occlusionValue == value)
+                return;
+
+            _occlusionValue = value;
+            SetSpatialValue(OCCLUSION, value);
+        }
+    }
 
     void SetSpatialValue(int index, float value) => ASource.SetSpatializerFloat(index, value);
 
@@ -12,27 +25,25 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
     {
         base.Awake();
 
-        if (SteamAudioManager.Simulator != null && (UseReflections || UseAmbisonics))
-        {
-            var simSettings = SteamAudioManager.GetSimulationSettings(false);
-
-            simSettings.flags = 0;
-            if (UseReflections)
-                simSettings.flags |= SimulationFlags.Reflections;
-
-            // Phonon Source must initialize with the pathing flag
-            // to allocate memory for eq/sh in C++. (otherwise we crash)
-            // We then never send the Pathing flag ever again during simulator updates.
-            if (UseAmbisonics)
-                simSettings.flags |= SimulationFlags.Pathing;
-
-            PhononSource = new Source(SteamAudioManager.Simulator, simSettings);
-
-            PhononSource.AddToSimulator(SteamAudioManager.Simulator);
-            _pluginHandle = API.iplUnityAddSource(PhononSource.Get());
-        }
-        else
+        if (SteamAudioManager.Simulator == null)
             return;
+            
+        var simSettings = SteamAudioManager.GetSimulationSettings(false);
+
+        simSettings.flags = 0;
+        if (UseReflections)
+            simSettings.flags |= SimulationFlags.Reflections;
+
+        // Phonon Source must initialize with the pathing flag
+        // to allocate memory for eq/sh in C++. (otherwise we crash)
+        // We then never send the Pathing flag ever again during simulator updates.
+        if (UseAmbisonics)
+            simSettings.flags |= SimulationFlags.Pathing;
+
+        PhononSource = new Source(SteamAudioManager.Simulator, simSettings);
+
+        PhononSource.AddToSimulator(SteamAudioManager.Simulator);
+        _pluginHandle = API.iplUnityAddSource(PhononSource.Get());
 
         SetSpatialValue(APPLY_DISTANCEATTENUATION, 1f);
         SetSpatialValue(APPLY_AIRABSORPTION, 1f);
@@ -47,10 +58,6 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         SetSpatialValue(DISTANCEATTENUATION, 1f);
         SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
 
-        // SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
-        // SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
-        // SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
-
         SetSpatialValue(DIRECTIVITY, 1f);
         SetSpatialValue(TRANSMISSION_TYPE, 1f);
 
@@ -64,9 +71,9 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         SetSpatialValue(REFLECTIONS_MIXLEVEL, 0);
         SetSpatialValue(PATHING_MIXLEVEL, 1);
 
-        SetSpatialValue(PATHING_BINAURAL, 0f); // HRTF Propagation
+        SetSpatialValue(PATHING_BINAURAL, FALSE); // HRTF Propagation
 
-        SetSpatialValue(DIRECT_BINAURAL, 1f); // HRTF
+        SetSpatialValue(DIRECT_BINAURAL, TRUE); // HRTF
         SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
         // SetSpatialValue(PERSPECTIVE_CORRECTION, 1f);
 
@@ -79,7 +86,7 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
     {
         base.OnDestroy();
 
-        if (_pluginHandle != -1)
+        if (_pluginHandle != INACTIVE_SPATIALIZER_POINTER)
             API.iplUnityRemoveSource(_pluginHandle);
 
         if (PhononSource == null)
@@ -105,19 +112,6 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         PhononSource.SetInputs(inputs.flags, inputs);
     }
 
-    private float _cachedOcclusion = -1f;
-
-    // Candidate for custom batch api
-    public void SetOcclusionLevel(float occlusion)
-    {
-        if (_cachedOcclusion == occlusion)
-            return;
-
-        _cachedOcclusion = occlusion;
-        SetSpatialValue(OCCLUSION, occlusion);
-        // SetSpatialValue(REFLECTIONS_MIXLEVEL, occlusion);
-    }
-
     public override void Play()
     {
         ASource.enabled = true;
@@ -139,7 +133,7 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         if (!base.Deactivate())
             return false;
 
-        SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, -1f);
+        SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, INACTIVE_SPATIALIZER_POINTER);
         ASource.enabled = false;
 
         return true;

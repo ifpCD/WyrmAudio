@@ -49,6 +49,7 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     {
         if (!IsRegistered)
             return;
+
         PortalWorldToLocal[SoAIndex]  = WorldToLocal;
         PortalExtents[SoAIndex]       = Extents;
         PortalRoomA[SoAIndex]         = RoomA != null ? RoomA.RoomIdentifier : -1;

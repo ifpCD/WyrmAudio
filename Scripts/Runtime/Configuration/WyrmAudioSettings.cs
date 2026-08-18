@@ -17,13 +17,18 @@ public class WyrmAudioSettings : ScriptableObject
     [HideInInspector]
     public List<AbstractWyrmBank> RegisteredSoundBanks = new();
 
+    [Header("Occlusion")]
+    public int MaxActiveRaycasts = 1024;
+
     [Header("Audio Rooms")]
     public int MaxActiveRooms = 1024;
 
     public LayerMask OcclusionMask = ~0;
     public LayerMask PropagationOcclusionMask = ~0;
 
-    static WyrmAudioSettings _instance = null;
+    [Header("Smoothing")]
+    [Range(1f, 15f)]
+    public float OcclusionLerpSpeed = 5f;
 
     [Header("Visualization")]
     public float CutoffDistance => FarDistance + 5f;
@@ -58,6 +63,8 @@ public class WyrmAudioSettings : ScriptableObject
     }
 #endif
 
+    static WyrmAudioSettings _instance = null;
+
     public static WyrmAudioSettings Instance
     {
         get
@@ -72,7 +79,7 @@ public class WyrmAudioSettings : ScriptableObject
             _instance = CreateInstance<WyrmAudioSettings>();
             _instance.name = "WyrmAudioSettings";
 
-#if WYRMAUDIO_DEVELOPMENT
+#if WYRMAUDIO_DEVELOPMENT && UNITY_EDITOR
             AssetDatabase.CreateAsset(_instance, "Assets/Plugins/WyrmAudio/Resources/WyrmAudioSettings.asset");
 #elif UNITY_EDITOR
             AssetDatabase.CreateAsset(_instance, "Assets/Packages/WyrmAudio/Resources/WyrmAudioSettings.asset");

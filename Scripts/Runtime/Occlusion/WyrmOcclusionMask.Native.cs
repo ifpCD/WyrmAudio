@@ -70,10 +70,10 @@ public partial class WyrmOcclusionMask
 
             for (int i = 0; i < WyrmBaseSource.ActiveCount; i++)
             {
-                if (WyrmBaseSource.OcclusionMaskIndex[i] == lastIndex)
-                    WyrmBaseSource.OcclusionMaskIndex[i] = removedIndex;
-                else if (WyrmBaseSource.OcclusionMaskIndex[i] == removedIndex)
-                    WyrmBaseSource.OcclusionMaskIndex[i] = -1;
+                if (WyrmBaseSource.OcclusionMaskIndices[i] == lastIndex)
+                    WyrmBaseSource.OcclusionMaskIndices[i] = removedIndex;
+                else if (WyrmBaseSource.OcclusionMaskIndices[i] == removedIndex)
+                    WyrmBaseSource.OcclusionMaskIndices[i] = -1;
             }
         }
 

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using UnityEditor;
 using UnityEngine;
 
 public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
@@ -10,56 +11,49 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     Color OpenColor = Color.green;
     Color ClosedColor = Color.red;
 
+    string header;
+
 #if WYRMAUDIO_VISUALIZATION_ENABLED
-    void OnDrawGizmos()
+    void OnDrawGizmosSelected() => DrawPortal(true);
+
+    void OnDrawGizmos() => DrawPortal(false);
+#endif
+
+    void DrawPortal(bool selected)
     {
         Outline = Color.Lerp(ClosedColor, OpenColor, Openness);
 
         labelStyle ??= new GUIStyle { alignment = TextAnchor.MiddleCenter };
         labelStyle.normal.textColor = new Color(1, 1, 1, this.GetGizmoOpacity() * .2f);
 
-        string header;
-
         if (RoomA != null && RoomB != null)
         {
-            header = $"{RoomA.gameObject.name} <-> {RoomB.gameObject.name}";
+            header = $"{RoomA.gameObject.name} <-> {RoomB.gameObject.name}\n{Openness:F2}";
         }
         else
         {
             header = gameObject.name;
         }
 
-        this.DrawVolumeGizmo(false, $"{header}\n{Openness:F2}");
-        // DrawListenerRoomHalf();
+        DrawBidirectionalForwardArrow(selected);
+        this.DrawVolumeGizmo(false, header);
     }
-#endif
 
-    void DrawListenerRoomHalf()
+    void DrawBidirectionalForwardArrow(bool selected)
     {
-        if (WyrmListener.CompletelyInactive)
-            return;
+        const float arrowHeadSize = 0.5f;
 
-        int listenerRoomIdentifier = WyrmListener.ListenerRoomIdentifier.Value;
-        float localZDirection;
+        transform.GetPositionAndRotation(out Vector3 position, out Quaternion rotation);
 
-        if (RoomA != null && listenerRoomIdentifier == RoomA.RoomIdentifier)
-            localZDirection = -1f;
-        else if (RoomB != null && listenerRoomIdentifier == RoomB.RoomIdentifier)
-            localZDirection = 1f;
-        else
-            return;
+        Color outline = selected ? Outline.WithAlpha(0.8f) : Outline.WithAlpha(0.2f);
 
-        Vector3 halfSize = BoxCollider.size;
-        halfSize.z *= .5f;
+        outline.a *= this.GetGizmoOpacity();
 
-        Vector3 halfCenter = BoxCollider.center;
-        halfCenter.z += localZDirection * halfSize.z * .5f;
+        Handles.color = outline;
 
-        float alpha = this.GetGizmoOpacity() * 0.2f;
+        Handles.ArrowHandleCap(0, position, rotation, arrowHeadSize, EventType.Repaint);
 
-        Gizmos.matrix = transform.localToWorldMatrix;
-        Gizmos.color = Color.cyan.WithAlpha(alpha);
-        Gizmos.DrawCube(halfCenter, halfSize);
+        Handles.ArrowHandleCap(0, position, rotation * Quaternion.Euler(0f, 180f, 0f), arrowHeadSize, EventType.Repaint);
     }
 
     void OnValidate()

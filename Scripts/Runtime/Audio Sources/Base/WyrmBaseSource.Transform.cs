@@ -1,9 +1,5 @@
 using System;
-using SaintsField.Playa;
-using Unity.Collections;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Jobs;
 
 public partial class WyrmBaseSource
 {
@@ -20,7 +16,17 @@ public partial class WyrmBaseSource
             if (_trackedTransform == value)
                 return;
 
-            _trackedTransform = value;
+            if (IsPooled)
+            {
+                _trackedTransform = value;
+            }
+            else
+            {
+                _trackedTransform = null;
+#if UNITY_EDITOR
+                Debug.LogWarning("You can't track transforms on non-pooled Wyrm Audio Sources");
+#endif
+            }
 
             if (IsRegistered)
                 PositionTransforms[SoAIndex] = PositionTransform;

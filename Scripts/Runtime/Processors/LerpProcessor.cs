@@ -13,7 +13,7 @@ internal static class LerpProcessor
         if (WyrmBaseSource.CompletelyInactive)
             return dependency;
 
-        float expLerpFactor = GetExpLerpFactor(5f);
+        float expLerpFactor = GetExpLerpFactor(WyrmAudioSettings.Instance.OcclusionLerpSpeed);
         
         int activeCount = WyrmBaseSource.ActiveCount;
 
