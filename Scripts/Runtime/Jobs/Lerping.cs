@@ -4,44 +4,44 @@ using Unity.Jobs;
 using Unity.Mathematics;
 
 [BurstCompile]
-internal struct StatelessLerpOcclusion01Job : IJobParallelFor
+internal struct ExponentialFloatLerpJob : IJobParallelFor
 {
     [ReadOnly]
-    public NativeArray<float> TargetOcclusions01;
+    public float ExponentialLerpFactor;
 
     [ReadOnly]
-    public float ExpLerpFactor;
+    public NativeArray<float> Targets;
 
-    public NativeArray<float> CurrentOcclusions01;
+    public NativeArray<float> Currents;
 
     public void Execute(int index)
     {
-        float current = CurrentOcclusions01[index];
-        float target = TargetOcclusions01[index];
+        float current = Currents[index];
+        float target = Targets[index];
 
-        CurrentOcclusions01[index] = math.lerp(current, target, ExpLerpFactor);
+        Currents[index] = math.lerp(current, target, ExponentialLerpFactor);
     }
 }
 
 [BurstCompile]
-internal struct StatelessLerpPropagation01Job : IJobParallelFor
+internal struct ExponentialFloat3LerpJob : IJobParallelFor
 {
-    [ReadOnly]
-    public NativeArray<float3> TargetPropagationEQs01;
-
     [ReadOnly]
     public float ExpLerpFactor;
 
-    public NativeArray<float3> CurrentPropagationEQs01;
+    [ReadOnly]
+    public NativeArray<float3> Targets;
+
+    public NativeArray<float3> Currents;
 
     public void Execute(int index)
     {
-        float3 current = CurrentPropagationEQs01[index];
-        float3 target = TargetPropagationEQs01[index];
+        float3 current = Currents[index];
+        float3 target = Targets[index];
 
         float3 lerpValue = math.lerp(current, target, ExpLerpFactor);
 
         // Because we aren't normalizing Path EQ - Phonon's IIR explodes if we feed it absolute 0
-        CurrentPropagationEQs01[index] = math.max(lerpValue, math.EPSILON);
+        Currents[index] = math.max(lerpValue, math.EPSILON);
     }
 }

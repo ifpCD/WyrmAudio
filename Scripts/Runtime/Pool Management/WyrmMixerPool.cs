@@ -16,7 +16,9 @@ public class WyrmMixerPool
         Config = config;
         _controller = controller;
 
-        GameObject rootGo = new($"{config.targetMixerGroup.audioMixer.name} - {config.targetMixerGroup.name}");
+        string mixerGameObjectName = $"{config.targetMixerGroup.audioMixer.name} - {config.targetMixerGroup.name}";
+
+        GameObject rootGo = new(mixerGameObjectName);
         _poolRoot = rootGo.transform;
         _poolRoot.SetParent(_controller.transform);
 
