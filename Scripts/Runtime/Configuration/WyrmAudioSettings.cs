@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
+[NoAutoStaticsCleanup]
 public class WyrmAudioSettings : ScriptableObject
 {
     [Header("Sources")]

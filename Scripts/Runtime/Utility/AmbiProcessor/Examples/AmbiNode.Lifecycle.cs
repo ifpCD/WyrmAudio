@@ -1,6 +1,5 @@
 using Unity.Collections;
 using Unity.Mathematics;
-using UnityEngine;
 using UnityEngine.Jobs;
 
 public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>

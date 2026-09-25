@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
+[NoAutoStaticsCleanup]
 public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 {
     [SerializeField]

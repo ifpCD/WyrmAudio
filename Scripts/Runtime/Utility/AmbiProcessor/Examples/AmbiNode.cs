@@ -1,10 +1,10 @@
-using System;
-using SaintsField.Playa;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 // User written
 [AmbiSynchronizable]
 [RequireComponent(typeof(BoxCollider))]
+[NoAutoStaticsCleanup]
 public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>
 {
     protected override int AllocatedCapacity => 2000;
@@ -30,6 +30,5 @@ public partial class AmbiNode : AmbiMonoBehaviour<AmbiNode>
 
     public Vector3 ColliderExtents => BoxCollider.size * 0.5f;
 
-    [ShowInInspector]
     public bool IsInRoom => IsInRooms.GetOrDefault(SoAIndex).ToBool();
 }

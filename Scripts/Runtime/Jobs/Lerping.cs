@@ -27,7 +27,7 @@ internal struct ExponentialFloatLerpJob : IJobParallelFor
 internal struct ExponentialFloat3LerpJob : IJobParallelFor
 {
     [ReadOnly]
-    public float ExpLerpFactor;
+    public float ExponentialLerpFactor;
 
     [ReadOnly]
     public NativeArray<float3> Targets;
@@ -39,7 +39,7 @@ internal struct ExponentialFloat3LerpJob : IJobParallelFor
         float3 current = Currents[index];
         float3 target = Targets[index];
 
-        float3 lerpValue = math.lerp(current, target, ExpLerpFactor);
+        float3 lerpValue = math.lerp(current, target, ExponentialLerpFactor);
 
         // Because we aren't normalizing Path EQ - Phonon's IIR explodes if we feed it absolute 0
         Currents[index] = math.max(lerpValue, math.EPSILON);

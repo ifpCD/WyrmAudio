@@ -32,6 +32,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: df5b9c5cd42e28140b502ae2da71ae86, type: 2}
   - {fileID: 11400000, guid: cbdfb01d87e84ff41ab09c4f5c224b8d, type: 2}
   - {fileID: 11400000, guid: 36c2f71b1296e374f975795f593d9f5e, type: 2}
+  MaxActiveRaycasts: 1024
   MaxActiveRooms: 1024
   OcclusionMask:
     serializedVersion: 2
@@ -39,6 +40,6 @@ MonoBehaviour:
   PropagationOcclusionMask:
     serializedVersion: 2
     m_Bits: 64
+  OcclusionLerpSpeed: 11
   NearDistance: 5
   FarDistance: 20
-  OcclusionLerpSpeed: 11

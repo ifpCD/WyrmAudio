@@ -1,8 +1,9 @@
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Scripting.LifecycleManagement;
+using UnityEngine;
 
+[NoAutoStaticsCleanup]
 public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
 {
     protected override int AllocatedCapacity => throw new System.NotImplementedException();
@@ -17,7 +18,7 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
             _Type = value;
 
             if (IsRegistered)
-                Types[SoAIndex] = (byte)value;
+                GenTypes[SoAIndex] = (byte)value;
         }
     }
 
@@ -66,7 +67,7 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
         get => _VerticalBlur;
         set
         {
-            value = Mathf.Clamp01(0, 1, value);
+            value = Mathf.Clamp01(value);
             _VerticalBlur = value;
 
             if (IsRegistered)
@@ -75,8 +76,9 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
     }
 
 
-    public static NativeArray<float3> VirtualPosition;
-    public static NativeArray<float3> VirtualDirection;
+    public static NativeArray<byte> GenTypes;
+    public static NativeArray<float3> VirtualPositions;
+    public static NativeArray<float3> VirtualDirections;
 
     public static NativeArray<float> HorizontalBlurs;
     public static NativeArray<float> VerticalBlurs;

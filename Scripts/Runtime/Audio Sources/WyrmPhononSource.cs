@@ -4,8 +4,9 @@ using UnityEngine;
 public sealed partial class WyrmPhononSource : WyrmBaseSource
 {
     const int INACTIVE_SPATIALIZER_POINTER = -1;
-    public Source PhononSource { get; private set; }
-    private int _pluginHandle = INACTIVE_SPATIALIZER_POINTER;
+    int _pluginHandle = INACTIVE_SPATIALIZER_POINTER;
+
+    internal Source PhononSource { get; private set; }
 
     public override float OcclusionValue
     {
@@ -27,7 +28,7 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
 
         if (SteamAudioManager.Simulator == null)
             return;
-            
+
         var simSettings = SteamAudioManager.GetSimulationSettings(false);
 
         simSettings.flags = 0;
@@ -47,37 +48,36 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
 
         SetSpatialValue(APPLY_DISTANCEATTENUATION, 1f);
         SetSpatialValue(APPLY_AIRABSORPTION, 1f);
-        SetSpatialValue(APPLY_DIRECTIVITY, 0);
-        SetSpatialValue(APPLY_OCCLUSION, 1f);
-        SetSpatialValue(APPLY_TRANSMISSION, 0f);
-        SetSpatialValue(APPLY_REFLECTIONS, UseReflections ? 1 : 0);
-        SetSpatialValue(APPLY_PATHING, 1f);
+        SetSpatialValue(APPLY_DIRECTIVITY, FALSE);
+        SetSpatialValue(APPLY_OCCLUSION, UseOcclusion.ToFloat());
+        SetSpatialValue(APPLY_TRANSMISSION, FALSE);
+        SetSpatialValue(APPLY_REFLECTIONS, UseReflections.ToFloat());
+        SetSpatialValue(APPLY_PATHING, UseAmbisonics.ToFloat());
 
-        SetSpatialValue(HRTF_INTERPOLATION, 1f); // 1 = bilinear
+        SetSpatialValue(HRTF_INTERPOLATION, 1f);
 
         SetSpatialValue(DISTANCEATTENUATION, 1f);
         SetSpatialValue(DISTANCEATTENUATION_USECURVE, 0f);
 
-        SetSpatialValue(DIRECTIVITY, 1f);
         SetSpatialValue(TRANSMISSION_TYPE, 1f);
 
         SetSpatialValue(TRANSMISSION_LOW, 0.1f);
         SetSpatialValue(TRANSMISSION_MID, 0.025f);
         SetSpatialValue(TRANSMISSION_HIGH, 0.025f);
 
-        SetSpatialValue(DIRECT_MIXLEVEL, 1f);
+        SetSpatialValue(DIRECT_MIXLEVEL, 0f);
 
-        // SetSpatialValue(REFLECTIONS_BINAURAL, 1);
-        SetSpatialValue(REFLECTIONS_MIXLEVEL, 0);
-        SetSpatialValue(PATHING_MIXLEVEL, 1);
+        SetSpatialValue(REFLECTIONS_BINAURAL, 1);
+        SetSpatialValue(REFLECTIONS_MIXLEVEL, 10);
+        SetSpatialValue(PATHING_MIXLEVEL, 0f);
 
-        SetSpatialValue(PATHING_BINAURAL, FALSE); // HRTF Propagation
+        SetSpatialValue(PATHING_BINAURAL, TRUE); // HRTF Propagation
 
         SetSpatialValue(DIRECT_BINAURAL, TRUE); // HRTF
         SetSpatialValue(SIMULATION_OUTPUTS_HANDLE, _pluginHandle); // we can disconnect from simulator if we pass -1
         // SetSpatialValue(PERSPECTIVE_CORRECTION, 1f);
 
-        // SetSpatialValue(NORMALIZE_PATHING_EQ, 1f); // we explode without this when we feed 0,0,0 propagation eq
+        // SetSpatialValue(NORMALIZE_PATHING_EQ, 1f);
 
         UpdatePhononSimulator();
     }
@@ -98,6 +98,9 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         PhononSource.Release();
         PhononSource = null;
     }
+
+    // void Update() => UpdatePhononSimulator();
+    // void LateUpdate() => UpdatePhononSimulator();
 
     // Candidate for custom batch api
     public void UpdatePhononSimulator()

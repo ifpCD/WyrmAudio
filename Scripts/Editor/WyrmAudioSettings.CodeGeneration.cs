@@ -20,11 +20,13 @@ public partial class WyrmAudioSettingsEditor : Editor
 
         string fileName = "WyrmMixer.g.cs";
         string[] existingGuids = AssetDatabase.FindAssets("WyrmMixer.g");
-        string filePath = existingGuids.Length > 0
-            ? AssetDatabase.GUIDToAssetPath(existingGuids[0])
-            : EditorUtility.SaveFilePanelInProject("Save Generated Class", fileName, "cs", "Select save location");
+        string filePath =
+            existingGuids.Length > 0
+                ? AssetDatabase.GUIDToAssetPath(existingGuids[0])
+                : EditorUtility.SaveFilePanelInProject("Save Generated Class", fileName, "cs", "Select save location");
 
-        if (string.IsNullOrEmpty(filePath)) return;
+        if (string.IsNullOrEmpty(filePath))
+            return;
 
         StringBuilder sb = new StringBuilder();
         sb.AppendLine("//------------------------------------------------------------------------------");
@@ -37,12 +39,14 @@ public partial class WyrmAudioSettingsEditor : Editor
         sb.AppendLine();
         sb.AppendLine("using UnityEngine;");
         sb.AppendLine("using UnityEngine.Audio;");
+        sb.AppendLine("using Unity.Scripting.LifecycleManagement;");
         sb.AppendLine();
+        sb.AppendLine("[NoAutoStaticsCleanup]");
         sb.AppendLine("public static class WyrmMixer");
         sb.AppendLine("{");
 
-        var validConfigs = settings.ActiveMixerConfigs
-            .Where(c => c != null && c.targetMixerGroup != null)
+        var validConfigs = settings
+            .ActiveMixerConfigs.Where(c => c != null && c.targetMixerGroup != null)
             .GroupBy(c => c.targetMixerGroup.audioMixer.name)
             .ToList();
 
@@ -51,6 +55,7 @@ public partial class WyrmAudioSettingsEditor : Editor
         foreach (var mixerGroup in validConfigs)
         {
             string mixerClassName = SanitizeIdentifier(mixerGroup.Key);
+            sb.AppendLine($"    [NoAutoStaticsCleanup]");
             sb.AppendLine($"    public static class {mixerClassName}");
             sb.AppendLine("    {");
 
@@ -61,8 +66,10 @@ public partial class WyrmAudioSettingsEditor : Editor
                 string rawGroupName = config.targetMixerGroup.name;
                 string fieldName = SanitizeIdentifier(rawGroupName);
 
-                if (fieldName == mixerClassName) fieldName += "_Group";
-                if (usedNames.Contains(fieldName)) continue;
+                if (fieldName == mixerClassName)
+                    fieldName += "_Group";
+                if (usedNames.Contains(fieldName))
+                    continue;
                 usedNames.Add(fieldName);
 
                 sb.AppendLine($"        public static AudioMixerGroup {fieldName};");
@@ -77,6 +84,9 @@ public partial class WyrmAudioSettingsEditor : Editor
         }
 
         sb.AppendLine("    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]");
+        sb.AppendLine("#if UNITY_EDITOR");
+        sb.AppendLine("    [UnityEditor.Callbacks.DidReloadScripts]");
+        sb.AppendLine("#endif");
         sb.AppendLine("    private static void Initialize()");
         sb.AppendLine("    {");
         sb.AppendLine("        var settings = WyrmAudioSettings.Instance;");
@@ -109,7 +119,6 @@ public partial class WyrmAudioSettingsEditor : Editor
 
     private void GenerateSoundBanksClass()
     {
-
         WyrmAudioSettings settings = (WyrmAudioSettings)target;
 
         // Collect valid folder paths from settings
@@ -119,7 +128,8 @@ public partial class WyrmAudioSettingsEditor : Editor
         {
             foreach (var folderObj in settings.SoundBankFolders)
             {
-                if (folderObj == null) continue;
+                if (folderObj == null)
+                    continue;
 
                 string path = AssetDatabase.GetAssetPath(folderObj);
 
@@ -151,10 +161,7 @@ public partial class WyrmAudioSettingsEditor : Editor
         }
 
         // Find all banks in all folders
-        string[] guids = AssetDatabase.FindAssets(
-            "t:WyrmLoopableBank",
-            searchFolders.ToArray()
-        );
+        string[] guids = AssetDatabase.FindAssets("t:WyrmLoopableBank", searchFolders.ToArray());
 
         if (guids.Length == 0)
         {
@@ -175,14 +182,14 @@ public partial class WyrmAudioSettingsEditor : Editor
         {
             string path = AssetDatabase.GUIDToAssetPath(guids[i]);
             var bank = AssetDatabase.LoadAssetAtPath<AbstractWyrmBank>(path);
-            if (bank == null) continue;
+            if (bank == null)
+                continue;
 
             settings.RegisteredSoundBanks.Add(bank);
             int index = settings.RegisteredSoundBanks.Count - 1;
 
             // Determine which root folder this asset belongs to
-            string matchedRoot = searchFolders
-                .FirstOrDefault(root => path.StartsWith(root));
+            string matchedRoot = searchFolders.FirstOrDefault(root => path.StartsWith(root));
 
             if (string.IsNullOrEmpty(matchedRoot))
                 continue;
@@ -209,7 +216,8 @@ public partial class WyrmAudioSettingsEditor : Editor
 
             string bankName = SanitizeIdentifier(parts.Last());
 
-            if (bankName == current.Name) bankName += "_Bank";
+            if (bankName == current.Name)
+                bankName += "_Bank";
 
             int dupCount = 1;
             string originalBankName = bankName;
@@ -227,11 +235,13 @@ public partial class WyrmAudioSettingsEditor : Editor
 
         string fileName = "WyrmBank.g.cs";
         string[] existingGuids = AssetDatabase.FindAssets("WyrmBank.g");
-        string filePath = existingGuids.Length > 0
-            ? AssetDatabase.GUIDToAssetPath(existingGuids[0])
-            : EditorUtility.SaveFilePanelInProject("Save Generated Class", fileName, "cs", "Select save location");
+        string filePath =
+            existingGuids.Length > 0
+                ? AssetDatabase.GUIDToAssetPath(existingGuids[0])
+                : EditorUtility.SaveFilePanelInProject("Save Generated Class", fileName, "cs", "Select save location");
 
-        if (string.IsNullOrEmpty(filePath)) return;
+        if (string.IsNullOrEmpty(filePath))
+            return;
 
         StringBuilder sb = new StringBuilder();
         sb.AppendLine("//------------------------------------------------------------------------------");
@@ -243,7 +253,9 @@ public partial class WyrmAudioSettingsEditor : Editor
         sb.AppendLine("//------------------------------------------------------------------------------");
         sb.AppendLine();
         sb.AppendLine("using UnityEngine;");
+        sb.AppendLine("using Unity.Scripting.LifecycleManagement;");
         sb.AppendLine();
+        sb.AppendLine("[NoAutoStaticsCleanup]");
         sb.AppendLine("public static class WyrmSound");
         sb.AppendLine("{");
 
@@ -259,6 +271,9 @@ public partial class WyrmAudioSettingsEditor : Editor
 
         sb.AppendLine();
         sb.AppendLine("    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]");
+        sb.AppendLine("#if UNITY_EDITOR");
+        sb.AppendLine("    [UnityEditor.Callbacks.DidReloadScripts]");
+        sb.AppendLine("#endif");
         sb.AppendLine("    private static void InitializeSoundBanks()");
         sb.AppendLine("    {");
         sb.AppendLine("        var settings = WyrmAudioSettings.Instance;");
@@ -281,8 +296,9 @@ public partial class WyrmAudioSettingsEditor : Editor
 
     private void WriteNamespaceNode(StringBuilder sb, NamespaceNode node, int indentLevel)
     {
-        string indent = new string(' ', indentLevel * 4);
+        string indent = new(' ', indentLevel * 4);
 
+        sb.AppendLine($"{indent}[NoAutoStaticsCleanup]");
         sb.AppendLine($"{indent}public static class {node.Name}");
         sb.AppendLine($"{indent}{{");
 
@@ -318,10 +334,13 @@ public partial class WyrmAudioSettingsEditor : Editor
 
     private static string SanitizeIdentifier(string name)
     {
-        if (string.IsNullOrWhiteSpace(name)) return "Unknown";
+        if (string.IsNullOrWhiteSpace(name))
+            return "Unknown";
         string result = Regex.Replace(name, @"[^a-zA-Z0-9_]", "");
-        if (string.IsNullOrEmpty(result)) return "Unknown";
-        if (char.IsDigit(result[0])) result = "_" + result;
+        if (string.IsNullOrEmpty(result))
+            return "Unknown";
+        if (char.IsDigit(result[0]))
+            result = "_" + result;
         return result;
     }
 }

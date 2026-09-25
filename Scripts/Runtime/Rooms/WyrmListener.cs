@@ -1,50 +1,43 @@
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
-using UnityEngine.Jobs;
 
+[NoAutoStaticsCleanup]
 [RequireComponent(typeof(AudioListener))]
-public class WyrmListener : AmbiMonoBehaviour<WyrmListener>
+public class WyrmListener : MonoBehaviour
 {
-    protected override int AllocatedCapacity => 1;
-
     public static NativeReference<int> ListenerRoomIdentifier;
     public static NativeReference<float3> ListenerPosition;
     public static NativeReference<quaternion> ListenerRotation;
 
-    void OnEnable() => Register();
-
-    void OnDisable() => Deregister();
-
-    protected override void AllocateNative()
+    void OnEnable()
     {
-        ListenerRoomIdentifier = new(allocator: Allocator.Persistent);
-        ListenerPosition = new(allocator: Allocator.Persistent);
-        ListenerRotation = new(allocator: Allocator.Persistent);
+        AllocateNative();
+        WyrmAudioManager.NotifyListenerModified(this);
     }
 
-    protected override void DeallocateNative()
+    void OnDisable() => DeallocateNative();
+
+    // csharpier-ignore
+    void AllocateNative()
+    {
+        ListenerRoomIdentifier = new(allocator: Allocator.Persistent);
+        ListenerPosition       = new(allocator: Allocator.Persistent);
+        ListenerRotation       = new(allocator: Allocator.Persistent);
+    }
+
+    void DeallocateNative()
     {
         ListenerRoomIdentifier.TryDispose();
         ListenerPosition.TryDispose();
         ListenerRotation.TryDispose();
     }
 
-    internal static void Synchronize()
+    internal void Synchronize()
     {
-        if (CompletelyInactive)
-            return;
-
-        Transform listenerTransform = RegisteredInstances[0].transform;
+        Transform listenerTransform = transform;
         ListenerPosition.Value = listenerTransform.position;
         ListenerRotation.Value = listenerTransform.rotation;
     }
-
-    protected override void LoadObjectToArrays()
-    {
-        ListenerRoomIdentifier.Value = -1;
-        Synchronize();
-    }
-
-    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex) { }
 }

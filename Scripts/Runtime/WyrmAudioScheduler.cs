@@ -1,6 +1,5 @@
 using System;
 using SteamAudio;
-using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -26,7 +25,7 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
         if (WyrmBaseSource.CompletelyInactive)
             return;
 
-        WyrmListener.Synchronize();
+        WyrmAudioManager.Listener.Synchronize();
         handle = ScheduleFrame();
     }
 
@@ -112,16 +111,21 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
         for (int index = 0; index < activeCount; index++)
         {
             if (WyrmBaseSource.RegisteredInstances[index] is WyrmPhononSource phononSource)
+            {
                 phononSource.OcclusionValue = WyrmBaseSource.CurrentOcclusion01[index];
+                phononSource.UpdatePhononSimulator();
+            }
         }
 
         SteamAudioSettings steamAudioSettings = SteamAudioSettings.Singleton;
         if (steamAudioSettings == null)
             return;
 
+        IntPtr* spatializerPtrs = (IntPtr*)WyrmBaseSource.SpatializerPointers.GetUnsafeReadOnlyPtr();
+
         WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
             activeCount,
-            (IntPtr*)WyrmBaseSource.SpatializerPointers.GetUnsafeReadOnlyPtr(),
+            spatializerPtrs,
             (float*)WyrmBaseSource.CurrentAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
             (float*)WyrmBaseSource.TargetAmbisonic.GetUnsafeReadOnlyPtr(),
             steamAudioSettings.realTimeAmbisonicOrder
@@ -129,7 +133,7 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
 
         WyrmPhononCustomAPI.iplSourceSetCustomDirectBatch(
             activeCount,
-            (IntPtr*)WyrmBaseSource.SpatializerPointers.GetUnsafeReadOnlyPtr(),
+            spatializerPtrs,
             (float3*)WyrmBaseSource.Positions.GetUnsafeReadOnlyPtr(),
             null,
             null

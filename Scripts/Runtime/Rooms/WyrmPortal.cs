@@ -1,12 +1,11 @@
 using System;
 using Unity.Mathematics;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using Unity.Scripting.LifecycleManagement;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider))]
+[NoAutoStaticsCleanup]
 public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCollider
 {
     protected override int AllocatedCapacity => 2000;

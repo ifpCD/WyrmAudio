@@ -1,6 +1,8 @@
 using System;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
+[NoAutoStaticsCleanup]
 public abstract class AmbiBase<T>
     where T : AmbiBase<T>
 {
@@ -107,6 +109,7 @@ public abstract class AmbiBase<T>
     }
 }
 
+[NoAutoStaticsCleanup]
 public abstract class AmbiMonoBehaviour<T> : MonoBehaviour
     where T : AmbiMonoBehaviour<T>
 {

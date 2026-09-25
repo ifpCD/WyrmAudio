@@ -14,32 +14,31 @@ internal static class LerpProcessor
             return dependency;
 
         float expLerpFactor = GetExpLerpFactor(WyrmAudioSettings.Instance.OcclusionLerpSpeed);
-        
+
         int activeCount = WyrmBaseSource.ActiveCount;
 
         // csharpier-ignore
-        var lerpOcclusions = new StatelessLerpOcclusion01Job
+        var lerpOcclusions = new ExponentialFloatLerpJob
         {
-            TargetOcclusions01  = WyrmBaseSource.TargetOcclusion01,
-            ExpLerpFactor       = expLerpFactor,
+            Targets               = WyrmBaseSource.TargetOcclusion01,
+            ExponentialLerpFactor = expLerpFactor,
 
-            CurrentOcclusions01 = WyrmBaseSource.CurrentOcclusion01,
+            Currents              = WyrmBaseSource.CurrentOcclusion01,
         };
         JobHandle lerpOcclusionsHandle = lerpOcclusions.Schedule(activeCount, 16, dependency);
 
         return lerpOcclusionsHandle;
 
         // csharpier-ignore
-        var lerpPropagationEqs = new StatelessLerpPropagation01Job
-        {
-            TargetPropagationEQs01  = WyrmBaseSource.TargetAmbisonicEQ01s,
-            ExpLerpFactor           = expLerpFactor,
+        // var lerpPropagationEqs = new ExponentialFloat3LerpJob
+        // {
+        //     Targets               = WyrmBaseSource.TargetAmbisonicEQ01s,
+        //     ExponentialLerpFactor = expLerpFactor,
 
-            CurrentPropagationEQs01 = WyrmBaseSource.CurrentAmbisonicEQ01s,
-        };
-        JobHandle lerpPropagationEqsHandle = lerpPropagationEqs.Schedule(activeCount, 16, dependency);
+        //     Currents              = WyrmBaseSource.CurrentAmbisonicEQ01s,
+        // };
+        // JobHandle lerpPropagationEqsHandle = lerpPropagationEqs.Schedule(activeCount, 16, dependency);
 
-        return JobHandle.CombineDependencies(lerpOcclusionsHandle, lerpPropagationEqsHandle);
+        // return JobHandle.CombineDependencies(lerpOcclusionsHandle, lerpPropagationEqsHandle);
     }
 }
-

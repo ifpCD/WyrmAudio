@@ -60,7 +60,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
             if (sample.Discardable)
                 Gizmos.DrawLine(tPosition, worldPos);
 
-            if (WyrmListener.CompletelyInactive)
+            if (WyrmAudioManager.Listener == null)
                 continue;
 
             Gizmos.DrawLine(worldPos, WyrmListener.ListenerPosition.Value);

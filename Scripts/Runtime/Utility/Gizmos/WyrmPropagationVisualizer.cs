@@ -34,25 +34,25 @@ public class WyrmPropagationVisualizer : MonoBehaviour
     [ColorUsage(true, true)]
     public Color highFreqColor = new(0.0f, 0.8f, 1.0f, 1.0f);
 
-    private Mesh _sphereMesh;
-    private Material _shMaterial;
-    private MaterialPropertyBlock _propBlock;
+    Mesh _sphereMesh;
+    Material _shMaterial;
+    MaterialPropertyBlock _propBlock;
 
-    private readonly Vector4[] _accumulatedSH = new Vector4[16];
+    readonly Vector4[] _accumulatedSH = new Vector4[16];
 
-    private static readonly int SH_COEFFS_ID = Shader.PropertyToID("_SHCoeffs");
-    private static readonly int BASE_RADIUS_ID = Shader.PropertyToID("_BaseRadius");
-    private static readonly int DEFORM_SCALE_ID = Shader.PropertyToID("_DeformScale");
-    private static readonly int SENSITIVITY_ID = Shader.PropertyToID("_Sensitivity");
-    private static readonly int IDLE_OPACITY_ID = Shader.PropertyToID("_IdleOpacity");
-    private static readonly int GRID_INTENSITY_ID = Shader.PropertyToID("_GridIntensity");
+    static readonly int SH_COEFFS_ID = Shader.PropertyToID("_SHCoeffs");
+    static readonly int BASE_RADIUS_ID = Shader.PropertyToID("_BaseRadius");
+    static readonly int DEFORM_SCALE_ID = Shader.PropertyToID("_DeformScale");
+    static readonly int SENSITIVITY_ID = Shader.PropertyToID("_Sensitivity");
+    static readonly int IDLE_OPACITY_ID = Shader.PropertyToID("_IdleOpacity");
+    static readonly int GRID_INTENSITY_ID = Shader.PropertyToID("_GridIntensity");
 
-    private static readonly int BASE_COLOR_ID = Shader.PropertyToID("_BaseColor");
-    private static readonly int LOW_COLOR_ID = Shader.PropertyToID("_LowColor");
-    private static readonly int MID_COLOR_ID = Shader.PropertyToID("_MidColor");
-    private static readonly int HIGH_COLOR_ID = Shader.PropertyToID("_HighColor");
+    static readonly int BASE_COLOR_ID = Shader.PropertyToID("_BaseColor");
+    static readonly int LOW_COLOR_ID = Shader.PropertyToID("_LowColor");
+    static readonly int MID_COLOR_ID = Shader.PropertyToID("_MidColor");
+    static readonly int HIGH_COLOR_ID = Shader.PropertyToID("_HighColor");
 
-    private void InitializeResources()
+    void InitializeResources()
     {
         if (_propBlock == null)
             _propBlock = new MaterialPropertyBlock();
@@ -72,22 +72,23 @@ public class WyrmPropagationVisualizer : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    private void OnEnable() => InitializeResources();
+    void OnEnable() => InitializeResources();
 
-    private void OnDisable()
+    void OnDisable()
     {
         if (_shMaterial != null)
             DestroyImmediate(_shMaterial);
+            
         if (_sphereMesh != null)
             DestroyImmediate(_sphereMesh);
     }
 
-    private void LateUpdate()
+    void LateUpdate()
     {
         if (!Application.isPlaying)
             return;
 
-        if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive)
+        if (WyrmBaseSource.CompletelyInactive || WyrmAudioManager.Listener == null)
             return;
 
         if (SteamAudio.SteamAudioSettings.Singleton == null)
@@ -156,9 +157,8 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
         Graphics.DrawMesh(_sphereMesh, Matrix4x4.Translate(WyrmListener.ListenerPosition.Value), _shMaterial, gameObject.layer, null, 0, _propBlock);
     }
-#endif
 
-    private Mesh GenerateHighResSphere(int latLines, int longLines)
+    Mesh GenerateHighResSphere(int latLines, int longLines)
     {
         Mesh mesh = new() { name = "SH_RadarSphere", hideFlags = HideFlags.DontSave };
 
@@ -217,4 +217,5 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
         return mesh;
     }
+#endif
 }

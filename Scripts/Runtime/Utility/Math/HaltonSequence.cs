@@ -4,16 +4,16 @@ using UnityEngine;
 
 internal static class HaltonSequence
 {
-    public static void GenerateBoxVolumeSamples(BoxCollider box, int numSamples, List<Vector3> haltonBuffer)
+    public static void GenerateBoxVolumeSamples(BoxCollider box, int numSamples, List<Vector3> buffer)
     {
         Vector3 size = box.size;
 
-        GenerateBoxVolumeSamples(size, numSamples, haltonBuffer);
+        GenerateBoxVolumeSamples(size, numSamples, buffer);
     }
 
-    public static void GenerateBoxVolumeSamples(Vector3 size, int numSamples, List<Vector3> haltonBuffer)
+    public static void GenerateBoxVolumeSamples(Vector3 size, int numSamples, List<Vector3> buffer)
     {
-        haltonBuffer.Clear();
+        buffer.Clear();
         for (int i = 0; i < numSamples; ++i)
         {
             float u = RadicalInverse(2, i);
@@ -26,20 +26,20 @@ internal static class HaltonSequence
                 Mathf.Lerp(-size.z * 0.5f, size.z * 0.5f, w)
             );
 
-            haltonBuffer.Add(local);
+            buffer.Add(local);
         }
     }
 
-    public static void GenerateSphereVolumeSamples(SphereCollider sphere, int numSamples, List<Vector3> haltonBuffer)
+    public static void GenerateSphereVolumeSamples(SphereCollider sphere, int numSamples, List<Vector3> buffer)
     {
         float radius = sphere.radius;
 
-        GenerateSphereVolumeSamples(radius, numSamples, haltonBuffer);
+        GenerateSphereVolumeSamples(radius, numSamples, buffer);
     }
 
-    public static void GenerateSphereVolumeSamples(float radius, int numSamples, List<Vector3> haltonBuffer)
+    public static void GenerateSphereVolumeSamples(float radius, int numSamples, List<Vector3> buffer)
     {
-        haltonBuffer.Clear();
+        buffer.Clear();
 
         for (int i = 0; i < numSamples; ++i)
         {
@@ -59,7 +59,7 @@ internal static class HaltonSequence
                 r * Mathf.Sin(phi) * Mathf.Sin(theta)
             );
 
-            haltonBuffer.Add(local);
+            buffer.Add(local);
         }
     }
 

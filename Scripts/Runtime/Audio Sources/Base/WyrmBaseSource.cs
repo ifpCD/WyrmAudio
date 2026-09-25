@@ -1,11 +1,11 @@
 using System;
-using SaintsField;
-using SaintsField.Playa;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Audio;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(AudioSource))]
+[NoAutoStaticsCleanup]
 public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSource
 {
     [HideInInspector]
@@ -112,9 +112,6 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
     public virtual void ResetState()
     {
         TrackedTransform = null;
-        volume           = 1f;
-        loop             = false;
-        pitch            = 1f;
     }
 
     public bool isPlaying => ASource.isPlaying;

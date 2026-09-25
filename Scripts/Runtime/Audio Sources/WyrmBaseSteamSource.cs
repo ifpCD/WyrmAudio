@@ -22,13 +22,13 @@ public sealed class WyrmBaseSteamSource : WyrmBaseSource
 
     public override void Play()
     {
-        SteamSource.enabled = true;
+        // SteamSource.enabled = true;
         base.Play();
     }
 
     public override void PlayOneShot(AudioClip clip)
     {
-        SteamSource.enabled = true;
+        // SteamSource.enabled = true;
         base.PlayOneShot(clip);
     }
 
@@ -37,7 +37,7 @@ public sealed class WyrmBaseSteamSource : WyrmBaseSource
         if (!base.Deactivate())
             return false;
 
-        SteamSource.enabled = false;
+        // SteamSource.enabled = false;
         return true;
     }
 }

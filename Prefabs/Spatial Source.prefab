@@ -143,7 +143,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59c3684b22f00604a97bb68037fcf4cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SteamAudioUnity::SteamAudio.SteamAudioSource
-  directBinaural: 1
+  directBinaural: 0
   interpolation: 1
   perspectiveCorrection: 0
   distanceAttenuation: 1
@@ -172,8 +172,8 @@ MonoBehaviour:
   transmissionMid: 1
   transmissionHigh: 1
   maxTransmissionSurfaces: 1
-  directMixLevel: 1
-  reflections: 0
+  directMixLevel: 0
+  reflections: 1
   reflectionsType: 0
   useDistanceCurveForReflections: 0
   currentBakedSource: {fileID: 0}
@@ -184,8 +184,8 @@ MonoBehaviour:
   hybridReverbEQMid: 1
   hybridReverbEQHigh: 1
   hybridReverbDelay: 0
-  applyHRTFToReflections: 0
-  reflectionsMixLevel: 10
+  applyHRTFToReflections: 1
+  reflectionsMixLevel: 0
   pathing: 0
   pathingProbeBatch: {fileID: 0}
   pathValidation: 1
@@ -226,9 +226,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70a582d83a5ba644e9a1794f3a494cf1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: WyrmAudio::PooledSteamAudioSource
-  <ASource>k__BackingField: {fileID: 6615845327962746880}
+  _virtualPosition: {x: 0, y: 0, z: 0}
+  _verticalWidth: 0
+  _horizontalWidth: 0
+  _directionalGain: 1
+  _ambientGain: 1
+  _ambisonicEQLow01: 1
+  _ambisonicEQMid01: 1
+  _ambisonicEQHigh01: 1
+  _clip: {fileID: 0}
+  _loop: 0
+  _volume: 0
+  _pitch: 0
+  _minDistance: 0
+  _maxDistance: 0
+  _occlusionValue: 0
+  _occlusionMask: {fileID: 0}
+  _trackedTransform: {fileID: 0}
   <UseReflections>k__BackingField: 1
-  <UsePropagation>k__BackingField: 0
-  <UseOcclusion>k__BackingField: 0
-  volumeTransitionTime: 0.05
-  <SteamSource>k__BackingField: {fileID: 1277862038185094253}
+  <UseAmbisonics>k__BackingField: 1
+  <UseOcclusion>k__BackingField: 1

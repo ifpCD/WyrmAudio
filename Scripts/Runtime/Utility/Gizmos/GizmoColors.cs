@@ -1,6 +1,8 @@
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 // csharpier-ignore
+[NoAutoStaticsCleanup]
 internal static class WyrmColor
 {
     private const float FAINT_ALPHA    = 0.2f;

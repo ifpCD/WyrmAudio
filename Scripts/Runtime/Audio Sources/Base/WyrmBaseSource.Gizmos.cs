@@ -9,7 +9,7 @@ public partial class WyrmBaseSource
     internal void DrawGizmo()
     {
         if (UseOcclusion)
-            OcclusionMask.DrawOcclusionGizmo();
+            OcclusionMask?.DrawOcclusionGizmo();
             
         if (!IsRegistered)
             return;

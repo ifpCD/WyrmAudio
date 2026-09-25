@@ -1,7 +1,9 @@
 using System;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Audio;
 
+[NoAutoStaticsCleanup]
 public partial class WyrmPoolController : MonoBehaviour
 {
     readonly struct PoolEntry
@@ -42,7 +44,7 @@ public partial class WyrmPoolController : MonoBehaviour
 
             for (int previousIndex = 0; previousIndex < i; previousIndex++)
             {
-                if (ReferenceEquals(settings.ActiveMixerConfigs[previousIndex].targetMixerGroup, config.targetMixerGroup))
+                if (settings.ActiveMixerConfigs[previousIndex].targetMixerGroup == config.targetMixerGroup)
                     throw new InvalidOperationException(
                         $"Mixer Group {config.targetMixerGroup.name} has more than one active Wyrm mixer configuration."
                     );
@@ -73,13 +75,20 @@ public partial class WyrmPoolController : MonoBehaviour
 
         WyrmBaseSource.Dispose();
     }
-
+//
     static WyrmMixerPool GetPool(AudioMixerGroup mixerGroup)
     {
+        if (mixerGroup == null)
+            throw new ArgumentNullException(
+                nameof(mixerGroup),
+                "Attempted to play audio on a null AudioMixerGroup. Make sure your script has assigned a valid Mixer Group in the Inspector."
+            );
+
         for (int i = 0; i < _pools.Length; i++)
         {
             ref readonly PoolEntry entry = ref _pools[i];
-            if (ReferenceEquals(entry.MixerGroup, mixerGroup))
+
+            if (entry.MixerGroup == mixerGroup)
                 return entry.Pool;
         }
 

@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
+using Unity.Scripting.LifecycleManagement;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider))]
+[NoAutoStaticsCleanup]
 public sealed partial class WyrmRoomShape : AmbiMonoBehaviour<WyrmRoomShape>, IEasyCollider
 {
     protected override int AllocatedCapacity => 2000;

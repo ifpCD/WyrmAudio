@@ -41,7 +41,7 @@ public struct SimpleAmbisonicsGeneration : IJobParallelFor
     {
         float3 dir;
 
-        if (Types[index] == SimpleAmbisonicType.Positional)
+        if (Types[index] == (byte)SimpleAmbisonicType.Positional)
             dir = VirtualPositions[index] - ListenerPosition;
         else
             dir = VirtualDirections[index];
@@ -59,9 +59,9 @@ public struct SimpleAmbisonicsGeneration : IJobParallelFor
         int offsetMid = offsetLow + numCoeffs;
         int offsetHigh = offsetMid + numCoeffs;
 
-        float3 eq = PathEQs[index];
+        float3 eq = EQVolume01s[index];
 
-        var shCoeffs = SHCoeffs;
+        var shCoeffs = AmbisonicOutputsBuffer;
 
         void WriteCoeff(int coefficient, float value)
         {

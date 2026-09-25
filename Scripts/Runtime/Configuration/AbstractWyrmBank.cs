@@ -18,4 +18,4 @@ public abstract class AbstractWyrmBank : ScriptableObject
     public abstract AudioClip GetStartClip();
     public abstract AudioClip GetBodyClip();
     public abstract AudioClip GetEndClip();
-}
+}//

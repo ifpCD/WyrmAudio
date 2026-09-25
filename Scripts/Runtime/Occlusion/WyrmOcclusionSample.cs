@@ -1,5 +1,7 @@
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
+[NoAutoStaticsCleanup]
 public partial class WyrmOcclusionSample : AmbiBase<WyrmOcclusionSample>
 {
     Vector3 _localPosition;

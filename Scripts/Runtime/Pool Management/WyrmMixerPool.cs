@@ -1,5 +1,7 @@
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
+[NoAutoStaticsCleanup]
 public class WyrmMixerPool
 {
     public WyrmMixerGroupConfig Config { get; private set; }

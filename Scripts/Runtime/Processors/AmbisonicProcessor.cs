@@ -8,7 +8,7 @@ internal static class AmbisonicProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
-        if (WyrmBaseSource.CompletelyInactive || WyrmListener.CompletelyInactive)
+        if (WyrmBaseSource.CompletelyInactive || WyrmAudioManager.Listener == null)
             return dependency;
 
         // csharpier-ignore

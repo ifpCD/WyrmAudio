@@ -7,12 +7,17 @@ internal static class OcclusionProcessor
 {
     public static JobHandle Schedule(JobHandle dependency)
     {
+        if (
+            WyrmOcclusionMask.CompletelyInactive
+            || WyrmAudioManager.Listener == null
+            || WyrmOcclusionSample.CompletelyInactive
+            || WyrmBaseSource.CompletelyInactive
+        )
+            return dependency;
+
         int maskActiveCount = WyrmOcclusionMask.ActiveCount;
         int sampleActiveCount = WyrmOcclusionSample.ActiveCount;
         int sourceActiveCount = WyrmBaseSource.ActiveCount;
-
-        if (sourceActiveCount == 0 || WyrmListener.CompletelyInactive || maskActiveCount == 0 || sampleActiveCount == 0)
-            return dependency;
 
         var CommandsSubBuffer = WyrmOcclusionSample.RaycastCommandBuffer.GetSubArray(0, sampleActiveCount);
         var ResultsSubBuffer = WyrmOcclusionSample.RaycastResultBuffer.GetSubArray(0, sampleActiveCount);

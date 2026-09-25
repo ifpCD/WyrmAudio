@@ -65,7 +65,7 @@ public static class NativeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Fill<T>(this NativeArray<T> array, T value)
+    public static void Fill<T>(ref this NativeArray<T> array, T value)
         where T : struct
     {
         for (int i = 0; i < array.Length; i++)
@@ -73,7 +73,7 @@ public static class NativeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void SubFill<T>(this NativeArray<T> array, T value, int length)
+    public static void SubFill<T>(ref this NativeArray<T> array, T value, int length)
         where T : struct
     {
         for (int i = 0; i < length; i++)

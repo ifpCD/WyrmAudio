@@ -8,7 +8,7 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     public static NativeArray<float3> PortalExtents;
     public static NativeArray<int> PortalRoomA;
     public static NativeArray<int> PortalRoomB;
-    public static NativeArray<float3> PortalOpenness;
+    public static NativeArray<float> PortalOpenness;
 
     // csharpier-ignore
     protected override void AllocateNative()

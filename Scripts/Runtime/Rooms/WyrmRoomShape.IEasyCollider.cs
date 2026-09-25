@@ -11,7 +11,7 @@ public sealed partial class WyrmRoomShape
 #if WYRMAUDIO_VISUALIZATION_ENABLED
     void OnDrawGizmos()
     {
-        if (!WyrmListener.CompletelyInactive)
+        if (WyrmAudioManager.Listener != null)
         {
             var ListenerRoomIdentifier = WyrmListener.ListenerRoomIdentifier.Value;
             if (ListenerRoomIdentifier != -1)

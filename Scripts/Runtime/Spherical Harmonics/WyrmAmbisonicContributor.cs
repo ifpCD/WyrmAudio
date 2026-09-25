@@ -1,3 +1,9 @@
+using Unity.Collections;
+using Unity.Mathematics;
+using Unity.Scripting.LifecycleManagement;
+using UnityEngine;
+
+[NoAutoStaticsCleanup]
 public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
 {
     protected override int AllocatedCapacity => throw new System.NotImplementedException();
@@ -16,7 +22,6 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
         }
     }
 
-
     public float _Volume;
     public float _VolumeLow;
     public float _VolumeMid;
@@ -27,47 +32,62 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
         get => _Volume;
         set
         {
-            value = Mathf.Clamp01(0, 1, value);
+            value = Mathf.Clamp01(value);
             _Volume = value;
 
             if (IsRegistered)
                 Volumes[SoAIndex] = value;
         }
     }
+
     public float VolumeLow
     {
         get => _VolumeLow;
         set
         {
-            value = Mathf.Clamp01(0, 1, value);
+            value = Mathf.Clamp01(value);
             _VolumeLow = value;
 
-            if (IsRegistered)
-                EQVolume01s[SoAIndex].x = value;
+            if (!IsRegistered)
+                return;
+
+            var eq = EQVolume01s[SoAIndex];
+            eq.x = value;
+            EQVolume01s[SoAIndex] = eq;
         }
     }
+
     public float VolumeMid
     {
         get => _VolumeMid;
         set
         {
-            value = Mathf.Clamp01(0, 1, value);
+            value = Mathf.Clamp01(value);
             _VolumeMid = value;
 
-            if (IsRegistered)
-                EQVolume01s[SoAIndex].y = value;
+            if (!IsRegistered)
+                return;
+
+            var eq = EQVolume01s[SoAIndex];
+            eq.y = value;
+            EQVolume01s[SoAIndex] = eq;
         }
     }
+
     public float VolumeHigh
     {
         get => _VolumeHigh;
         set
         {
-            value = Mathf.Clamp01(0, 1, value);
+            value = Mathf.Clamp01(value);
             _VolumeHigh = value;
 
-            if (IsRegistered)
-                EQVolume01s[SoAIndex].z = value;
+            if (!IsRegistered)
+                return;
+
+            var eq = EQVolume01s[SoAIndex];
+            eq.z = value;
+            EQVolume01s[SoAIndex] = eq;
         }
     }
 
@@ -82,7 +102,6 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
     public static NativeArray<float> TargetAmbisonicOutputs;
 
     public static NativeArray<int> TargetSourceIndices;
-
 
     protected override void AllocateNative()
     {
@@ -112,7 +131,7 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
 
     protected override void LoadObjectToArrays()
     {
-        Types[SoAIndex] = Type;
+        Types[SoAIndex] = (byte)Type;
 
         Volumes[SoAIndex] = Volume;
         EQVolume01s[SoAIndex] = new float3
@@ -120,13 +139,9 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
             x = VolumeLow,
             y = VolumeMid,
             z = VolumeHigh,
-
         };
 
-        CurrentAmbisonicOutputs[SoAIndex] = CurrentAmbisonicOutput;
-        TargetAmbisonicOutputs[SoAIndex] = TargetAmbisonicOutput;
-
-        TargetSourceIndices[SoAIndex] = TargetSourceIndice;
+        TargetSourceIndices[SoAIndex] = TargetSourceIndex;
     }
 
     protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
@@ -134,7 +149,7 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
         if (removedIndex != lastIndex)
         {
             Types[removedIndex] = Types[lastIndex];
-            
+
             Volumes[removedIndex] = Volumes[lastIndex];
             EQVolume01s[removedIndex] = EQVolume01s[lastIndex];
 
@@ -144,13 +159,4 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
             TargetSourceIndices[removedIndex] = TargetSourceIndices[lastIndex];
         }
     }
-}
-
-
-public enum AmbisonicGeneratorType
-{
-    Simple,
-    Cube,
-    Mesh,
-    Custom
 }
