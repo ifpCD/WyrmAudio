@@ -22,7 +22,6 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
         }
     }
 
-
     public Vector3 _VirtualPosition;
     public Vector3 _VirtualDirection;
     public float _HorizontalBlur;
@@ -51,6 +50,7 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
                 VirtualDirections[SoAIndex] = value;
         }
     }
+
     public float HorizontalBlur
     {
         get => _HorizontalBlur;
@@ -62,6 +62,7 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
                 HorizontalBlurs[SoAIndex] = value;
         }
     }
+
     public float VerticalBlur
     {
         get => _VerticalBlur;
@@ -75,7 +76,6 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
         }
     }
 
-
     public static NativeArray<byte> GenTypes;
     public static NativeArray<float3> VirtualPositions;
     public static NativeArray<float3> VirtualDirections;
@@ -83,12 +83,13 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
     public static NativeArray<float> HorizontalBlurs;
     public static NativeArray<float> VerticalBlurs;
 
+    // csharpier-ignore
     protected override void AllocateNative()
     {
-        VirtualPositions = new(AllocatedCapacity, Allocator.Persistent);
-        VirtualDirections = new(AllocatedCapacity, Allocator.Persistent);
-        HorizontalBlurs = new(AllocatedCapacity, Allocator.Persistent);
-        VerticalBlurs = new(AllocatedCapacity, Allocator.Persistent);
+        VirtualPositions                    = new(AllocatedCapacity, Allocator.Persistent);
+        VirtualDirections                   = new(AllocatedCapacity, Allocator.Persistent);
+        HorizontalBlurs                     = new(AllocatedCapacity, Allocator.Persistent);
+        VerticalBlurs                       = new(AllocatedCapacity, Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
@@ -99,22 +100,24 @@ public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
         VerticalBlurs.TryDispose();
     }
 
+    // csharpier-ignore
     protected override void LoadObjectToArrays()
     {
-        VirtualPositions[SoAIndex] = VirtualPosition;
-        VirtualDirections[SoAIndex] = VirtualDirection;
-        HorizontalBlurs[SoAIndex] = HorizontalBlur;
-        VerticalBlurs[SoAIndex] = VerticalBlur;
+        VirtualPositions[SoAIndex]          = VirtualPosition;
+        VirtualDirections[SoAIndex]         = VirtualDirection;
+        HorizontalBlurs[SoAIndex]           = HorizontalBlur;
+        VerticalBlurs[SoAIndex]             = VerticalBlur;
     }
 
+    // csharpier-ignore
     protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
     {
         if (removedIndex != lastIndex)
         {
-            VirtualPositions[removedIndex] = VirtualPositions[lastIndex];
+            VirtualPositions[removedIndex]  = VirtualPositions[lastIndex];
             VirtualDirections[removedIndex] = VirtualDirections[lastIndex];
-            HorizontalBlurs[removedIndex] = HorizontalBlurs[lastIndex];
-            VerticalBlurs[removedIndex] = VerticalBlurs[lastIndex];
+            HorizontalBlurs[removedIndex]   = HorizontalBlurs[lastIndex];
+            VerticalBlurs[removedIndex]     = VerticalBlurs[lastIndex];
         }
     }
 }
@@ -124,5 +127,5 @@ public enum SimpleAmbisonicType
     Directional,
     DirectionalBlurrable,
     Positional,
-    PositionalBlurrable
+    PositionalBlurrable,
 }

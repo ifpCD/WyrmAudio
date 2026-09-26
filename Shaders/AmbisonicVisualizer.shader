@@ -1,4 +1,4 @@
-Shader "Hidden/WyrmAudio/SHVisualizer"
+Shader "Hidden/WyrmAudio/AmbisonicVisualizer"
 {
     Properties
     {

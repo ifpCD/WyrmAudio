@@ -28,13 +28,12 @@ public partial class WyrmBaseSource
         {
             if (_occlusionMask == value)
                 return;
-
             _occlusionMask = value;
 
             if (IsRegistered)
-                OcclusionMaskIndices[SoAIndex] = OcclusionMaskIndex;
+                OcclusionMaskHandles[SoAIndex] = OcclusionMaskHandle;
         }
     }
 
-    internal int OcclusionMaskIndex => IsRegistered && UseOcclusion ? OcclusionMask.SoAIndex : WyrmOcclusionMask.INACTIVE;
+    internal AmbiHandle OcclusionMaskHandle => (IsRegistered && UseOcclusion && OcclusionMask != null) ? OcclusionMask.Handle : AmbiHandle.Null;
 }

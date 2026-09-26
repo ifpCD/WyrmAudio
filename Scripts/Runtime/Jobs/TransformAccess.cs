@@ -2,7 +2,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine.Jobs;
-#pragma warning disable UNT0022 // Burst TransformAccess doesn't cross boundary
+#pragma warning disable UNT0022
 
 [BurstCompile]
 internal struct GatherSourcePositionsJob : IJobParallelForTransform

@@ -1,6 +1,15 @@
+using System;
 using System.Collections.Generic;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
+
+[Serializable]
+public struct MaskSampleData
+{
+    public Vector3 LocalPosition;
+    public float Weight;
+    public bool Discardable;
+}
 
 [NoAutoStaticsCleanup]
 public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
@@ -8,9 +17,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
     [SerializeField]
     OcclusionMaskType _type = OcclusionMaskType.Singular;
 
-    public const int MAX_SAMPLE_COUNT = 64;
-
-    [Range(1, MAX_SAMPLE_COUNT)]
+    [Range(1, HC.MAX_OCC_SAMPLES_PER_MASK)]
     [SerializeField]
     int _sampleCount = 1;
 
@@ -20,37 +27,67 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
     float Radius => _size / 2;
 
-    readonly List<Vector3> _generatedPositionsBuffer = new(MAX_SAMPLE_COUNT);
+    readonly List<Vector3> _generatedPositionsBuffer = new(HC.MAX_OCC_SAMPLES_PER_MASK);
 
-    readonly List<WyrmOcclusionSample> _sampleBuffer = new(MAX_SAMPLE_COUNT);
+    [HideInInspector]
+    public List<MaskSampleData> _generatedSampleData = new(HC.MAX_OCC_SAMPLES_PER_MASK);
 
     void OnEnable()
     {
-        if (_sampleBuffer.Count == 0)
+        if (_generatedSampleData.Count == 0)
             RebuildSampleBuffer();
-            
+
         Register();
-        RegisterSamples();
     }
 
     void OnDisable()
     {
-        DeregisterSamples();
         Deregister();
     }
 
     void OnValidate()
     {
-        DeregisterSamples();
         RebuildSampleBuffer();
-        RegisterSamples();
 
-        SoASync();
+        if (IsRegistered)
+            SyncAllSamplesToNative();
+    }
+
+    public void UpdateSampleLocalPosition(int sampleIndex, Vector3 newLocalPosition)
+    {
+        if (sampleIndex < 0 || sampleIndex >= _generatedSampleData.Count)
+            return;
+
+        var sample = _generatedSampleData[sampleIndex];
+        sample.LocalPosition = newLocalPosition;
+        _generatedSampleData[sampleIndex] = sample;
+
+        if (IsRegistered)
+        {
+            int SoASampleIndex = (SoAIndex * HC.MAX_OCC_SAMPLES_PER_MASK) + sampleIndex;
+            SampleLocalPositions[SoASampleIndex] = newLocalPosition;
+        }
+    }
+
+    public void SyncAllSamplesToNative()
+    {
+        if (!IsRegistered)
+            return;
+
+        MaskSampleCounts[SoAIndex] = _generatedSampleData.Count;
+        int chunkStartOffset = SoAIndex * HC.MAX_OCC_SAMPLES_PER_MASK;
+
+        for (int i = 0; i < _generatedSampleData.Count; i++)
+        {
+            SampleLocalPositions[chunkStartOffset + i] = _generatedSampleData[i].LocalPosition;
+            SampleWeights[chunkStartOffset + i] = _generatedSampleData[i].Weight;
+            SampleIsDiscardable[chunkStartOffset + i] = _generatedSampleData[i].Discardable;
+        }
     }
 
     void RebuildSampleBuffer()
     {
-        _sampleBuffer.Clear();
+        _generatedSampleData.Clear();
         _generatedPositionsBuffer.Clear();
 
         if (_type is OcclusionMaskType.SphericalHalton or OcclusionMaskType.Singular)
@@ -62,31 +99,16 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
             for (var i = 0; i < _generatedPositionsBuffer.Count; i++)
             {
-                var newSample = new WyrmOcclusionSample { LocalPosition = _generatedPositionsBuffer[i] };
-                _sampleBuffer.Add(newSample);
+                _generatedSampleData.Add(
+                    new MaskSampleData
+                    {
+                        LocalPosition = _generatedPositionsBuffer[i],
+                        Weight = 1f,
+                        Discardable = true,
+                    }
+                );
             }
         }
-    }
-
-    void RegisterSamples()
-    {
-        if (!IsRegistered)
-            return;
-
-        foreach (var sample in _sampleBuffer)
-        {
-            sample.Register();
-            WyrmOcclusionSample.SampleToMask[sample.SoAIndex] = SoAIndex;
-        }
-    }
-
-    void DeregisterSamples()
-    {
-        if (!IsRegistered)
-            return;
-
-        foreach (var sample in _sampleBuffer)
-            sample.Deregister();
     }
 }
 

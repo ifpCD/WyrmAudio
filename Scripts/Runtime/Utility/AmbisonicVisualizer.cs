@@ -59,7 +59,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
         if (_shMaterial == null)
         {
-            Shader shader = Shader.Find("Hidden/WyrmAudio/SHVisualizer");
+            Shader shader = Shader.Find("Hidden/WyrmAudio/AmbisonicVisualizer");
             if (shader != null)
                 _shMaterial = new Material(shader) { hideFlags = HideFlags.DontSave };
         }

@@ -7,8 +7,6 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
     const float VIS_OCC_SAMPLE_RADIUS = 0.02f;
 
 #if WYRMAUDIO_VISUALIZATION_ENABLED && UNITY_EDITOR
-    // void OnDrawGizmos() => DrawOcclusionGizmo();
-
     void OnDrawGizmosSelected() => DrawOcclusionGizmo();
 #endif
 
@@ -24,33 +22,31 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
             Gizmos.DrawWireSphere(tPosition, Radius);
         }
 
-        if (_sampleBuffer == null)
+        if (_generatedSampleData == null)
             return;
 
         var localToWorldNoRotation = Matrix4x4.TRS(tPosition, Quaternion.identity, tLossyScale);
+        int chunkStartOffset = SoAIndex * HC.MAX_OCC_SAMPLES_PER_MASK;
 
-        for (int i = 0; i < _sampleBuffer.Count; i++)
+        for (int i = 0; i < _generatedSampleData.Count; i++)
         {
-            var sample = _sampleBuffer[i];
+            var sample = _generatedSampleData[i];
 
             var localPos = sample.LocalPosition;
             var worldPos = localToWorldNoRotation.MultiplyPoint3x4(localPos);
 
             Color SampleColor = Color.gray;
 
-            if (sample.IsRegistered)
+            if (IsRegistered && Application.isPlaying)
             {
-                var isOccluded = WyrmOcclusionSample.IsOccluded[sample.SoAIndex];
-                var isDiscarded = WyrmOcclusionSample.IsDiscarded[sample.SoAIndex];
+                int nativeIdx = chunkStartOffset + i;
+                var isOccluded = SampleIsOccluded[nativeIdx];
+                var isDiscarded = SampleIsDiscarded[nativeIdx];
 
                 if (!isDiscarded && isOccluded)
-                {
                     SampleColor = Color.red;
-                }
                 else if (!isDiscarded && !isOccluded)
-                {
                     SampleColor = Color.green;
-                }
             }
 
             Gizmos.color = SampleColor.WithAlpha(0.8f);

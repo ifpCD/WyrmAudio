@@ -30,7 +30,7 @@ public struct SimpleAmbisonicsGeneration : IJobParallelFor
     [ReadOnly]
     public int AmbisonicOrder;
 
-    public NativeArray<int> SimpleAmbisonicsToContributorIndices; 
+    public NativeArray<int> SimpleAmbisonicsToContributorIndices;
 
     [NativeDisableParallelForRestriction]
     [WriteOnly]

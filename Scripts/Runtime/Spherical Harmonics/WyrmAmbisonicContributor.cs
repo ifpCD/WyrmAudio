@@ -6,7 +6,7 @@ using UnityEngine;
 [NoAutoStaticsCleanup]
 public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
 {
-    protected override int AllocatedCapacity => throw new System.NotImplementedException();
+    protected override int AllocatedCapacity => HC.MAX_AMBISONIC_CONTRIBUTORS;
 
     public AmbisonicGeneratorType _Type;
 

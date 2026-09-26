@@ -45,7 +45,7 @@ public partial class WyrmBaseSource
     // Output Scratch Buffers
     internal static NativeArray<int> SourceRoomIDs;
 
-    internal static NativeArray<int> OcclusionMaskIndices;
+    internal static NativeArray<AmbiHandle> OcclusionMaskHandles;
 
     internal static NativeArray<float> TargetOcclusion01;
     internal static NativeArray<float3> TargetAmbisonicEQ01s;
@@ -103,7 +103,7 @@ public partial class WyrmBaseSource
 
         SourceRoomIDs                                  = new(AllocatedCapacity, Allocator.Persistent);
 
-        OcclusionMaskIndices                             = new(AllocatedCapacity, Allocator.Persistent);
+        OcclusionMaskHandles                             = new(AllocatedCapacity, Allocator.Persistent);
 
         TargetOcclusion01                              = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicEQ01s                           = new(AllocatedCapacity, Allocator.Persistent);
@@ -137,7 +137,7 @@ public partial class WyrmBaseSource
 
         SourceRoomIDs.TryDispose();
 
-        OcclusionMaskIndices.TryDispose();
+        OcclusionMaskHandles.TryDispose();
 
         TargetOcclusion01.TryDispose();
         TargetAmbisonicEQ01s.TryDispose();
@@ -174,12 +174,12 @@ public partial class WyrmBaseSource
         CurrentOcclusion01[SoAIndex]                      = 0f;
         CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
-        OcclusionMaskIndices[SoAIndex]                      = OcclusionMaskIndex;
+        OcclusionMaskHandles[SoAIndex]                    = OcclusionMaskHandle;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
-            SpatializerPointers[SoAIndex]                            = phononSource.PhononSource.Get();
+            SpatializerPointers[SoAIndex]                 = phononSource.PhononSource.Get();
         else
-            SpatializerPointers[SoAIndex]                            = IntPtr.Zero;
+            SpatializerPointers[SoAIndex]                 = IntPtr.Zero;
     }
 
     // csharpier-ignore
@@ -198,12 +198,12 @@ public partial class WyrmBaseSource
             InputAmbisonicEQMid01s[removedIndex]       = InputAmbisonicEQMid01s[lastIndex];
             InputAmbisonicEQLow01s[removedIndex]       = InputAmbisonicEQLow01s[lastIndex];
 
-            SpatializerPointers[removedIndex]                     = SpatializerPointers[lastIndex];
+            SpatializerPointers[removedIndex]          = SpatializerPointers[lastIndex];
 
             CurrentOcclusion01[removedIndex]           = CurrentOcclusion01[lastIndex];
             CurrentAmbisonicEQ01s[removedIndex]        = CurrentAmbisonicEQ01s[lastIndex];
 
-            OcclusionMaskIndices[removedIndex] = OcclusionMaskIndices[lastIndex];
+            OcclusionMaskHandles[removedIndex] = OcclusionMaskHandles[lastIndex];
         }
 
         SourceTransforms.RemoveAtSwapBack(removedIndex);

@@ -1,4 +1,3 @@
-using System;
 using SteamAudio;
 using UnityEngine;
 
