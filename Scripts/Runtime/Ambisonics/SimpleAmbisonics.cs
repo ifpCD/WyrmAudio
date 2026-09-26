@@ -4,7 +4,7 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 [NoAutoStaticsCleanup]
-public sealed class SimpleAmbisonics : AmbiBase<WyrmAmbisonicContributor>
+public sealed class SimpleAmbisonics : AmbiBase<SimpleAmbisonics>
 {
     protected override int AllocatedCapacity => throw new System.NotImplementedException();
 

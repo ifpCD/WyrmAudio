@@ -7,6 +7,9 @@ using Unity.Mathematics;
 public struct SimpleAmbisonicsGeneration : IJobParallelFor
 {
     [ReadOnly]
+    public float3 ListenerPosition;
+
+    [ReadOnly]
     public NativeArray<byte> Types;
 
     [ReadOnly]
@@ -25,12 +28,7 @@ public struct SimpleAmbisonicsGeneration : IJobParallelFor
     public NativeArray<float3> EQVolume01s;
 
     [ReadOnly]
-    public float3 ListenerPosition;
-
-    [ReadOnly]
     public int AmbisonicOrder;
-
-    public NativeArray<int> SimpleAmbisonicsToContributorIndices;
 
     [NativeDisableParallelForRestriction]
     [WriteOnly]
@@ -100,5 +98,46 @@ public struct SimpleAmbisonicsGeneration : IJobParallelFor
         WriteCoeff(13, SH.C7 * x * (5.0f * zz - 1.0f));
         WriteCoeff(14, SH.C9 * z * (xx - yy));
         WriteCoeff(15, SH.C5 * x * (xx - 3.0f * yy));
+    }
+}
+
+[BurstCompile]
+public struct LoadAmbisonicOutputsToSources : IJobParallelFor
+{
+    [ReadOnly]
+    public NativeArray<AmbiHandle> SourceToAmbisonicGeneratorHandles;
+
+    [ReadOnly]
+    public NativeArray<float> AmbisonicGeneratorBuffers;
+
+    [ReadOnly]
+    public NativeArray<int> GeneratorHandleToSoAIndex;
+
+    [ReadOnly]
+    public NativeArray<int> GeneratorVersions;
+
+    [WriteOnly]
+    public NativeArray<float> SourceAmbisonicBuffers;
+
+    public void Execute(int sourceIndex)
+    {
+        AmbiHandle handle = SourceToAmbisonicGeneratorHandles[sourceIndex];
+        if (handle.IsNull || GeneratorVersions[handle.Index] != handle.Version)
+        {
+            return;
+        }
+
+        int ambisonicGeneratorIndex = GeneratorHandleToSoAIndex[handle.Index];
+
+        int ambisonicBufferOffset = HC.AMBISONIC_BUFFER_LENGTH * ambisonicGeneratorIndex;
+        int sourceBufferOffset = HC.AMBISONIC_BUFFER_LENGTH * sourceIndex;
+
+        NativeArray<float>.Copy(
+            AmbisonicGeneratorBuffers,
+            ambisonicBufferOffset,
+            SourceAmbisonicBuffers,
+            sourceBufferOffset,
+            HC.AMBISONIC_BUFFER_LENGTH
+        );
     }
 }

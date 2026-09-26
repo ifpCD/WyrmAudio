@@ -23,6 +23,9 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
     [Header("Spatial Features")]
     
     [field: SerializeField]
+    public virtual bool UseDirect { get; set; } = false;
+
+    [field: SerializeField]
     public virtual bool UseReflections { get; set; } = false;
 
     [field: SerializeField]

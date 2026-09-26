@@ -20,7 +20,7 @@ public struct GenerateDirectionalSHJob : IJobParallelFor
 
     [NativeDisableParallelForRestriction]
     [WriteOnly]
-    public NativeArray<float> SHCoeffs;
+    public NativeArray<float> SphericalHarmonicCoefficientOutputs;
 
     public void Execute(int sourceIndex)
     {
@@ -40,7 +40,7 @@ public struct GenerateDirectionalSHJob : IJobParallelFor
 
         float3 eq = PathEQs[sourceIndex];
 
-        var shCoeffs = SHCoeffs;
+        var shCoeffs = SphericalHarmonicCoefficientOutputs;
 
         void WriteCoeff(int coefficient, float value)
         {

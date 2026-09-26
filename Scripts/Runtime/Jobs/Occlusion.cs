@@ -3,19 +3,6 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Jobs;
-
-[BurstCompile]
-internal struct GatherMaskTransformsJob : IJobParallelForTransform
-{
-    [WriteOnly]
-    public NativeArray<float4x4> LocalToWorlds;
-
-    public void Execute(int index, TransformAccess transform)
-    {
-        LocalToWorlds[index] = transform.localToWorldMatrix;
-    }
-}
 
 [BurstCompile]
 public struct GenerateDiscardCommands : IJobParallelFor

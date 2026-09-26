@@ -4,7 +4,7 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 [NoAutoStaticsCleanup]
-public class MeshAmbisonics : AmbiBase<WyrmAmbisonicContributor>
+public class MeshAmbisonics : AmbiBase<MeshAmbisonics>
 {
     protected override int AllocatedCapacity => 2000;
 

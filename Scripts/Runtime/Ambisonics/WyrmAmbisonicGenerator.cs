@@ -4,49 +4,49 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 [NoAutoStaticsCleanup]
-public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
+public class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbisonicGenerator>
 {
     protected override int AllocatedCapacity => HC.MAX_AMBISONIC_CONTRIBUTORS;
 
-    public AmbisonicGeneratorType _Type;
+    AmbisonicGeneratorType _type;
 
     public AmbisonicGeneratorType Type
     {
-        get => _Type;
+        get => _type;
         set
         {
-            _Type = value;
+            _type = value;
 
             if (IsRegistered)
                 Types[SoAIndex] = (byte)value;
         }
     }
 
-    public float _Volume;
-    public float _VolumeLow;
-    public float _VolumeMid;
-    public float _VolumeHigh;
+    float _volume;
+    float _volumeLow;
+    float _volumeMid;
+    float _volumeHigh;
 
     public float Volume
     {
-        get => _Volume;
+        get => _volume;
         set
         {
             value = Mathf.Clamp01(value);
-            _Volume = value;
+            _volume = value;
 
             if (IsRegistered)
-                Volumes[SoAIndex] = value;
+                Volume01s[SoAIndex] = value;
         }
     }
 
     public float VolumeLow
     {
-        get => _VolumeLow;
+        get => _volumeLow;
         set
         {
             value = Mathf.Clamp01(value);
-            _VolumeLow = value;
+            _volumeLow = value;
 
             if (!IsRegistered)
                 return;
@@ -59,11 +59,11 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
 
     public float VolumeMid
     {
-        get => _VolumeMid;
+        get => _volumeMid;
         set
         {
             value = Mathf.Clamp01(value);
-            _VolumeMid = value;
+            _volumeMid = value;
 
             if (!IsRegistered)
                 return;
@@ -76,11 +76,11 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
 
     public float VolumeHigh
     {
-        get => _VolumeHigh;
+        get => _volumeHigh;
         set
         {
             value = Mathf.Clamp01(value);
-            _VolumeHigh = value;
+            _volumeHigh = value;
 
             if (!IsRegistered)
                 return;
@@ -95,7 +95,7 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
 
     public static NativeArray<byte> Types;
 
-    public static NativeArray<float> Volumes;
+    public static NativeArray<float> Volume01s;
     public static NativeArray<float3> EQVolume01s;
 
     public static NativeArray<float> CurrentAmbisonicOutputs;
@@ -103,60 +103,57 @@ public class WyrmAmbisonicContributor : AmbiBase<WyrmAmbisonicContributor>
 
     public static NativeArray<int> TargetSourceIndices;
 
+    // csharpier-ignore
     protected override void AllocateNative()
     {
-        Types = new(AllocatedCapacity, Allocator.Persistent);
+        Types                   = new(AllocatedCapacity, Allocator.Persistent);
 
-        Volumes = new(AllocatedCapacity, Allocator.Persistent);
-        EQVolume01s = new(AllocatedCapacity, Allocator.Persistent);
+        Volume01s                 = new(AllocatedCapacity, Allocator.Persistent);
+        EQVolume01s             = new(AllocatedCapacity, Allocator.Persistent);
 
         CurrentAmbisonicOutputs = new(AllocatedCapacity * 48, Allocator.Persistent);
-        TargetAmbisonicOutputs = new(AllocatedCapacity * 48, Allocator.Persistent);
+        TargetAmbisonicOutputs  = new(AllocatedCapacity * 48, Allocator.Persistent);
 
-        TargetSourceIndices = new(AllocatedCapacity, Allocator.Persistent);
+        TargetSourceIndices     = new(AllocatedCapacity, Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
     {
         Types.TryDispose();
 
-        Volumes.TryDispose();
+        Volume01s.TryDispose();
         EQVolume01s.TryDispose();
 
         CurrentAmbisonicOutputs.TryDispose();
         TargetAmbisonicOutputs.TryDispose();
-
-        TargetSourceIndices.TryDispose();
     }
 
+    // csharpier-ignore
     protected override void LoadObjectToArrays()
     {
-        Types[SoAIndex] = (byte)Type;
+        Types[SoAIndex]       = (byte)Type;
 
-        Volumes[SoAIndex] = Volume;
+        Volume01s[SoAIndex]     = Volume;
         EQVolume01s[SoAIndex] = new float3
         {
             x = VolumeLow,
             y = VolumeMid,
             z = VolumeHigh,
         };
-
-        TargetSourceIndices[SoAIndex] = TargetSourceIndex;
     }
 
+    // csharpier-ignore
     protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
     {
         if (removedIndex != lastIndex)
         {
-            Types[removedIndex] = Types[lastIndex];
+            Types[removedIndex]                   = Types[lastIndex];
 
-            Volumes[removedIndex] = Volumes[lastIndex];
-            EQVolume01s[removedIndex] = EQVolume01s[lastIndex];
+            Volume01s[removedIndex]                 = Volume01s[lastIndex];
+            EQVolume01s[removedIndex]             = EQVolume01s[lastIndex];
 
             CurrentAmbisonicOutputs[removedIndex] = CurrentAmbisonicOutputs[lastIndex];
-            TargetAmbisonicOutputs[removedIndex] = TargetAmbisonicOutputs[lastIndex];
-
-            TargetSourceIndices[removedIndex] = TargetSourceIndices[lastIndex];
+            TargetAmbisonicOutputs[removedIndex]  = TargetAmbisonicOutputs[lastIndex];
         }
     }
 }

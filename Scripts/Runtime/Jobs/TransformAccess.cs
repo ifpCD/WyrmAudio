@@ -5,7 +5,7 @@ using UnityEngine.Jobs;
 #pragma warning disable UNT0022
 
 [BurstCompile]
-internal struct GatherSourcePositionsJob : IJobParallelForTransform
+internal struct ReadTransformDataJob : IJobParallelForTransform
 {
     [WriteOnly]
     public NativeArray<float3> Positions;
@@ -25,7 +25,7 @@ internal struct GatherSourcePositionsJob : IJobParallelForTransform
 }
 
 [BurstCompile]
-internal struct ApplySourceTransformsJob : IJobParallelForTransform
+internal struct SetPositionsAndRotationsJob : IJobParallelForTransform
 {
     [ReadOnly]
     public NativeArray<float3> Positions;
@@ -37,5 +37,17 @@ internal struct ApplySourceTransformsJob : IJobParallelForTransform
     {
         transform.position = Positions[index];
         transform.rotation = Rotations[index];
+    }
+}
+
+[BurstCompile]
+internal struct ReadTransformLocalToWorldMatricesJob : IJobParallelForTransform
+{
+    [WriteOnly]
+    public NativeArray<float4x4> LocalToWorlds;
+
+    public void Execute(int index, TransformAccess transform)
+    {
+        LocalToWorlds[index] = transform.localToWorldMatrix;
     }
 }

@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using UnityEngine;
-using UnityEditor;
 
 public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 {
@@ -12,6 +11,12 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
     public void DrawOcclusionGizmo()
     {
+        if (WyrmAudioManager.Listener == null)
+            return;
+
+        if (_generatedSampleData == null)
+            return;
+
         var t = transform;
         var tPosition = t.position;
         var tLossyScale = t.lossyScale;
@@ -21,9 +26,6 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
             Gizmos.color = WyrmColor.FaintWhite;
             Gizmos.DrawWireSphere(tPosition, Radius);
         }
-
-        if (_generatedSampleData == null)
-            return;
 
         var localToWorldNoRotation = Matrix4x4.TRS(tPosition, Quaternion.identity, tLossyScale);
         int chunkStartOffset = SoAIndex * HC.MAX_OCC_SAMPLES_PER_MASK;
@@ -37,7 +39,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
             Color SampleColor = Color.gray;
 
-            if (IsRegistered && Application.isPlaying)
+            if (IsRegistered)
             {
                 int nativeIdx = chunkStartOffset + i;
                 var isOccluded = SampleIsOccluded[nativeIdx];
@@ -55,9 +57,6 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
             if (sample.Discardable)
                 Gizmos.DrawLine(tPosition, worldPos);
-
-            if (WyrmAudioManager.Listener == null)
-                continue;
 
             Gizmos.DrawLine(worldPos, WyrmListener.ListenerPosition.Value);
         }

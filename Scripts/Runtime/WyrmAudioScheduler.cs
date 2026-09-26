@@ -69,7 +69,7 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
     // csharpier-ignore
     static JobHandle ScheduleFrame()
     {
-        var gatherSourcePositions   = new GatherSourcePositionsJob
+        var gatherSourcePositions   = new ReadTransformDataJob
         {
             Positions               = WyrmBaseSource.Positions,
             Rotations               = WyrmBaseSource.Rotations,
@@ -78,7 +78,7 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
         JobHandle gatherHandle      = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
 
         // we use WyrmBaseSource.SourcePositions for every job - meaning we can append this to the finalizer handle
-        var applySourceTransforms   = new ApplySourceTransformsJob
+        var applySourceTransforms   = new SetPositionsAndRotationsJob
         {
             Positions               = WyrmBaseSource.Positions,
             Rotations               = WyrmBaseSource.Rotations,
@@ -127,7 +127,7 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
             activeCount,
             spatializerPtrs,
             (float*)WyrmBaseSource.CurrentAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
-            (float*)WyrmBaseSource.TargetAmbisonic.GetUnsafeReadOnlyPtr(),
+            (float*)WyrmBaseSource.TargetAmbisonicOutputs.GetUnsafeReadOnlyPtr(),
             steamAudioSettings.realTimeAmbisonicOrder
         );
 

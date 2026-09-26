@@ -35,5 +35,5 @@ public partial class WyrmBaseSource
         }
     }
 
-    internal AmbiHandle OcclusionMaskHandle => (IsRegistered && UseOcclusion && OcclusionMask != null) ? OcclusionMask.Handle : AmbiHandle.Null;
+    internal AmbiHandle OcclusionMaskHandle => (UseOcclusion && _occlusionMask != null) ? OcclusionMask.Handle : AmbiHandle.Null;
 }

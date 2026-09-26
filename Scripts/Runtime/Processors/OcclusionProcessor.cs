@@ -24,7 +24,7 @@ internal static class OcclusionProcessor
         var layerMask = WyrmAudioSettings.Instance.OcclusionMask;
         var queryParameters = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
 
-        var gatherMasksJob = new GatherMaskTransformsJob { LocalToWorlds = WyrmOcclusionMask.LocalToWorlds };
+        var gatherMasksJob = new ReadTransformLocalToWorldMatricesJob { LocalToWorlds = WyrmOcclusionMask.LocalToWorlds };
         JobHandle gatherMasksHandle = gatherMasksJob.Schedule(WyrmOcclusionMask.MaskTransforms, dependency);
 
         var genDiscardCommandsJob = new GenerateDiscardCommands
@@ -80,6 +80,7 @@ internal static class OcclusionProcessor
         {
             SourceMaskHandles = WyrmBaseSource.OcclusionMaskHandles,
             UseOcclusions = WyrmBaseSource.UseOcclusions,
+            
             MaskHandleToSoA = WyrmOcclusionMask.HandleToSoA,
             MaskVersions = WyrmOcclusionMask.HandleVersions,
             MaskTargetOcclusions = WyrmOcclusionMask.TargetOcclusionValue01s,

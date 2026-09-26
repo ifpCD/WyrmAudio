@@ -1,8 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
-using Unity.Collections;
 using UnityEngine;
-using UnityEngine.Jobs;
 
 public static class ColorExtensions
 {

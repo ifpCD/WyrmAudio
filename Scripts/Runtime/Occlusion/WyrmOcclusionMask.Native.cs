@@ -110,6 +110,6 @@ public partial class WyrmOcclusionMask
         }
         MaskTransforms.RemoveAtSwapBack(removedIndex);
 
-        RecalculateDenseOffsets(); // Update packing!
+        RecalculateDenseOffsets();
     }
 }

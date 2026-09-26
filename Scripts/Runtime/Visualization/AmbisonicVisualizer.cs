@@ -131,7 +131,7 @@ public class WyrmPropagationVisualizer : MonoBehaviour
 
             for (int c = 0; c < numCoeffs; c++)
             {
-                float shValue = WyrmBaseSource.TargetAmbisonic[shOffset + c];
+                float shValue = WyrmBaseSource.TargetAmbisonicOutputs[shOffset + c];
 
                 _accumulatedSH[c].w += shValue;
                 _accumulatedSH[c].x += shValue * rawEq.x;

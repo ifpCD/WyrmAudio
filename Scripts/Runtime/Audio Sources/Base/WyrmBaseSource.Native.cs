@@ -30,28 +30,19 @@ public partial class WyrmBaseSource
     internal static NativeArray<quaternion> Rotations;
     internal static NativeArray<float4x4> LocalToWorlds;
 
-    // Ambisonic Inputs
-    internal static NativeArray<float3> InputVirtualPositions;
-    internal static NativeArray<float> InputDirectionalGains;
-    internal static NativeArray<float> InputAmbientGains;
-    internal static NativeArray<float> InputHorizontalWidths;
-    internal static NativeArray<float> InputVerticalWidths;
-    internal static NativeArray<float> InputAmbisonicEQLow01s;
-    internal static NativeArray<float> InputAmbisonicEQMid01s;
-    internal static NativeArray<float> InputAmbisonicEQHigh01s;
+    internal static NativeArray<AmbiHandle> OcclusionMaskHandles;
+    internal static NativeArray<AmbiHandle> AmbisonicGeneratorHandles;
 
     internal static NativeArray<IntPtr> SpatializerPointers; // For Phonon
 
-    // Output Scratch Buffers
+    // Scratch Buffers
     internal static NativeArray<int> SourceRoomIDs;
-
-    internal static NativeArray<AmbiHandle> OcclusionMaskHandles;
 
     internal static NativeArray<float> TargetOcclusion01;
     internal static NativeArray<float3> TargetAmbisonicEQ01s;
-    internal static NativeArray<float> TargetAmbisonic;
+    internal static NativeArray<float> TargetAmbisonicOutputs;
 
-    // Stateful
+    // Stateful Outputs
     internal static NativeArray<float> CurrentOcclusion01;
     internal static NativeArray<float3> CurrentAmbisonicEQ01s;
 
@@ -74,9 +65,7 @@ public partial class WyrmBaseSource
         Register();
     }
 
-    const float PLAYBACK_END_GRACE_TIME = 0.1f;
-
-    internal void SetPlaybackEndTime(double endTime) => PlaybackEndTime = endTime + PLAYBACK_END_GRACE_TIME;
+    internal void SetPlaybackEndTime(double endTime) => PlaybackEndTime = endTime + HC.PLAYBACK_END_GRACE_TIME;
 
     // csharpier-ignore
     protected sealed override void AllocateNative()
@@ -90,24 +79,16 @@ public partial class WyrmBaseSource
         Rotations                                      = new(AllocatedCapacity, Allocator.Persistent);
         LocalToWorlds                                  = new(AllocatedCapacity, Allocator.Persistent);
 
-        InputVirtualPositions                          = new(AllocatedCapacity, Allocator.Persistent);
-        InputVerticalWidths                            = new(AllocatedCapacity, Allocator.Persistent);
-        InputHorizontalWidths                          = new(AllocatedCapacity, Allocator.Persistent);
-        InputDirectionalGains                          = new(AllocatedCapacity, Allocator.Persistent);
-        InputAmbientGains                              = new(AllocatedCapacity, Allocator.Persistent);
-        InputAmbisonicEQHigh01s                        = new(AllocatedCapacity, Allocator.Persistent);
-        InputAmbisonicEQMid01s                         = new(AllocatedCapacity, Allocator.Persistent);
-        InputAmbisonicEQLow01s                         = new(AllocatedCapacity, Allocator.Persistent);
-
         SpatializerPointers                            = new(AllocatedCapacity, Allocator.Persistent);
 
         SourceRoomIDs                                  = new(AllocatedCapacity, Allocator.Persistent);
 
-        OcclusionMaskHandles                             = new(AllocatedCapacity, Allocator.Persistent);
+        OcclusionMaskHandles                           = new(AllocatedCapacity, Allocator.Persistent);
+        AmbisonicGeneratorHandles                      = new(AllocatedCapacity, Allocator.Persistent);
 
         TargetOcclusion01                              = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicEQ01s                           = new(AllocatedCapacity, Allocator.Persistent);
-        TargetAmbisonic                                = new(AllocatedCapacity * 48, Allocator.Persistent);
+        TargetAmbisonicOutputs                         = new(AllocatedCapacity * HC.AMBISONIC_BUFFER_LENGTH, Allocator.Persistent);
 
         CurrentOcclusion01                             = new(AllocatedCapacity, Allocator.Persistent);
         CurrentAmbisonicEQ01s                          = new(AllocatedCapacity, Allocator.Persistent);
@@ -124,15 +105,6 @@ public partial class WyrmBaseSource
         Rotations.TryDispose();
         LocalToWorlds.TryDispose();
 
-        InputVirtualPositions.TryDispose();
-        InputVerticalWidths.TryDispose();
-        InputHorizontalWidths.TryDispose();
-        InputDirectionalGains.TryDispose();
-        InputAmbientGains.TryDispose();
-        InputAmbisonicEQHigh01s.TryDispose();
-        InputAmbisonicEQMid01s.TryDispose();
-        InputAmbisonicEQLow01s.TryDispose();
-
         SpatializerPointers.TryDispose();
 
         SourceRoomIDs.TryDispose();
@@ -141,7 +113,7 @@ public partial class WyrmBaseSource
 
         TargetOcclusion01.TryDispose();
         TargetAmbisonicEQ01s.TryDispose();
-        TargetAmbisonic.TryDispose();
+        TargetAmbisonicOutputs.TryDispose();
 
         CurrentOcclusion01.TryDispose();
         CurrentAmbisonicEQ01s.TryDispose();
@@ -162,19 +134,11 @@ public partial class WyrmBaseSource
 
         UseOcclusions[SoAIndex]                           = UseOcclusion;
 
-        InputVirtualPositions[SoAIndex]                   = VirtualPosition;
-        InputVerticalWidths[SoAIndex]                     = VerticalWidth;
-        InputHorizontalWidths[SoAIndex]                   = HorizontalWidth;
-        InputDirectionalGains[SoAIndex]                   = DirectionalGain;
-        InputAmbientGains[SoAIndex]                       = AmbientGain;
-        InputAmbisonicEQHigh01s[SoAIndex]                 = AmbisonicEQHigh01;
-        InputAmbisonicEQMid01s[SoAIndex]                  = AmbisonicEQMid01;
-        InputAmbisonicEQLow01s[SoAIndex]                  = AmbisonicEQLow01;
-
         CurrentOcclusion01[SoAIndex]                      = 0f;
         CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
         OcclusionMaskHandles[SoAIndex]                    = OcclusionMaskHandle;
+        AmbisonicGeneratorHandles[SoAIndex]                 = AmbisonicGenerator.Handle;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
             SpatializerPointers[SoAIndex]                 = phononSource.PhononSource.Get();
@@ -189,21 +153,13 @@ public partial class WyrmBaseSource
         {
             UseOcclusions[removedIndex]                = UseOcclusions[lastIndex];
 
-            InputVirtualPositions[removedIndex]        = InputVirtualPositions[lastIndex];
-            InputVerticalWidths[removedIndex]          = InputVerticalWidths[lastIndex];
-            InputHorizontalWidths[removedIndex]        = InputHorizontalWidths[lastIndex];
-            InputDirectionalGains[removedIndex]        = InputDirectionalGains[lastIndex];
-            InputAmbientGains[removedIndex]            = InputAmbientGains[lastIndex];
-            InputAmbisonicEQHigh01s[removedIndex]      = InputAmbisonicEQHigh01s[lastIndex];
-            InputAmbisonicEQMid01s[removedIndex]       = InputAmbisonicEQMid01s[lastIndex];
-            InputAmbisonicEQLow01s[removedIndex]       = InputAmbisonicEQLow01s[lastIndex];
-
             SpatializerPointers[removedIndex]          = SpatializerPointers[lastIndex];
 
             CurrentOcclusion01[removedIndex]           = CurrentOcclusion01[lastIndex];
             CurrentAmbisonicEQ01s[removedIndex]        = CurrentAmbisonicEQ01s[lastIndex];
 
             OcclusionMaskHandles[removedIndex] = OcclusionMaskHandles[lastIndex];
+            AmbisonicGeneratorHandles[removedIndex] = AmbisonicGeneratorHandles[lastIndex];
         }
 
         SourceTransforms.RemoveAtSwapBack(removedIndex);
