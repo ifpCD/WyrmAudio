@@ -22,7 +22,6 @@ internal static class AmbisonicProcessor
             VerticalBlurs = SimpleAmbisonics.VerticalBlurs,
             HorizontalBlurs = SimpleAmbisonics.HorizontalBlurs,
 
-            AmbisonicOrder = 3,
             EQVolume01s = WyrmAmbisonicGenerator.EQVolume01s,
 
             AmbisonicOutputsBuffer = WyrmAmbisonicGenerator.TargetAmbisonicOutputs,
@@ -44,26 +43,5 @@ internal static class AmbisonicProcessor
         );
 
         return LoadAmbisonicOutputsToSourcesJob;
-    }
-}
-
-[BurstCompile]
-internal struct CalculateAmbisonicEqualizationJob : IJobParallelFor
-{
-    [ReadOnly]
-    public NativeArray<float> InputAmbisonicEQLow01s;
-
-    [ReadOnly]
-    public NativeArray<float> InputAmbisonicEQMid01s;
-
-    [ReadOnly]
-    public NativeArray<float> InputAmbisonicEQHigh01s;
-
-    [WriteOnly]
-    public NativeArray<float3> TargetAmbisonicEQ01s;
-
-    public void Execute(int i)
-    {
-        TargetAmbisonicEQ01s[i] = new(InputAmbisonicEQLow01s[i], InputAmbisonicEQMid01s[i], InputAmbisonicEQHigh01s[i]);
     }
 }

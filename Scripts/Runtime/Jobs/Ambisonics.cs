@@ -19,16 +19,13 @@ public struct SimpleAmbisonicsGeneration : IJobParallelFor
     public NativeArray<float3> VirtualDirections;
 
     [ReadOnly]
-    public NativeArray<float> HorizontalBlurs;
+    public NativeArray<float> HorizontalBlurs; // future
 
     [ReadOnly]
-    public NativeArray<float> VerticalBlurs;
+    public NativeArray<float> VerticalBlurs; // future
 
     [ReadOnly]
     public NativeArray<float3> EQVolume01s;
-
-    [ReadOnly]
-    public int AmbisonicOrder;
 
     [NativeDisableParallelForRestriction]
     [WriteOnly]
@@ -51,11 +48,9 @@ public struct SimpleAmbisonicsGeneration : IJobParallelFor
         float y = -u.x;
         float z = u.y;
 
-        int numCoeffs = (AmbisonicOrder + 1) * (AmbisonicOrder + 1);
-
-        int offsetLow = index * numCoeffs * 3;
-        int offsetMid = offsetLow + numCoeffs;
-        int offsetHigh = offsetMid + numCoeffs;
+        int offsetLow = index * HC.MAX_AMBISONIC_CHANNELS * HC.MAX_AMBISONIC_BANDS;
+        int offsetMid = offsetLow + HC.MAX_AMBISONIC_CHANNELS;
+        int offsetHigh = offsetMid + HC.MAX_AMBISONIC_CHANNELS;
 
         float3 eq = EQVolume01s[index];
 
@@ -121,16 +116,20 @@ public struct LoadAmbisonicOutputsToSources : IJobParallelFor
 
     public void Execute(int sourceIndex)
     {
+        int sourceBufferOffset = HC.AMBISONIC_BUFFER_LENGTH * sourceIndex;
+
         AmbiHandle handle = SourceToAmbisonicGeneratorHandles[sourceIndex];
         if (handle.IsNull || GeneratorVersions[handle.Index] != handle.Version)
         {
+            for (int i = 0; i < HC.AMBISONIC_BUFFER_LENGTH; i++)
+                SourceAmbisonicBuffers[sourceBufferOffset + i] = 0f;
+
             return;
         }
 
         int ambisonicGeneratorIndex = GeneratorHandleToSoAIndex[handle.Index];
 
         int ambisonicBufferOffset = HC.AMBISONIC_BUFFER_LENGTH * ambisonicGeneratorIndex;
-        int sourceBufferOffset = HC.AMBISONIC_BUFFER_LENGTH * sourceIndex;
 
         NativeArray<float>.Copy(
             AmbisonicGeneratorBuffers,

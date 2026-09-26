@@ -98,8 +98,8 @@ public class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbisonicGenerator>
     public static NativeArray<float> Volume01s;
     public static NativeArray<float3> EQVolume01s;
 
-    public static NativeArray<float> CurrentAmbisonicOutputs;
     public static NativeArray<float> TargetAmbisonicOutputs;
+    public static NativeArray<float> CurrentAmbisonicOutputs;
 
     public static NativeArray<int> TargetSourceIndices;
 
@@ -111,8 +111,8 @@ public class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbisonicGenerator>
         Volume01s                 = new(AllocatedCapacity, Allocator.Persistent);
         EQVolume01s             = new(AllocatedCapacity, Allocator.Persistent);
 
-        CurrentAmbisonicOutputs = new(AllocatedCapacity * 48, Allocator.Persistent);
         TargetAmbisonicOutputs  = new(AllocatedCapacity * 48, Allocator.Persistent);
+        CurrentAmbisonicOutputs = new(AllocatedCapacity * 48, Allocator.Persistent);
 
         TargetSourceIndices     = new(AllocatedCapacity, Allocator.Persistent);
     }
@@ -124,8 +124,8 @@ public class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbisonicGenerator>
         Volume01s.TryDispose();
         EQVolume01s.TryDispose();
 
-        CurrentAmbisonicOutputs.TryDispose();
         TargetAmbisonicOutputs.TryDispose();
+        CurrentAmbisonicOutputs.TryDispose();
     }
 
     // csharpier-ignore
@@ -147,13 +147,15 @@ public class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbisonicGenerator>
     {
         if (removedIndex != lastIndex)
         {
-            Types[removedIndex]                   = Types[lastIndex];
+            Types[removedIndex]       = Types[lastIndex];
 
-            Volume01s[removedIndex]                 = Volume01s[lastIndex];
-            EQVolume01s[removedIndex]             = EQVolume01s[lastIndex];
+            Volume01s[removedIndex]   = Volume01s[lastIndex];
+            EQVolume01s[removedIndex] = EQVolume01s[lastIndex];
 
-            CurrentAmbisonicOutputs[removedIndex] = CurrentAmbisonicOutputs[lastIndex];
-            TargetAmbisonicOutputs[removedIndex]  = TargetAmbisonicOutputs[lastIndex];
+            int dstOffset             = removedIndex * HC.AMBISONIC_BUFFER_LENGTH;
+            int srcOffset             = lastIndex * HC.AMBISONIC_BUFFER_LENGTH;
+
+            NativeArray<float>.Copy(CurrentAmbisonicOutputs, srcOffset, CurrentAmbisonicOutputs, dstOffset, HC.AMBISONIC_BUFFER_LENGTH);
         }
     }
 }
