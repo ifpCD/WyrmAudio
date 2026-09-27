@@ -21,7 +21,7 @@ internal static class LerpProcessor
         var lerpOcclusionsHandle = new ExponentialFloatLerpJob
         {
             Targets               = WyrmBaseSource.TargetOcclusion01,
-            ExponentialLerpFactor = expLerpFactor,
+            SmoothingFactor = expLerpFactor,
 
             Currents              = WyrmBaseSource.CurrentOcclusion01,
         }.Schedule(activeCount, 16, dependency);

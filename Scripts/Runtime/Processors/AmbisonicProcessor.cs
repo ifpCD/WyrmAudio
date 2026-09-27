@@ -42,19 +42,16 @@ internal static class AmbisonicProcessor
         if (!MeshAmbisonics.CompletelyInactive)
             generation = ScheduleMeshProjection(listenerPosition, dependency, generation);
 
-        var loadAmbisonicOutputsToSources = new LoadAmbisonicOutputsToSources
+        var LoadAmbisonicOutputsToSourcesJob = new LoadAmbisonicOutputsToSources
         {
             SourceToAmbisonicGeneratorHandles = WyrmBaseSource.AmbisonicGeneratorHandles,
-            AmbisonicGeneratorBuffers = WyrmAmbisonicGenerator.Outputs,
-            SourceAmbisonicBuffers = WyrmBaseSource.TargetAmbisonicOutputs,
-            GeneratorHandleToSoAIndex = WyrmAmbisonicGenerator.HandleToSoA,
-            GeneratorVersions = WyrmAmbisonicGenerator.HandleVersions,
-        };
-        JobHandle LoadAmbisonicOutputsToSourcesJob = loadAmbisonicOutputsToSources.Schedule(
-            WyrmBaseSource.ActiveCount,
-            16,
-            generation
-        );
+
+            GeneratorHandleToSoAIndex         = WyrmAmbisonicGenerator.HandleToSoA,
+            GeneratorVersions                 = WyrmAmbisonicGenerator.HandleVersions,
+            AmbisonicGeneratorBuffers         = WyrmAmbisonicGenerator.Outputs,
+
+            SourceAmbisonicBuffers            = WyrmBaseSource.TargetAmbisonicOutputs,
+        }.Schedule(WyrmBaseSource.ActiveCount, 16, generation);
 
         return LoadAmbisonicOutputsToSourcesJob;
     }

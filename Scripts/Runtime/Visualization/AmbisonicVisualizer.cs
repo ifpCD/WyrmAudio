@@ -78,7 +78,7 @@ public class AmbisonicVisualizer : MonoBehaviour
     {
         if (_shMaterial != null)
             DestroyImmediate(_shMaterial);
-            
+
         if (_sphereMesh != null)
             DestroyImmediate(_sphereMesh);
     }
@@ -112,9 +112,9 @@ public class AmbisonicVisualizer : MonoBehaviour
             _accumulatedSH[i] = Vector4.zero;
         }
 
-        for (int sourceIdx = 0; sourceIdx < WyrmBaseSource.ActiveCount; sourceIdx++)
+        for (int sourceIndex = 0; sourceIndex < WyrmBaseSource.ActiveCount; sourceIndex++)
         {
-            var instance = WyrmBaseSource.RegisteredInstances[sourceIdx];
+            var instance = WyrmBaseSource.RegisteredInstances[sourceIndex];
             if (!instance.UseAmbisonics)
                 continue;
 
@@ -125,9 +125,9 @@ public class AmbisonicVisualizer : MonoBehaviour
                     continue;
             }
 
-            int shOffset = sourceIdx * 16;
+            int shOffset = sourceIndex * 16;
 
-            float3 rawEq = WyrmBaseSource.CurrentAmbisonicEQ01s[sourceIdx];
+            float3 rawEq = WyrmBaseSource.CurrentAmbisonicEQ01s[sourceIndex];
 
             for (int c = 0; c < numCoeffs; c++)
             {

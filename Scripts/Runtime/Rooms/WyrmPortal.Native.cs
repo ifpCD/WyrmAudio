@@ -10,14 +10,24 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     public static NativeArray<int> PortalRoomB;
     public static NativeArray<float> PortalOpenness;
 
+    public static NativeArray<float> PortalClosenesses;
+    public static NativeArray<float> PortalClosenessRadiuses;
+
+    public static NativeArray<AmbiHandle> AmbisonicGeneratorHandles;
+
     // csharpier-ignore
     protected override void AllocateNative()
     {
-        PortalWorldToLocal               = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
-        PortalExtents                    = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
-        PortalRoomA                      = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
-        PortalRoomB                      = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
-        PortalOpenness                   = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalWorldToLocal      = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalExtents           = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalRoomA             = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalRoomB             = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalOpenness          = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+
+        PortalClosenesses       = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+        PortalClosenessRadiuses = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
+
+        AmbisonicGeneratorHandles = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
@@ -32,17 +42,18 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     // csharpier-ignore
     protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
     {
-        PortalWorldToLocal[removedIndex] = PortalWorldToLocal[lastIndex];
-        PortalExtents[removedIndex]      = PortalExtents[lastIndex];
-        PortalRoomA[removedIndex]        = PortalRoomA[lastIndex];
-        PortalRoomB[removedIndex]        = PortalRoomB[lastIndex];
-        PortalOpenness[removedIndex]     = PortalOpenness[lastIndex];
+        PortalWorldToLocal[removedIndex]        = PortalWorldToLocal[lastIndex];
+        PortalExtents[removedIndex]             = PortalExtents[lastIndex];
+        PortalRoomA[removedIndex]               = PortalRoomA[lastIndex];
+        PortalRoomB[removedIndex]               = PortalRoomB[lastIndex];
+
+        PortalOpenness[removedIndex]            = PortalOpenness[lastIndex];
+        PortalClosenesses[removedIndex]         = PortalClosenesses[lastIndex];
+        PortalClosenessRadiuses[removedIndex]   = PortalClosenessRadiuses[lastIndex];
+        AmbisonicGeneratorHandles[removedIndex] = AmbisonicGeneratorHandles[lastIndex];
     }
 
-    protected override void LoadObjectToArrays()
-    {
-        SoASync();
-    }
+    protected override void LoadObjectToArrays() => SoASync();
 
     // csharpier-ignore
     void SoASync()
@@ -50,10 +61,14 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         if (!IsRegistered)
             return;
 
-        PortalWorldToLocal[SoAIndex]  = WorldToLocal;
-        PortalExtents[SoAIndex]       = Extents;
-        PortalRoomA[SoAIndex]         = RoomA != null ? RoomA.RoomIdentifier : -1;
-        PortalRoomB[SoAIndex]         = RoomB != null ? RoomB.RoomIdentifier : -1;
-        PortalOpenness[SoAIndex]      = Openness;
+        PortalWorldToLocal[SoAIndex]           = WorldToLocal;
+        PortalExtents[SoAIndex]                = Extents;
+        PortalRoomA[SoAIndex]                  = RoomA != null ? RoomA.RoomIdentifier : -1;
+        PortalRoomB[SoAIndex]                  = RoomB != null ? RoomB.RoomIdentifier : -1;
+
+        PortalOpenness[SoAIndex]               = Openness;
+        PortalClosenessRadiuses[SoAIndex]      = PortalClosenessRadius;
+
+        AmbisonicGeneratorHandles[SoAIndex]    = AmbisonicGeneratorHandle;
     }
 }

@@ -2,7 +2,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
 
 internal static class EffectsMixingProcessor
 {
@@ -18,7 +17,7 @@ internal static class EffectsMixingProcessor
 
             TargetPropagationEQ01s = WyrmBaseSource.TargetAmbisonicEQ01s,
         }.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);
-        
+
         return downMixIfVisibleJob;
     }
 }

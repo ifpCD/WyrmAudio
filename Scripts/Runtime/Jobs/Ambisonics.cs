@@ -262,13 +262,13 @@ public struct LoadAmbisonicOutputsToSources : IJobParallelFor
     public NativeArray<AmbiHandle> SourceToAmbisonicGeneratorHandles;
 
     [ReadOnly]
-    public NativeArray<float> AmbisonicGeneratorBuffers;
-
-    [ReadOnly]
     public NativeArray<int> GeneratorHandleToSoAIndex;
 
     [ReadOnly]
     public NativeArray<int> GeneratorVersions;
+
+    [ReadOnly]
+    public NativeArray<float> AmbisonicGeneratorBuffers;
 
     [NativeDisableParallelForRestriction]
     [WriteOnly]
