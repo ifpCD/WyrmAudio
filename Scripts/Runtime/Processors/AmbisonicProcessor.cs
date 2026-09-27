@@ -12,10 +12,12 @@ internal static class AmbisonicProcessor
 
         if (WyrmAmbisonicGenerator.CompletelyInactive)
         {
-            return new ClearSourceAmbisonicBuffers
+            return new ClearSourceAmbisonicsJob
             {
-                Length                     = WyrmBaseSource.ActiveCount * HC.AMBISONIC_BUFFER_LENGTH,
-                SourceAmbisonicBuffers     = WyrmBaseSource.TargetAmbisonicOutputs,
+                SourceCount                = WyrmBaseSource.ActiveCount,
+
+                SourceOutputs              = WyrmBaseSource.TargetAmbisonicOutputs,
+                SourceBandOrders           = WyrmBaseSource.TargetAmbisonicOrders,
             }.Schedule(dependency);
         }
 
@@ -31,6 +33,7 @@ internal static class AmbisonicProcessor
                 GeneratorHandles           = SimpleAmbisonics.GeneratorHandles,
 
                 GeneratorHandleToSoA       = WyrmAmbisonicGenerator.HandleToSoA,
+                GeneratorBandOrders        = WyrmAmbisonicGenerator.BandOrders,
                 GeneratorBandGains         = WyrmAmbisonicGenerator.BandGains,
                 GeneratorBandSpreads       = WyrmAmbisonicGenerator.BandSpreads,
                 GeneratorHorizontalSpreads = WyrmAmbisonicGenerator.HorizontalSpreads,
@@ -42,18 +45,19 @@ internal static class AmbisonicProcessor
         if (!MeshAmbisonics.CompletelyInactive)
             generation = ScheduleMeshProjection(listenerPosition, dependency, generation);
 
-        var LoadAmbisonicOutputsToSourcesJob = new LoadAmbisonicOutputsToSources
+        return new LoadAmbisonicOutputsToSourcesJob
         {
-            SourceToAmbisonicGeneratorHandles = WyrmBaseSource.AmbisonicGeneratorHandles,
+            SourceGeneratorHandles         = WyrmBaseSource.AmbisonicGeneratorHandles,
+            SourceBandGains                = WyrmBaseSource.CurrentAmbisonicEQ01s,
 
-            GeneratorHandleToSoAIndex         = WyrmAmbisonicGenerator.HandleToSoA,
-            GeneratorVersions                 = WyrmAmbisonicGenerator.HandleVersions,
-            AmbisonicGeneratorBuffers         = WyrmAmbisonicGenerator.Outputs,
+            GeneratorHandleToSoA           = WyrmAmbisonicGenerator.HandleToSoA,
+            GeneratorVersions              = WyrmAmbisonicGenerator.HandleVersions,
+            GeneratorBandOrders            = WyrmAmbisonicGenerator.BandOrders,
+            GeneratorOutputs               = WyrmAmbisonicGenerator.Outputs,
 
-            SourceAmbisonicBuffers            = WyrmBaseSource.TargetAmbisonicOutputs,
+            SourceOutputs                  = WyrmBaseSource.TargetAmbisonicOutputs,
+            SourceBandOrders               = WyrmBaseSource.TargetAmbisonicOrders,
         }.Schedule(WyrmBaseSource.ActiveCount, 16, generation);
-
-        return LoadAmbisonicOutputsToSourcesJob;
     }
 
     // Projection overlaps the simple encode; only the reduce shares the generator outputs with it.
@@ -91,6 +95,7 @@ internal static class AmbisonicProcessor
             GeneratorHandles           = MeshAmbisonics.GeneratorHandles,
 
             GeneratorHandleToSoA       = WyrmAmbisonicGenerator.HandleToSoA,
+            GeneratorBandOrders        = WyrmAmbisonicGenerator.BandOrders,
             GeneratorBandGains         = WyrmAmbisonicGenerator.BandGains,
             GeneratorBandSpreads       = WyrmAmbisonicGenerator.BandSpreads,
             GeneratorHorizontalSpreads = WyrmAmbisonicGenerator.HorizontalSpreads,

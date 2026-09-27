@@ -93,5 +93,5 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         }
     }
 
-    internal AmbiHandle AmbisonicGeneratorHandle => (UseAmbisonics && _ambisonicGenerator != null) ? AmbisonicGenerator.Handle : AmbiHandle.Null;
+    internal AmbiHandle AmbisonicGeneratorHandle => (_ambisonicGenerator != null) ? AmbisonicGenerator.Handle : AmbiHandle.Null;
 }

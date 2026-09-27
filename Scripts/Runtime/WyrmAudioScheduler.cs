@@ -1,5 +1,4 @@
 using System;
-using SteamAudio;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -114,18 +113,13 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
             }
         }
 
-        SteamAudioSettings steamAudioSettings = SteamAudioSettings.Singleton;
-        if (steamAudioSettings == null)
-            return;
-
         IntPtr* spatializerPtrs = (IntPtr*)WyrmBaseSource.SpatializerPointers.GetUnsafeReadOnlyPtr();
 
-        WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
+        WyrmPhononCustomAPI.iplSourceSetAmbisonicFieldBatch(
             activeCount,
             spatializerPtrs,
-            (float*)WyrmBaseSource.CurrentAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
-            (float*)WyrmBaseSource.TargetAmbisonicOutputs.GetUnsafeReadOnlyPtr(),
-            steamAudioSettings.realTimeAmbisonicOrder
+            (int3*)WyrmBaseSource.TargetAmbisonicOrders.GetUnsafeReadOnlyPtr(),
+            (float*)WyrmBaseSource.TargetAmbisonicOutputs.GetUnsafeReadOnlyPtr()
         );
 
         WyrmPhononCustomAPI.iplSourceSetCustomDirectBatch(

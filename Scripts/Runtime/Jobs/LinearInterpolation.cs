@@ -39,9 +39,6 @@ internal struct ExponentialFloat3LerpJob : IJobParallelFor
         float3 current = Currents[index];
         float3 target = Targets[index];
 
-        float3 lerpValue = math.lerp(current, target, SmoothingFactor);
-
-        // Because we aren't normalizing Path EQ - Phonon's IIR explodes if we feed it absolute 0
-        Currents[index] = math.max(lerpValue, math.EPSILON);
+        Currents[index] = math.lerp(current, target, SmoothingFactor);
     }
 }

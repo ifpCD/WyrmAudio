@@ -31,6 +31,7 @@ public partial class WyrmBaseSource
     internal static NativeArray<float> TargetOcclusion01;
     internal static NativeArray<float3> TargetAmbisonicEQ01s;
     internal static NativeArray<float> TargetAmbisonicOutputs;
+    internal static NativeArray<int3> TargetAmbisonicOrders;
 
     // Stateful Outputs
     internal static NativeArray<float> CurrentOcclusion01;
@@ -79,6 +80,7 @@ public partial class WyrmBaseSource
         TargetOcclusion01                              = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicEQ01s                           = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicOutputs                         = new(AllocatedCapacity * HC.AMBISONIC_BUFFER_LENGTH, Allocator.Persistent);
+        TargetAmbisonicOrders                          = new(AllocatedCapacity, Allocator.Persistent);
 
         CurrentOcclusion01                             = new(AllocatedCapacity, Allocator.Persistent);
         CurrentAmbisonicEQ01s                          = new(AllocatedCapacity, Allocator.Persistent);
@@ -100,10 +102,12 @@ public partial class WyrmBaseSource
         SourceRoomIDs.TryDispose();
 
         OcclusionMaskHandles.TryDispose();
+        AmbisonicGeneratorHandles.TryDispose();
 
         TargetOcclusion01.TryDispose();
         TargetAmbisonicEQ01s.TryDispose();
         TargetAmbisonicOutputs.TryDispose();
+        TargetAmbisonicOrders.TryDispose();
 
         CurrentOcclusion01.TryDispose();
         CurrentAmbisonicEQ01s.TryDispose();

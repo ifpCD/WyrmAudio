@@ -104,9 +104,9 @@ internal static unsafe class PolygonProjection
         }
     }
 
-    public static void Resolve(double4* bandMoments, double4* momentToHarmonic, double* harmonics)
+    public static void Resolve(double4* bandMoments, double4* momentToHarmonic, int channels, double* harmonics)
     {
-        for (int channel = 0; channel < HC.MAX_AMBISONIC_CHANNELS; channel++)
+        for (int channel = 0; channel < channels; channel++)
         {
             double4* row = momentToHarmonic + channel * MOMENTS;
             double4 sum = 0.0;

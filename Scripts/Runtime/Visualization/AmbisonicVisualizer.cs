@@ -1,11 +1,24 @@
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 
-[DefaultExecutionOrder(200)]
-public class AmbisonicVisualizer : MonoBehaviour
+public enum AmbisonicVisualization : byte
 {
-    public AudioMixerGroup targetMixerGroup = null;
+    Encoded,
+    Rendered,
+}
+
+// Sum of every audible source's banded field around the listener, world-aligned. Rendered applies Phonon's per-band
+// max-rE decoder weighting; Encoded shows the raw coefficients, truncation ringing (negative lobes) included.
+[DefaultExecutionOrder(200)]
+public sealed partial class AmbisonicVisualizer : MonoBehaviour
+{
+    public AudioMixerGroup targetMixerGroup;
+
+    public AmbisonicVisualization visualization = AmbisonicVisualization.Rendered;
+
+    public bool weightByVolume = true;
+
+    public Vector3 bandVisibility = Vector3.one;
 
     public float sensitivity = 25.0f;
 
@@ -19,8 +32,8 @@ public class AmbisonicVisualizer : MonoBehaviour
     [Range(0f, 1f)]
     public float gridOpacity = 0.25f;
 
-    [Range(20, 100)]
-    public int sphereResolution = 60;
+    [Range(3, 6)]
+    public int subdivisions = 5;
 
     [ColorUsage(true, true)]
     public Color idleColor = new(0.02f, 0.1f, 0.3f, 1.0f);
@@ -34,13 +47,17 @@ public class AmbisonicVisualizer : MonoBehaviour
     [ColorUsage(true, true)]
     public Color highFreqColor = new(0.0f, 0.8f, 1.0f, 1.0f);
 
-    Mesh _sphereMesh;
-    Material _shMaterial;
-    MaterialPropertyBlock _propBlock;
+    [ColorUsage(true, true)]
+    public Color negativeLobeColor = new(0.55f, 0.0f, 1.0f, 1.0f);
 
-    readonly Vector4[] _accumulatedSH = new Vector4[16];
+#if UNITY_EDITOR
+    Mesh _sphere;
+    int _sphereSubdivisions;
+    Material _material;
+    MaterialPropertyBlock _properties;
 
-    static readonly int SH_COEFFS_ID = Shader.PropertyToID("_SHCoeffs");
+    static readonly int FIELD_ID = Shader.PropertyToID("_Field");
+    static readonly int ORDER_ID = Shader.PropertyToID("_Order");
     static readonly int BASE_RADIUS_ID = Shader.PropertyToID("_BaseRadius");
     static readonly int DEFORM_SCALE_ID = Shader.PropertyToID("_DeformScale");
     static readonly int SENSITIVITY_ID = Shader.PropertyToID("_Sensitivity");
@@ -51,171 +68,76 @@ public class AmbisonicVisualizer : MonoBehaviour
     static readonly int LOW_COLOR_ID = Shader.PropertyToID("_LowColor");
     static readonly int MID_COLOR_ID = Shader.PropertyToID("_MidColor");
     static readonly int HIGH_COLOR_ID = Shader.PropertyToID("_HighColor");
+    static readonly int NEGATIVE_COLOR_ID = Shader.PropertyToID("_NegativeColor");
 
-    void InitializeResources()
-    {
-        if (_propBlock == null)
-            _propBlock = new MaterialPropertyBlock();
-
-        if (_shMaterial == null)
-        {
-            Shader shader = Shader.Find("Hidden/WyrmAudio/AmbisonicVisualizer");
-            if (shader != null)
-                _shMaterial = new Material(shader) { hideFlags = HideFlags.DontSave };
-        }
-
-        if (_sphereMesh == null)
-        {
-            _sphereMesh = GenerateHighResSphere(sphereResolution, sphereResolution);
-            _sphereMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
-        }
-    }
-
-#if UNITY_EDITOR
-    void OnEnable() => InitializeResources();
+    void OnEnable() => AllocateField();
 
     void OnDisable()
     {
-        if (_shMaterial != null)
-            DestroyImmediate(_shMaterial);
+        DeallocateField();
 
-        if (_sphereMesh != null)
-            DestroyImmediate(_sphereMesh);
+        if (_material != null)
+            DestroyImmediate(_material);
+
+        if (_sphere != null)
+            DestroyImmediate(_sphere);
     }
 
     void LateUpdate()
     {
-        if (!Application.isPlaying)
+        if (!Application.isPlaying || WyrmBaseSource.CompletelyInactive || WyrmAudioManager.Listener == null)
             return;
 
-        if (WyrmBaseSource.CompletelyInactive || WyrmAudioManager.Listener == null)
+        if (!EnsureResources())
             return;
 
-        if (SteamAudio.SteamAudioSettings.Singleton == null)
-            return;
-
-        if (_shMaterial == null || _sphereMesh == null)
-            InitializeResources();
-
-        IterateOverSources();
-        SetShaderData();
+        int order = AccumulateField();
+        Draw(order);
     }
 
-    void IterateOverSources()
+    bool EnsureResources()
     {
-        int order = SteamAudio.SteamAudioSettings.Singleton.realTimeAmbisonicOrder;
+        _properties ??= new MaterialPropertyBlock();
 
-        int numCoeffs = (order + 1) * (order + 1);
-
-        for (int i = 0; i < 16; i++)
+        if (_material == null)
         {
-            _accumulatedSH[i] = Vector4.zero;
+            Shader shader = Shader.Find("Hidden/WyrmAudio/AmbisonicVisualizer");
+
+            if (shader == null)
+                return false;
+
+            _material = new Material(shader) { hideFlags = HideFlags.DontSave };
         }
 
-        for (int sourceIndex = 0; sourceIndex < WyrmBaseSource.ActiveCount; sourceIndex++)
+        if (_sphere == null || _sphereSubdivisions != subdivisions)
         {
-            var instance = WyrmBaseSource.RegisteredInstances[sourceIndex];
-            if (!instance.UseAmbisonics)
-                continue;
+            if (_sphere != null)
+                DestroyImmediate(_sphere);
 
-            if (targetMixerGroup != null)
-            {
-                var sourceMixerGroup = instance.ASource.outputAudioMixerGroup;
-                if (sourceMixerGroup != targetMixerGroup)
-                    continue;
-            }
-
-            int shOffset = sourceIndex * 16;
-
-            float3 rawEq = WyrmBaseSource.CurrentAmbisonicEQ01s[sourceIndex];
-
-            for (int c = 0; c < numCoeffs; c++)
-            {
-                float shValue = WyrmBaseSource.TargetAmbisonicOutputs[shOffset + c];
-
-                _accumulatedSH[c].w += shValue;
-                _accumulatedSH[c].x += shValue * rawEq.x;
-                _accumulatedSH[c].y += shValue * rawEq.y;
-                _accumulatedSH[c].z += shValue * rawEq.z;
-            }
+            _sphere = BuildIcosphere(subdivisions);
+            _sphereSubdivisions = subdivisions;
         }
+
+        return true;
     }
 
-    void SetShaderData()
+    void Draw(int order)
     {
-        _propBlock.SetVectorArray(SH_COEFFS_ID, _accumulatedSH);
-        _propBlock.SetFloat(BASE_RADIUS_ID, baseRadius);
-        _propBlock.SetFloat(DEFORM_SCALE_ID, deformationScale);
-        _propBlock.SetFloat(SENSITIVITY_ID, sensitivity);
-        _propBlock.SetFloat(IDLE_OPACITY_ID, idleOpacity);
-        _propBlock.SetFloat(GRID_INTENSITY_ID, gridOpacity);
+        _properties.SetVectorArray(FIELD_ID, _fieldUpload);
+        _properties.SetFloat(ORDER_ID, order);
+        _properties.SetFloat(BASE_RADIUS_ID, baseRadius);
+        _properties.SetFloat(DEFORM_SCALE_ID, deformationScale);
+        _properties.SetFloat(SENSITIVITY_ID, sensitivity);
+        _properties.SetFloat(IDLE_OPACITY_ID, idleOpacity);
+        _properties.SetFloat(GRID_INTENSITY_ID, gridOpacity);
 
-        _propBlock.SetColor(BASE_COLOR_ID, idleColor);
-        _propBlock.SetColor(LOW_COLOR_ID, lowFreqColor);
-        _propBlock.SetColor(MID_COLOR_ID, midFreqColor);
-        _propBlock.SetColor(HIGH_COLOR_ID, highFreqColor);
+        _properties.SetColor(BASE_COLOR_ID, idleColor);
+        _properties.SetColor(LOW_COLOR_ID, lowFreqColor);
+        _properties.SetColor(MID_COLOR_ID, midFreqColor);
+        _properties.SetColor(HIGH_COLOR_ID, highFreqColor);
+        _properties.SetColor(NEGATIVE_COLOR_ID, negativeLobeColor);
 
-        Graphics.DrawMesh(_sphereMesh, Matrix4x4.Translate(WyrmListener.ListenerPosition.Value), _shMaterial, gameObject.layer, null, 0, _propBlock);
-    }
-
-    Mesh GenerateHighResSphere(int latLines, int longLines)
-    {
-        Mesh mesh = new() { name = "SH_RadarSphere", hideFlags = HideFlags.DontSave };
-
-        int numVertices = (latLines + 1) * (longLines + 1);
-        Vector3[] vertices = new Vector3[numVertices];
-        Vector3[] normals = new Vector3[numVertices];
-        Vector2[] uvs = new Vector2[numVertices];
-
-        int vIndex = 0;
-        for (int lat = 0; lat <= latLines; lat++)
-        {
-            float v = (float)lat / latLines;
-            float polar = v * Mathf.PI;
-            float y = 0.5f * Mathf.Cos(polar);
-            float r = 0.5f * Mathf.Sin(polar);
-
-            for (int lon = 0; lon <= longLines; lon++)
-            {
-                float u = (float)lon / longLines;
-                float azimuth = u * 2f * Mathf.PI;
-                float x = r * Mathf.Cos(azimuth);
-                float z = r * Mathf.Sin(azimuth);
-
-                vertices[vIndex] = new Vector3(x, y, z);
-                normals[vIndex] = vertices[vIndex].normalized;
-                uvs[vIndex] = new Vector2(u, v);
-                vIndex++;
-            }
-        }
-
-        int[] triangles = new int[latLines * longLines * 6];
-        int tIndex = 0;
-        for (int lat = 0; lat < latLines; lat++)
-        {
-            for (int lon = 0; lon < longLines; lon++)
-            {
-                int current = lat * (longLines + 1) + lon;
-                int next = current + 1;
-                int currentBelow = current + (longLines + 1);
-                int nextBelow = currentBelow + 1;
-
-                triangles[tIndex++] = current;
-                triangles[tIndex++] = currentBelow;
-                triangles[tIndex++] = next;
-
-                triangles[tIndex++] = next;
-                triangles[tIndex++] = currentBelow;
-                triangles[tIndex++] = nextBelow;
-            }
-        }
-
-        mesh.vertices = vertices;
-        mesh.normals = normals;
-        mesh.uv = uvs;
-        mesh.triangles = triangles;
-
-        return mesh;
+        Graphics.DrawMesh(_sphere, Matrix4x4.Translate(WyrmListener.ListenerPosition.Value), _material, gameObject.layer, null, 0, _properties);
     }
 #endif
 }

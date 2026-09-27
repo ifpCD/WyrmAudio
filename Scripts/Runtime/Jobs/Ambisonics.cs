@@ -22,6 +22,9 @@ internal unsafe struct EncodeSimpleAmbisonicsJob : IJobParallelForTransform
     public NativeArray<int> GeneratorHandleToSoA;
 
     [ReadOnly]
+    public NativeArray<int3> GeneratorBandOrders;
+
+    [ReadOnly]
     public NativeArray<float3> GeneratorBandGains;
 
     [ReadOnly]
@@ -40,10 +43,12 @@ internal unsafe struct EncodeSimpleAmbisonicsJob : IJobParallelForTransform
                 ? (float3)transform.position - ListenerPosition
                 : math.rotate((quaternion)transform.rotation, new float3(0f, 0f, 1f));
 
-        float* basis = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
-        SphericalHarmonics.EvaluateArrival(arrival, basis);
-
         int generator = GeneratorHandleToSoA[GeneratorHandles[index].Index];
+        int3 orders = GeneratorBandOrders[generator];
+
+        float* basis = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
+        SphericalHarmonics.EvaluateArrival(arrival, math.cmax(orders), basis);
+
         float* target = (float*)GeneratorOutputs.GetUnsafePtr() + generator * HC.AMBISONIC_BUFFER_LENGTH;
 
         float3 gains = GeneratorBandGains[generator];
@@ -51,7 +56,7 @@ internal unsafe struct EncodeSimpleAmbisonicsJob : IJobParallelForTransform
         float horizontalSpread = GeneratorHorizontalSpreads[generator];
 
         for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
-            SphericalHarmonics.Shape(basis, gains[band], spreads[band], horizontalSpread, target + band * HC.MAX_AMBISONIC_CHANNELS);
+            SphericalHarmonics.Shape(basis, orders[band], gains[band], spreads[band], horizontalSpread, target + band * HC.MAX_AMBISONIC_CHANNELS);
     }
 }
 
@@ -151,6 +156,9 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
     public NativeArray<int> GeneratorHandleToSoA;
 
     [ReadOnly]
+    public NativeArray<int3> GeneratorBandOrders;
+
+    [ReadOnly]
     public NativeArray<float3> GeneratorBandGains;
 
     [ReadOnly]
@@ -182,6 +190,7 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
         double* harmonics = stackalloc double[HC.MAX_AMBISONIC_CHANNELS];
         float* distribution = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
 
+        int3 orders = GeneratorBandOrders[generator];
         float3 gains = GeneratorBandGains[generator];
         float3 spreads = GeneratorBandSpreads[generator];
         float horizontalSpread = GeneratorHorizontalSpreads[generator];
@@ -189,7 +198,9 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
         for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
         {
             float* bandTarget = target + band * HC.MAX_AMBISONIC_CHANNELS;
-            PolygonProjection.Resolve(total + band * PolygonProjection.MOMENTS, momentToHarmonic, harmonics);
+            int channels = SphericalHarmonics.ChannelCount(orders[band]);
+
+            PolygonProjection.Resolve(total + band * PolygonProjection.MOMENTS, momentToHarmonic, channels, harmonics);
 
             if (harmonics[0] <= 0.0)
             {
@@ -200,10 +211,10 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
             // unit-mass direction distribution: c00 == Y00, identical energy scale to a point source
             double normalization = SphericalHarmonics.Y00 / harmonics[0];
 
-            for (int channel = 0; channel < HC.MAX_AMBISONIC_CHANNELS; channel++)
+            for (int channel = 0; channel < channels; channel++)
                 distribution[channel] = (float)(harmonics[channel] * normalization);
 
-            SphericalHarmonics.Shape(distribution, gains[band], spreads[band], horizontalSpread, bandTarget);
+            SphericalHarmonics.Shape(distribution, orders[band], gains[band], spreads[band], horizontalSpread, bandTarget);
         }
     }
 }
@@ -255,60 +266,78 @@ internal struct CacheMeshTrianglesJob : IJob
     static float3 Bands(Color color) => new(color.r, color.g, color.b);
 }
 
+// Stale or unbound generators resolve to silence: order 0 with a zero omnidirectional term.
 [BurstCompile]
-public struct LoadAmbisonicOutputsToSources : IJobParallelFor
+internal unsafe struct LoadAmbisonicOutputsToSourcesJob : IJobParallelFor
 {
     [ReadOnly]
-    public NativeArray<AmbiHandle> SourceToAmbisonicGeneratorHandles;
+    public NativeArray<AmbiHandle> SourceGeneratorHandles;
 
     [ReadOnly]
-    public NativeArray<int> GeneratorHandleToSoAIndex;
+    public NativeArray<float3> SourceBandGains;
+
+    [ReadOnly]
+    public NativeArray<int> GeneratorHandleToSoA;
 
     [ReadOnly]
     public NativeArray<int> GeneratorVersions;
 
     [ReadOnly]
-    public NativeArray<float> AmbisonicGeneratorBuffers;
+    public NativeArray<int3> GeneratorBandOrders;
 
-    [NativeDisableParallelForRestriction]
+    [ReadOnly]
+    public NativeArray<float> GeneratorOutputs;
+
+    [WriteOnly, NativeDisableParallelForRestriction]
+    public NativeArray<float> SourceOutputs;
+
     [WriteOnly]
-    public NativeArray<float> SourceAmbisonicBuffers;
+    public NativeArray<int3> SourceBandOrders;
 
-    public void Execute(int sourceIndex)
+    public void Execute(int source)
     {
-        int sourceBufferOffset = HC.AMBISONIC_BUFFER_LENGTH * sourceIndex;
+        float* target = (float*)SourceOutputs.GetUnsafePtr() + source * HC.AMBISONIC_BUFFER_LENGTH;
+        AmbiHandle handle = SourceGeneratorHandles[source];
 
-        AmbiHandle handle = SourceToAmbisonicGeneratorHandles[sourceIndex];
         if (handle.IsNull || GeneratorVersions[handle.Index] != handle.Version)
         {
-            for (int i = 0; i < HC.AMBISONIC_BUFFER_LENGTH; i++)
-                SourceAmbisonicBuffers[sourceBufferOffset + i] = 0f;
-
+            UnsafeUtility.MemClear(target, HC.AMBISONIC_BUFFER_LENGTH * sizeof(float));
+            SourceBandOrders[source] = int3.zero;
             return;
         }
 
-        int ambisonicGeneratorIndex = GeneratorHandleToSoAIndex[handle.Index];
+        int generator = GeneratorHandleToSoA[handle.Index];
+        float* field = (float*)GeneratorOutputs.GetUnsafeReadOnlyPtr() + generator * HC.AMBISONIC_BUFFER_LENGTH;
+        float3 gains = SourceBandGains[source];
 
-        int ambisonicBufferOffset = HC.AMBISONIC_BUFFER_LENGTH * ambisonicGeneratorIndex;
+        for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
+        {
+            float gain = gains[band];
+            int offset = band * HC.MAX_AMBISONIC_CHANNELS;
 
-        NativeArray<float>.Copy(
-            AmbisonicGeneratorBuffers,
-            ambisonicBufferOffset,
-            SourceAmbisonicBuffers,
-            sourceBufferOffset,
-            HC.AMBISONIC_BUFFER_LENGTH
-        );
+            for (int channel = offset; channel < offset + HC.MAX_AMBISONIC_CHANNELS; channel++)
+                target[channel] = field[channel] * gain;
+        }
+
+        SourceBandOrders[source] = GeneratorBandOrders[generator];
     }
 }
 
-// No generator registry: every source is unbound, which the load job resolves to silence.
+// No generator registry: every source is unbound.
 [BurstCompile]
-public struct ClearSourceAmbisonicBuffers : IJob
+internal unsafe struct ClearSourceAmbisonicsJob : IJob
 {
-    public int Length;
+    public int SourceCount;
 
     [WriteOnly]
-    public NativeArray<float> SourceAmbisonicBuffers;
+    public NativeArray<float> SourceOutputs;
 
-    public unsafe void Execute() => UnsafeUtility.MemClear(SourceAmbisonicBuffers.GetUnsafePtr(), (long)Length * sizeof(float));
+    [WriteOnly]
+    public NativeArray<int3> SourceBandOrders;
+
+    public void Execute()
+    {
+        UnsafeUtility.MemClear(SourceOutputs.GetUnsafePtr(), (long)SourceCount * HC.AMBISONIC_BUFFER_LENGTH * sizeof(float));
+        UnsafeUtility.MemClear(SourceBandOrders.GetUnsafePtr(), (long)SourceCount * sizeof(int3));
+    }
 }

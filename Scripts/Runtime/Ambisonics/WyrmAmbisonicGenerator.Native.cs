@@ -3,6 +3,7 @@ using Unity.Mathematics;
 
 public sealed partial class WyrmAmbisonicGenerator
 {
+    internal static NativeArray<int3> BandOrders;
     internal static NativeArray<float3> BandGains;
     internal static NativeArray<float3> BandSpreads;
     internal static NativeArray<float> HorizontalSpreads;
@@ -13,6 +14,7 @@ public sealed partial class WyrmAmbisonicGenerator
     // csharpier-ignore
     protected override void AllocateNative()
     {
+        BandOrders        = new(AllocatedCapacity, Allocator.Persistent);
         BandGains         = new(AllocatedCapacity, Allocator.Persistent);
         BandSpreads       = new(AllocatedCapacity, Allocator.Persistent);
         HorizontalSpreads = new(AllocatedCapacity, Allocator.Persistent);
@@ -21,6 +23,7 @@ public sealed partial class WyrmAmbisonicGenerator
 
     protected override void DeallocateNative()
     {
+        BandOrders.TryDispose();
         BandGains.TryDispose();
         BandSpreads.TryDispose();
         HorizontalSpreads.TryDispose();
@@ -43,6 +46,7 @@ public sealed partial class WyrmAmbisonicGenerator
         if (removedIndex == lastIndex)
             return;
 
+        BandOrders[removedIndex]        = BandOrders[lastIndex];
         BandGains[removedIndex]         = BandGains[lastIndex];
         BandSpreads[removedIndex]       = BandSpreads[lastIndex];
         HorizontalSpreads[removedIndex] = HorizontalSpreads[lastIndex];
@@ -56,6 +60,7 @@ public sealed partial class WyrmAmbisonicGenerator
         if (!IsRegistered)
             return;
 
+        BandOrders[SoAIndex]        = ClampedOrders(_ambisonicOrders);
         BandGains[SoAIndex]         = BandGain;
         BandSpreads[SoAIndex]       = BandSpreadRadians;
         HorizontalSpreads[SoAIndex] = math.radians(_horizontalSpreadDegrees);

@@ -16,6 +16,9 @@ public sealed partial class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbis
     float _volume = 1f;
 
     [SerializeField]
+    Vector3Int _ambisonicOrders = new(HC.MAX_AMBISONIC_ORDER, HC.MAX_AMBISONIC_ORDER, HC.MAX_AMBISONIC_ORDER);
+
+    [SerializeField]
     Vector3 _bandVolumes = Vector3.one;
 
     [SerializeField]
@@ -59,6 +62,20 @@ public sealed partial class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbis
 
             if (IsRegistered)
                 BandGains[SoAIndex] = BandGain;
+        }
+    }
+
+    // per band (x low, y mid, z high), each in [0, HC.MAX_AMBISONIC_ORDER]
+    public Vector3Int AmbisonicOrders
+    {
+        get => _ambisonicOrders;
+        set
+        {
+            int3 orders = ClampedOrders(value);
+            _ambisonicOrders = new Vector3Int(orders.x, orders.y, orders.z);
+
+            if (IsRegistered)
+                BandOrders[SoAIndex] = orders;
         }
     }
 
@@ -132,6 +149,8 @@ public sealed partial class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbis
         }
     }
 
+    static int3 ClampedOrders(Vector3Int orders) => math.clamp(new int3(orders.x, orders.y, orders.z), 0, HC.MAX_AMBISONIC_ORDER);
+
     float3 BandGain => _volume * math.saturate((float3)_bandVolumes);
     float3 BandSpreadRadians => math.radians((float3)_bandSpreadDegrees);
 
@@ -149,6 +168,9 @@ public sealed partial class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbis
 
     void OnValidate()
     {
+        int3 orders = ClampedOrders(_ambisonicOrders);
+        _ambisonicOrders = new Vector3Int(orders.x, orders.y, orders.z);
+
         if (!IsRegistered)
             return;
 

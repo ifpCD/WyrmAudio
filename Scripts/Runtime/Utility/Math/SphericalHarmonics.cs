@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 // Real, orthonormal, ACN, no Condon-Shortley phase: bit-compatible with Phonon's modified Google SH.
@@ -7,7 +8,7 @@ internal static unsafe class SphericalHarmonics
     public const float Y00 = 0.2820947918f;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Evaluate(float3 unitDirection, float* basis)
+    public static void Evaluate(float3 unitDirection, int order, float* basis)
     {
         // Unity (+x right, +y up, +z forward) -> ambisonic (+x forward, +y left, +z up)
         float x = unitDirection.z;
@@ -18,7 +19,7 @@ internal static unsafe class SphericalHarmonics
         float cosine = 1f;
         float sine = 0f;
 
-        for (int m = 0; m <= HC.MAX_AMBISONIC_ORDER; m++)
+        for (int m = 0; m <= order; m++)
         {
             if (m > 0)
             {
@@ -31,7 +32,7 @@ internal static unsafe class SphericalHarmonics
             float previous = 0f;
             float current = sectoral;
 
-            for (int l = m; l <= HC.MAX_AMBISONIC_ORDER; l++)
+            for (int l = m; l <= order; l++)
             {
                 if (l > m)
                 {
@@ -114,33 +115,34 @@ internal static unsafe class SphericalHarmonics
 
     // listener -> source vector of any length; coincident positions are omnidirectional
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void EvaluateArrival(float3 arrival, float* basis)
+    public static void EvaluateArrival(float3 arrival, int order, float* basis)
     {
         float lengthSquared = math.lengthsq(arrival);
 
         if (lengthSquared > 1e-12f)
-            Evaluate(arrival * math.rsqrt(lengthSquared), basis);
+            Evaluate(arrival * math.rsqrt(lengthSquared), order, basis);
         else
-            EvaluateOmnidirectional(basis);
+            EvaluateOmnidirectional(order, basis);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void EvaluateOmnidirectional(float* basis)
+    public static void EvaluateOmnidirectional(int order, float* basis)
     {
         basis[0] = Y00;
-
-        for (int channel = 1; channel < HC.MAX_AMBISONIC_CHANNELS; channel++)
-            basis[channel] = 0f;
+        UnsafeUtility.MemClear(basis + 1, (ChannelCount(order) - 1) * sizeof(float));
     }
 
-    // Exact diagonal filters: spherical heat kernel per degree (isotropic spread), azimuthal Gaussian per |order| (horizontal spread).
+    public static int ChannelCount(int order) => (order + 1) * (order + 1);
+
+    // Exact diagonal filters: spherical heat kernel per degree (isotropic spread), azimuthal Gaussian per |order| (horizontal
+    // spread), truncated at the band order; the channels above it are cleared.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Shape(float* basis, float gain, float spread, float horizontalSpread, float* output)
+    public static void Shape(float* basis, int bandOrder, float gain, float spread, float horizontalSpread, float* output)
     {
         float degreeRate = 0.5f * spread * spread;
         float orderRate = 0.5f * horizontalSpread * horizontalSpread;
 
-        for (int l = 0; l <= HC.MAX_AMBISONIC_ORDER; l++)
+        for (int l = 0; l <= bandOrder; l++)
         {
             int center = l * (l + 1);
             float degreeGain = gain * math.exp(-degreeRate * (l * (l + 1)));
@@ -154,6 +156,9 @@ internal static unsafe class SphericalHarmonics
                 output[center - m] = basis[center - m] * orderGain;
             }
         }
+
+        int shaped = ChannelCount(bandOrder);
+        UnsafeUtility.MemClear(output + shaped, (HC.MAX_AMBISONIC_CHANNELS - shaped) * sizeof(float));
     }
 
     // Normalized associated Legendre recurrence (sin^m factored into the sectoral terms).

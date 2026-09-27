@@ -37,6 +37,11 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         PortalRoomA.TryDispose();
         PortalRoomB.TryDispose();
         PortalOpenness.TryDispose();
+
+        PortalClosenesses.TryDispose();
+        PortalClosenessRadiuses.TryDispose();
+
+        AmbisonicGeneratorHandles.TryDispose();
     }
 
     // csharpier-ignore
