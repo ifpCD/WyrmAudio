@@ -1,161 +1,161 @@
-using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
+[DisallowMultipleComponent]
 [NoAutoStaticsCleanup]
-public class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbisonicGenerator>
+public sealed partial class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbisonicGenerator>
 {
     protected override int AllocatedCapacity => HC.MAX_AMBISONIC_CONTRIBUTORS;
 
+    [SerializeField]
     AmbisonicGeneratorType _type;
+
+    [SerializeField]
+    [Range(0f, 1f)]
+    float _volume = 1f;
+
+    [SerializeField]
+    Vector3 _bandVolumes = Vector3.one;
+
+    [SerializeField]
+    Vector3 _bandSpreadDegrees;
+
+    [SerializeField]
+    [Range(0f, 180f)]
+    float _horizontalSpreadDegrees;
+
+    [SerializeField]
+    SimpleAmbisonicType _simpleType = SimpleAmbisonicType.Positional;
+
+    [SerializeField]
+    MeshFilter _meshTarget;
+
+    [SerializeField]
+    bool _meshVertexColorBands;
 
     public AmbisonicGeneratorType Type
     {
         get => _type;
         set
         {
+            if (_type == value)
+                return;
+
+            DetachKind();
             _type = value;
 
             if (IsRegistered)
-                Types[SoAIndex] = (byte)value;
+                AttachKind();
         }
     }
-
-    float _volume;
-    float _volumeLow;
-    float _volumeMid;
-    float _volumeHigh;
 
     public float Volume
     {
         get => _volume;
         set
         {
-            value = Mathf.Clamp01(value);
-            _volume = value;
+            _volume = Mathf.Clamp01(value);
 
             if (IsRegistered)
-                Volume01s[SoAIndex] = value;
+                BandGains[SoAIndex] = BandGain;
         }
     }
 
-    public float VolumeLow
+    public Vector3 BandVolumes
     {
-        get => _volumeLow;
+        get => _bandVolumes;
         set
         {
-            value = Mathf.Clamp01(value);
-            _volumeLow = value;
+            _bandVolumes = value;
 
-            if (!IsRegistered)
-                return;
-
-            var eq = EQVolume01s[SoAIndex];
-            eq.x = value;
-            EQVolume01s[SoAIndex] = eq;
+            if (IsRegistered)
+                BandGains[SoAIndex] = BandGain;
         }
     }
 
-    public float VolumeMid
+    public Vector3 BandSpreadDegrees
     {
-        get => _volumeMid;
+        get => _bandSpreadDegrees;
         set
         {
-            value = Mathf.Clamp01(value);
-            _volumeMid = value;
+            _bandSpreadDegrees = value;
 
-            if (!IsRegistered)
-                return;
-
-            var eq = EQVolume01s[SoAIndex];
-            eq.y = value;
-            EQVolume01s[SoAIndex] = eq;
+            if (IsRegistered)
+                BandSpreads[SoAIndex] = BandSpreadRadians;
         }
     }
 
-    public float VolumeHigh
+    public float HorizontalSpreadDegrees
     {
-        get => _volumeHigh;
+        get => _horizontalSpreadDegrees;
         set
         {
-            value = Mathf.Clamp01(value);
-            _volumeHigh = value;
+            _horizontalSpreadDegrees = value;
 
-            if (!IsRegistered)
-                return;
-
-            var eq = EQVolume01s[SoAIndex];
-            eq.z = value;
-            EQVolume01s[SoAIndex] = eq;
+            if (IsRegistered)
+                HorizontalSpreads[SoAIndex] = math.radians(value);
         }
     }
 
-    public int TargetSourceIndex;
-
-    public static NativeArray<byte> Types;
-
-    public static NativeArray<float> Volume01s;
-    public static NativeArray<float3> EQVolume01s;
-
-    public static NativeArray<float> TargetAmbisonicOutputs;
-    public static NativeArray<float> CurrentAmbisonicOutputs;
-
-    public static NativeArray<int> TargetSourceIndices;
-
-    // csharpier-ignore
-    protected override void AllocateNative()
+    public SimpleAmbisonicType SimpleType
     {
-        Types                   = new(AllocatedCapacity, Allocator.Persistent);
-
-        Volume01s                 = new(AllocatedCapacity, Allocator.Persistent);
-        EQVolume01s             = new(AllocatedCapacity, Allocator.Persistent);
-
-        TargetAmbisonicOutputs  = new(AllocatedCapacity * 48, Allocator.Persistent);
-        CurrentAmbisonicOutputs = new(AllocatedCapacity * 48, Allocator.Persistent);
-
-        TargetSourceIndices     = new(AllocatedCapacity, Allocator.Persistent);
-    }
-
-    protected override void DeallocateNative()
-    {
-        Types.TryDispose();
-
-        Volume01s.TryDispose();
-        EQVolume01s.TryDispose();
-
-        TargetAmbisonicOutputs.TryDispose();
-        CurrentAmbisonicOutputs.TryDispose();
-    }
-
-    // csharpier-ignore
-    protected override void LoadObjectToArrays()
-    {
-        Types[SoAIndex]       = (byte)Type;
-
-        Volume01s[SoAIndex]     = Volume;
-        EQVolume01s[SoAIndex] = new float3
+        get => _simpleType;
+        set
         {
-            x = VolumeLow,
-            y = VolumeMid,
-            z = VolumeHigh,
-        };
-    }
-
-    // csharpier-ignore
-    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
-    {
-        if (removedIndex != lastIndex)
-        {
-            Types[removedIndex]       = Types[lastIndex];
-
-            Volume01s[removedIndex]   = Volume01s[lastIndex];
-            EQVolume01s[removedIndex] = EQVolume01s[lastIndex];
-
-            int dstOffset             = removedIndex * HC.AMBISONIC_BUFFER_LENGTH;
-            int srcOffset             = lastIndex * HC.AMBISONIC_BUFFER_LENGTH;
-
-            NativeArray<float>.Copy(CurrentAmbisonicOutputs, srcOffset, CurrentAmbisonicOutputs, dstOffset, HC.AMBISONIC_BUFFER_LENGTH);
+            _simpleType = value;
+            _simpleRow?.SyncType();
         }
+    }
+
+    public MeshFilter MeshTarget
+    {
+        get => _meshTarget;
+        set
+        {
+            _meshTarget = value;
+
+            if (IsRegistered)
+                ReattachKind();
+        }
+    }
+
+    public bool MeshVertexColorBands
+    {
+        get => _meshVertexColorBands;
+        set
+        {
+            _meshVertexColorBands = value;
+
+            if (IsRegistered)
+                ReattachKind();
+        }
+    }
+
+    float3 BandGain => _volume * math.saturate((float3)_bandVolumes);
+    float3 BandSpreadRadians => math.radians((float3)_bandSpreadDegrees);
+
+    void OnEnable()
+    {
+        Register();
+        AttachKind();
+    }
+
+    void OnDisable()
+    {
+        DetachKind();
+        Deregister();
+    }
+
+    void OnValidate()
+    {
+        if (!IsRegistered)
+            return;
+
+        SyncShaping();
+        _simpleRow?.SyncType();
+
+        if (AttachmentIsStale)
+            ReattachKind();
     }
 }

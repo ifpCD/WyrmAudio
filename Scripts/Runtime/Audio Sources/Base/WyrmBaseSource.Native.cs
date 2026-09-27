@@ -5,16 +5,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-[Flags]
-public enum SourceSettings : byte
-{
-    None = 0,
-    UseTracking = 1 << 0,
-    UseOcclusion = 1 << 1,
-    UsePropagation = 1 << 2,
-    UseReflections = 1 << 3,
-}
-
 public partial class WyrmBaseSource
 {
     static int _maximumSourceCapacity;
@@ -138,7 +128,7 @@ public partial class WyrmBaseSource
         CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
         OcclusionMaskHandles[SoAIndex]                    = OcclusionMaskHandle;
-        AmbisonicGeneratorHandles[SoAIndex]                 = AmbisonicGenerator.Handle;
+        AmbisonicGeneratorHandles[SoAIndex]                 = AmbisonicGeneratorHandle;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
             SpatializerPointers[SoAIndex]                 = phononSource.PhononSource.Get();

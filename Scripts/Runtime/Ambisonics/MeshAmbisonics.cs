@@ -1,23 +1,11 @@
-using Unity.Collections;
-using Unity.Mathematics;
 using Unity.Scripting.LifecycleManagement;
-using UnityEngine;
 
 [NoAutoStaticsCleanup]
-public class MeshAmbisonics : AmbiBase<MeshAmbisonics>
+internal sealed partial class MeshAmbisonics : AmbiBase<MeshAmbisonics>
 {
-    protected override int AllocatedCapacity => 2000;
+    protected override int AllocatedCapacity => 256;
 
-    public MeshFilter meshFilter;
+    readonly WyrmAmbisonicGenerator _generator;
 
-    protected override void AllocateNative() { }
-
-    protected override void DeallocateNative() { }
-
-    protected override void LoadObjectToArrays() { }
-
-    protected override void RemoveAtSwapBack(int removedIndex, int lastIndex)
-    {
-        if (removedIndex != lastIndex) { }
-    }
+    internal MeshAmbisonics(WyrmAmbisonicGenerator generator) => _generator = generator;
 }

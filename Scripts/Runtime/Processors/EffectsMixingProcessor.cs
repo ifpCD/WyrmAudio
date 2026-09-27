@@ -12,20 +12,22 @@ internal static class EffectsMixingProcessor
             return dependency;
 
         // csharpier-ignore
-        var downMixIfVisible = new DownmixPropagationOnVisibilityJob
+        var downMixIfVisibleJob = new DownmixPropagationOnVisibilityJob
         {
             TargetOcclusion01s     = WyrmBaseSource.TargetOcclusion01,
-            
+
             TargetPropagationEQ01s = WyrmBaseSource.TargetAmbisonicEQ01s,
-        };
-        return downMixIfVisible.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);
+        }.Schedule(WyrmBaseSource.ActiveCount, 16, dependency);
+        
+        return downMixIfVisibleJob;
     }
 }
 
 [BurstCompile]
 internal struct DownmixPropagationOnVisibilityJob : IJobParallelFor
 {
-    [ReadOnly] public NativeArray<float> TargetOcclusion01s;
+    [ReadOnly]
+    public NativeArray<float> TargetOcclusion01s;
 
     public NativeArray<float3> TargetPropagationEQ01s;
 

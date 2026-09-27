@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 
 [DefaultExecutionOrder(200)]
-public class WyrmPropagationVisualizer : MonoBehaviour
+public class AmbisonicVisualizer : MonoBehaviour
 {
     public AudioMixerGroup targetMixerGroup = null;
 

@@ -1,99 +1,258 @@
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Jobs;
+using UnityEngine.Rendering;
 
-[BurstCompile]
-public struct SimpleAmbisonicsGeneration : IJobParallelFor
+[BurstCompile(CompileSynchronously = true)]
+internal unsafe struct EncodeSimpleAmbisonicsJob : IJobParallelForTransform
 {
-    [ReadOnly]
     public float3 ListenerPosition;
 
     [ReadOnly]
     public NativeArray<byte> Types;
 
     [ReadOnly]
-    public NativeArray<float3> VirtualPositions;
+    public NativeArray<AmbiHandle> GeneratorHandles;
 
     [ReadOnly]
-    public NativeArray<float3> VirtualDirections;
+    public NativeArray<int> GeneratorHandleToSoA;
 
     [ReadOnly]
-    public NativeArray<float> HorizontalBlurs; // future
+    public NativeArray<float3> GeneratorBandGains;
 
     [ReadOnly]
-    public NativeArray<float> VerticalBlurs; // future
+    public NativeArray<float3> GeneratorBandSpreads;
 
     [ReadOnly]
-    public NativeArray<float3> EQVolume01s;
+    public NativeArray<float> GeneratorHorizontalSpreads;
+
+    [WriteOnly, NativeDisableParallelForRestriction]
+    public NativeArray<float> GeneratorOutputs;
+
+    public void Execute(int index, TransformAccess transform)
+    {
+        float3 arrival =
+            Types[index] == (byte)SimpleAmbisonicType.Positional
+                ? (float3)transform.position - ListenerPosition
+                : math.rotate((quaternion)transform.rotation, new float3(0f, 0f, 1f));
+
+        float* basis = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
+        SphericalHarmonics.EvaluateArrival(arrival, basis);
+
+        int generator = GeneratorHandleToSoA[GeneratorHandles[index].Index];
+        float* target = (float*)GeneratorOutputs.GetUnsafePtr() + generator * HC.AMBISONIC_BUFFER_LENGTH;
+
+        float3 gains = GeneratorBandGains[generator];
+        float3 spreads = GeneratorBandSpreads[generator];
+        float horizontalSpread = GeneratorHorizontalSpreads[generator];
+
+        for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
+            SphericalHarmonics.Shape(basis, gains[band], spreads[band], horizontalSpread, target + band * HC.MAX_AMBISONIC_CHANNELS);
+    }
+}
+
+[BurstCompile(CompileSynchronously = true)]
+internal struct ReadMeshTargetsJob : IJobParallelForTransform
+{
+    public float3 ListenerPosition;
+
+    [WriteOnly]
+    public NativeArray<float4x4> LocalToAmbisonic;
+
+    public void Execute(int index, TransformAccess transform)
+    {
+        float4x4 localToListener = math.mul(float4x4.Translate(-ListenerPosition), (float4x4)transform.localToWorldMatrix);
+        LocalToAmbisonic[index] = math.mul(SphericalHarmonics.AmbisonicFromUnity, localToListener);
+    }
+}
+
+[BurstCompile(CompileSynchronously = true)]
+internal unsafe struct ProjectMeshChunksJob : IJobParallelFor
+{
+    [ReadOnly]
+    public NativeArray<int3> Chunks;
+
+    [ReadOnly]
+    public NativeArray<float4x4> LocalToAmbisonic;
+
+    [ReadOnly]
+    public NativeArray<float3x3> Triangles;
+
+    [ReadOnly]
+    public NativeArray<float3> TriangleBands;
+
+    [ReadOnly]
+    public NativeArray<double4> DirectionsX;
+
+    [ReadOnly]
+    public NativeArray<double4> DirectionsY;
+
+    [ReadOnly]
+    public NativeArray<double4> DirectionsZ;
 
     [NativeDisableParallelForRestriction]
-    [WriteOnly]
-    public NativeArray<float> AmbisonicOutputsBuffer;
+    public NativeArray<double4> ChunkMoments;
 
-    // iterated over SimpleAmbisonics.ActiveCount
     public void Execute(int index)
     {
-        float3 dir;
+        int3 chunk = Chunks[index];
+        float4x4 localToAmbisonic = LocalToAmbisonic[chunk.x];
 
-        if (Types[index] == (byte)SimpleAmbisonicType.Positional)
-            dir = VirtualPositions[index] - ListenerPosition;
-        else
-            dir = VirtualDirections[index];
+        double4* moments = (double4*)ChunkMoments.GetUnsafePtr() + index * PolygonProjection.BANDED_MOMENTS;
+        UnsafeUtility.MemClear(moments, PolygonProjection.BANDED_MOMENTS * sizeof(double4));
 
-        float3 u = math.normalizesafe(dir, float3.zero);
+        double4* scratch = stackalloc double4[PolygonProjection.SCRATCH];
+        double4* directionsX = (double4*)DirectionsX.GetUnsafeReadOnlyPtr();
+        double4* directionsY = (double4*)DirectionsY.GetUnsafeReadOnlyPtr();
+        double4* directionsZ = (double4*)DirectionsZ.GetUnsafeReadOnlyPtr();
 
-        // Phonon Mapping
-        float x = u.z;
-        float y = -u.x;
-        float z = u.y;
-
-        int offsetLow = index * HC.MAX_AMBISONIC_CHANNELS * HC.MAX_AMBISONIC_BANDS;
-        int offsetMid = offsetLow + HC.MAX_AMBISONIC_CHANNELS;
-        int offsetHigh = offsetMid + HC.MAX_AMBISONIC_CHANNELS;
-
-        float3 eq = EQVolume01s[index];
-
-        var shCoeffs = AmbisonicOutputsBuffer;
-
-        void WriteCoeff(int coefficient, float value)
+        for (int triangle = chunk.y; triangle < chunk.y + chunk.z; triangle++)
         {
-            shCoeffs[offsetLow + coefficient] = value * eq.x;
-            shCoeffs[offsetMid + coefficient] = value * eq.y;
-            shCoeffs[offsetHigh + coefficient] = value * eq.z;
+            float3x3 vertices = Triangles[triangle];
+
+            PolygonProjection.AccumulateTriangle(
+                math.transform(localToAmbisonic, vertices.c0),
+                math.transform(localToAmbisonic, vertices.c1),
+                math.transform(localToAmbisonic, vertices.c2),
+                TriangleBands[triangle],
+                directionsX,
+                directionsY,
+                directionsZ,
+                scratch,
+                moments
+            );
+        }
+    }
+}
+
+[BurstCompile(CompileSynchronously = true)]
+internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
+{
+    [ReadOnly]
+    public NativeArray<int> ChunkOffsets;
+
+    [ReadOnly]
+    public NativeArray<int> ChunkCounts;
+
+    [ReadOnly]
+    public NativeArray<double4> ChunkMoments;
+
+    [ReadOnly]
+    public NativeArray<double4> MomentToHarmonic;
+
+    [ReadOnly]
+    public NativeArray<AmbiHandle> GeneratorHandles;
+
+    [ReadOnly]
+    public NativeArray<int> GeneratorHandleToSoA;
+
+    [ReadOnly]
+    public NativeArray<float3> GeneratorBandGains;
+
+    [ReadOnly]
+    public NativeArray<float3> GeneratorBandSpreads;
+
+    [ReadOnly]
+    public NativeArray<float> GeneratorHorizontalSpreads;
+
+    [WriteOnly, NativeDisableParallelForRestriction]
+    public NativeArray<float> GeneratorOutputs;
+
+    public void Execute(int row)
+    {
+        double4* total = stackalloc double4[PolygonProjection.BANDED_MOMENTS];
+        UnsafeUtility.MemClear(total, PolygonProjection.BANDED_MOMENTS * sizeof(double4));
+
+        double4* chunkMoments = (double4*)ChunkMoments.GetUnsafeReadOnlyPtr() + ChunkOffsets[row] * PolygonProjection.BANDED_MOMENTS;
+
+        for (int chunk = 0; chunk < ChunkCounts[row]; chunk++, chunkMoments += PolygonProjection.BANDED_MOMENTS)
+        {
+            for (int index = 0; index < PolygonProjection.BANDED_MOMENTS; index++)
+                total[index] += chunkMoments[index];
         }
 
-        // 0th Order
-        WriteCoeff(0, SH.C0);
+        int generator = GeneratorHandleToSoA[GeneratorHandles[row].Index];
+        float* target = (float*)GeneratorOutputs.GetUnsafePtr() + generator * HC.AMBISONIC_BUFFER_LENGTH;
 
-        // 1st Order
-        WriteCoeff(1, SH.C1 * y);
-        WriteCoeff(2, SH.C1 * z);
-        WriteCoeff(3, SH.C1 * x);
+        double4* momentToHarmonic = (double4*)MomentToHarmonic.GetUnsafeReadOnlyPtr();
+        double* harmonics = stackalloc double[HC.MAX_AMBISONIC_CHANNELS];
+        float* distribution = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
 
-        // 2nd Order
-        float xx = x * x;
-        float yy = y * y;
-        float zz = z * z;
-        float xy = x * y;
-        float yz = y * z;
-        float xz = x * z;
+        float3 gains = GeneratorBandGains[generator];
+        float3 spreads = GeneratorBandSpreads[generator];
+        float horizontalSpread = GeneratorHorizontalSpreads[generator];
 
-        WriteCoeff(4, SH.C2 * xy);
-        WriteCoeff(5, SH.C2 * yz);
-        WriteCoeff(6, SH.C3 * (3.0f * zz - 1.0f));
-        WriteCoeff(7, SH.C2 * xz);
-        WriteCoeff(8, SH.C4 * (xx - yy));
+        for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
+        {
+            float* bandTarget = target + band * HC.MAX_AMBISONIC_CHANNELS;
+            PolygonProjection.Resolve(total + band * PolygonProjection.MOMENTS, momentToHarmonic, harmonics);
 
-        // 3rd Order
-        WriteCoeff(9, SH.C5 * y * (3.0f * xx - yy));
-        WriteCoeff(10, SH.C6 * x * y * z);
-        WriteCoeff(11, SH.C7 * y * (5.0f * zz - 1.0f));
-        WriteCoeff(12, SH.C8 * z * (5.0f * zz - 3.0f));
-        WriteCoeff(13, SH.C7 * x * (5.0f * zz - 1.0f));
-        WriteCoeff(14, SH.C9 * z * (xx - yy));
-        WriteCoeff(15, SH.C5 * x * (xx - 3.0f * yy));
+            if (harmonics[0] <= 0.0)
+            {
+                UnsafeUtility.MemClear(bandTarget, HC.MAX_AMBISONIC_CHANNELS * sizeof(float));
+                continue;
+            }
+
+            // unit-mass direction distribution: c00 == Y00, identical energy scale to a point source
+            double normalization = SphericalHarmonics.Y00 / harmonics[0];
+
+            for (int channel = 0; channel < HC.MAX_AMBISONIC_CHANNELS; channel++)
+                distribution[channel] = (float)(harmonics[channel] * normalization);
+
+            SphericalHarmonics.Shape(distribution, gains[band], spreads[band], horizontalSpread, bandTarget);
+        }
     }
+}
+
+// Runs synchronously at registration. Every surface layer emits (no self-occlusion); vertex rgb optionally weights the bands.
+[BurstCompile(CompileSynchronously = true)]
+internal struct CacheMeshTrianglesJob : IJob
+{
+    [ReadOnly]
+    public Mesh.MeshData Source;
+
+    public bool VertexColorBands;
+
+    public NativeList<float3x3> Triangles;
+    public NativeList<float3> TriangleBands;
+
+    public void Execute()
+    {
+        var vertices = new NativeArray<Vector3>(Source.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+        var colors = new NativeArray<Color>(VertexColorBands ? Source.vertexCount : 0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+        Source.GetVertices(vertices);
+
+        if (VertexColorBands)
+            Source.GetColors(colors);
+
+        for (int submesh = 0; submesh < Source.subMeshCount; submesh++)
+        {
+            SubMeshDescriptor descriptor = Source.GetSubMesh(submesh);
+
+            if (descriptor.topology != MeshTopology.Triangles)
+                continue;
+
+            var indices = new NativeArray<int>(descriptor.indexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            Source.GetIndices(indices, submesh);
+
+            for (int corner = 0; corner + 2 < indices.Length; corner += 3)
+            {
+                int a = indices[corner];
+                int b = indices[corner + 1];
+                int c = indices[corner + 2];
+
+                Triangles.Add(new float3x3((float3)vertices[a], (float3)vertices[b], (float3)vertices[c]));
+                TriangleBands.Add(VertexColorBands ? (Bands(colors[a]) + Bands(colors[b]) + Bands(colors[c])) / 3f : new float3(1f));
+            }
+        }
+    }
+
+    static float3 Bands(Color color) => new(color.r, color.g, color.b);
 }
 
 [BurstCompile]
@@ -111,6 +270,7 @@ public struct LoadAmbisonicOutputsToSources : IJobParallelFor
     [ReadOnly]
     public NativeArray<int> GeneratorVersions;
 
+    [NativeDisableParallelForRestriction]
     [WriteOnly]
     public NativeArray<float> SourceAmbisonicBuffers;
 
@@ -139,4 +299,16 @@ public struct LoadAmbisonicOutputsToSources : IJobParallelFor
             HC.AMBISONIC_BUFFER_LENGTH
         );
     }
+}
+
+// No generator registry: every source is unbound, which the load job resolves to silence.
+[BurstCompile]
+public struct ClearSourceAmbisonicBuffers : IJob
+{
+    public int Length;
+
+    [WriteOnly]
+    public NativeArray<float> SourceAmbisonicBuffers;
+
+    public unsafe void Execute() => UnsafeUtility.MemClear(SourceAmbisonicBuffers.GetUnsafePtr(), (long)Length * sizeof(float));
 }

@@ -22,7 +22,7 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
     [SerializeField]
     WyrmAmbisonicGenerator _ambisonicGenerator;
 
-    internal WyrmAmbisonicGenerator AmbisonicGenerator
+    public WyrmAmbisonicGenerator AmbisonicGenerator
     {
         get => _ambisonicGenerator;
         set
