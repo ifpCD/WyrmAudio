@@ -8,7 +8,6 @@ public sealed partial class WyrmAmbisonicGenerator
     internal static NativeArray<float3> BandSpreads;
     internal static NativeArray<float> HorizontalSpreads;
 
-    // rewritten every scheduled frame; Phonon interpolates per audio block, so no smoothing (and no latency) here
     internal static NativeArray<float> Outputs;
 
     // csharpier-ignore

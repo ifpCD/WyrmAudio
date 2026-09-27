@@ -37,6 +37,6 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
     const int PATHING_NORMALIZEEQ          = 33;
     const int NUM_PARAMS                   = 34;
 
-    private const float TRUE               = 1f;
-    private const float FALSE              = 0f;
+    const float TRUE                       = 1f;
+    const float FALSE                      = 0f;
 }

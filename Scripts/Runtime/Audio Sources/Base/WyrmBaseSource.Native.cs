@@ -18,7 +18,6 @@ public partial class WyrmBaseSource
 
     internal static NativeArray<float3> Positions;
     internal static NativeArray<quaternion> Rotations;
-    internal static NativeArray<float4x4> LocalToWorlds;
 
     internal static NativeArray<AmbiHandle> OcclusionMaskHandles;
     internal static NativeArray<AmbiHandle> AmbisonicGeneratorHandles;
@@ -68,7 +67,6 @@ public partial class WyrmBaseSource
 
         Positions                                      = new(AllocatedCapacity, Allocator.Persistent);
         Rotations                                      = new(AllocatedCapacity, Allocator.Persistent);
-        LocalToWorlds                                  = new(AllocatedCapacity, Allocator.Persistent);
 
         SpatializerPointers                            = new(AllocatedCapacity, Allocator.Persistent);
 
@@ -95,7 +93,6 @@ public partial class WyrmBaseSource
 
         Positions.TryDispose();
         Rotations.TryDispose();
-        LocalToWorlds.TryDispose();
 
         SpatializerPointers.TryDispose();
 
@@ -132,7 +129,7 @@ public partial class WyrmBaseSource
         CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
         OcclusionMaskHandles[SoAIndex]                    = OcclusionMaskHandle;
-        AmbisonicGeneratorHandles[SoAIndex]                 = AmbisonicGeneratorHandle;
+        AmbisonicGeneratorHandles[SoAIndex]               = AmbisonicGeneratorHandle;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
             SpatializerPointers[SoAIndex]                 = phononSource.PhononSource.Get();
@@ -152,8 +149,8 @@ public partial class WyrmBaseSource
             CurrentOcclusion01[removedIndex]           = CurrentOcclusion01[lastIndex];
             CurrentAmbisonicEQ01s[removedIndex]        = CurrentAmbisonicEQ01s[lastIndex];
 
-            OcclusionMaskHandles[removedIndex] = OcclusionMaskHandles[lastIndex];
-            AmbisonicGeneratorHandles[removedIndex] = AmbisonicGeneratorHandles[lastIndex];
+            OcclusionMaskHandles[removedIndex]         = OcclusionMaskHandles[lastIndex];
+            AmbisonicGeneratorHandles[removedIndex]    = AmbisonicGeneratorHandles[lastIndex];
         }
 
         SourceTransforms.RemoveAtSwapBack(removedIndex);

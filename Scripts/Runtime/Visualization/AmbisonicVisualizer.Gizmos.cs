@@ -25,11 +25,28 @@ public sealed partial class AmbisonicVisualizer
         string header = $"{visualization}  orders {orders.x}/{orders.y}/{orders.z}  sources {_contributingSources}  peak feed {Decibels(_speakerPeak):F1} dB";
         Handles.Label(_listenerPosition + Vector3.up * (speakerRadius + 0.6f), header, style);
 
+        float4 peak = _fieldPeak.Value;
+
+        if (peak.w > 0f)
+            DrawPeak(peak, style);
+
         if (showEnergyVectors)
             DrawEnergyVectors(style);
 
         if (showVirtualSpeakers && labeledSpeakers > 0 && _speakerPeak > 0f)
             DrawLoudestSpeakers(style);
+    }
+
+    // the balloon's apex in the head frame: where the field places the sound
+    void DrawPeak(float4 peak, GUIStyle style)
+    {
+        float level = radiusScale == AmbisonicRadiusScale.Decibel ? 1f : math.saturate(math.pow(peak.w * linearSensitivity, 0.8f));
+        Vector3 tip = _listenerPosition + (Vector3)(peak.xyz * (baseRadius + level * deformationScale));
+        Vector3 head = Quaternion.Inverse(_listenerRotation) * (Vector3)peak.xyz;
+
+        Handles.color = nodalColor;
+        Handles.DrawDottedLine(_listenerPosition, tip, 4f);
+        Handles.Label(tip, $"peak  az {math.degrees(math.atan2(head.x, head.z)):F1}°  el {math.degrees(math.asin(math.clamp(head.y, -1f, 1f))):F1}°", style);
     }
 
     void DrawEnergyVectors(GUIStyle style)

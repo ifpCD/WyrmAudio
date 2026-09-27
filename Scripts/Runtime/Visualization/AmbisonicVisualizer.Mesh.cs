@@ -1,10 +1,11 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public sealed partial class AmbisonicVisualizer
 {
-    // Uniform directions (no pole pinching), so order-10 lobes are sampled evenly; vertex normals carry the directions.
+    // Uniform directions (no pole pinching); vertex normals carry the directions. Level 6: 40962 vertices, ~1.1 deg apart.
     static Mesh BuildIcosphere(int subdivisions)
     {
         float t = (1f + Mathf.Sqrt(5f)) * 0.5f;
@@ -62,6 +63,7 @@ public sealed partial class AmbisonicVisualizer
         }
 
         var mesh = new Mesh { name = "Ambisonic Icosphere", hideFlags = HideFlags.DontSave };
+        mesh.indexFormat = vertices.Count > ushort.MaxValue ? IndexFormat.UInt32 : IndexFormat.UInt16;
         mesh.SetVertices(vertices);
         mesh.SetNormals(vertices);
         mesh.SetTriangles(triangles, 0);

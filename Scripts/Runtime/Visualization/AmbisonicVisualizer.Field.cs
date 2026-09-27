@@ -16,6 +16,36 @@ public sealed partial class AmbisonicVisualizer
 
     readonly Vector4[] _fieldUpload = new Vector4[HC.MAX_AMBISONIC_CHANNELS];
 
+    // SphericalHarmonics.Evaluate's constants for the shader, at index l(l+1)+m with 0 <= m <= l:
+    // xy = (a, b) of the degree recurrence for l > m, z = sectoral factor for l == m > 0
+    static Vector4[] BuildRecurrence()
+    {
+        var recurrence = new Vector4[HC.MAX_AMBISONIC_CHANNELS];
+
+        for (int m = 0; m <= HC.MAX_AMBISONIC_ORDER; m++)
+        {
+            recurrence[m * (m + 2)].z = m == 0 ? 1f : m == 1 ? math.sqrt(3f) : math.sqrt((2f * m + 1f) / (2f * m));
+
+            for (int l = m + 1; l <= HC.MAX_AMBISONIC_ORDER; l++)
+            {
+                float l2 = l * l;
+                float m2 = m * m;
+
+                recurrence[l * (l + 1) + m] =
+                    l == m + 1
+                        ? new Vector4(math.sqrt(2f * m + 3f), 0f, 0f, 0f)
+                        : new Vector4(
+                            math.sqrt((4f * l2 - 1f) / (l2 - m2)),
+                            math.sqrt(((l - 1f) * (l - 1f) - m2) * (2f * l + 1f) / ((2f * l - 3f) * (l2 - m2))),
+                            0f,
+                            0f
+                        );
+            }
+        }
+
+        return recurrence;
+    }
+
     void AllocateField()
     {
         _field = new(HC.MAX_AMBISONIC_CHANNELS, Allocator.Persistent);

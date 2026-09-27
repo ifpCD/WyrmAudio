@@ -2,27 +2,41 @@ Shader "Hidden/WyrmAudio/AmbisonicVisualizer"
 {
     Properties
     {
-        _BaseRadius ("Base Bubble Radius", Float) = 2.0
-        _DeformScale ("Deformation Scale", Float) = 1.0
-        _Sensitivity ("Audio Sensitivity", Float) = 25.0
+        _BaseRadius ("Base Radius", Float) = 2.0
+        _DeformScale ("Deformation Scale", Float) = 1.5
+        _RadiusMode ("Radius Mode (0 linear, 1 decibel)", Float) = 1.0
+        _Sensitivity ("Linear Sensitivity", Float) = 25.0
+        _RangeDecibels ("Decibel Range", Float) = 30.0
+        _FieldPeak ("Field Peak", Float) = 1.0
 
-        _IdleOpacity ("Idle Opacity", Range(0, 0.2)) = 0.02
-        _GridIntensity ("Grid Opacity", Range(0, 1)) = 0.3
+        _IdleOpacity ("Idle Opacity", Range(0, 1)) = 0.04
+        _PositiveOpacity ("Positive Lobe Opacity", Range(0, 1)) = 0.55
+        _NegativeOpacity ("Negative Lobe Opacity", Range(0, 1)) = 0.95
 
-        [Header(Color Palette)]
-        [HDR] _BaseColor ("Idle/Base Color", Color) = (0.02, 0.1, 0.3, 1.0)
-        [HDR] _LowColor ("Low Freq (Bass) Color", Color) = (1.0, 0.05, 0.0, 1.0)
+        _GridIntensity ("Grid", Range(0, 1)) = 0.2
+        _ContourSpacing ("Contour Spacing (dB)", Float) = 6.0
+        _ContourIntensity ("Contours", Range(0, 1)) = 0.6
+        _ContourFlow ("Contour Flow", Float) = 0.4
+        _NodalIntensity ("Nodal Lines", Range(0, 1)) = 0.9
+        _HatchIntensity ("Negative Hatch", Range(0, 1)) = 0.35
+
+        _HeadForward ("Head Forward", Vector) = (0, 0, 1, 0)
+
+        [HDR] _BaseColor ("Idle Color", Color) = (0.02, 0.1, 0.3, 1.0)
+        [HDR] _LowColor ("Low Freq Color", Color) = (1.0, 0.05, 0.0, 1.0)
         [HDR] _MidColor ("Mid Freq Color", Color) = (0.1, 1.0, 0.3, 1.0)
-        [HDR] _HighColor ("High Freq (Treble) Color", Color) = (0.0, 0.8, 1.0, 1.0)
+        [HDR] _HighColor ("High Freq Color", Color) = (0.0, 0.8, 1.0, 1.0)
+        [HDR] _NegativeRimColor ("Negative Rim Color", Color) = (0.75, 0.25, 1.0, 1.0)
+        [HDR] _NodalColor ("Nodal Line Color", Color) = (1.0, 0.92, 0.7, 1.0)
     }
     SubShader
     {
-        Tags { "RenderType"="Transparent" "Queue"="Overlay" }
-
-        Blend SrcAlpha OneMinusSrcAlpha
+        // one queue behind AmbisonicVisualizerOccluder: its depth lets the formed lobes hide what lies behind them
+        Tags { "RenderType"="Transparent" "Queue"="Overlay+1" }
+        Cull Off
         ZWrite Off
-        ZTest Always
-        Cull Back
+        ZTest LEqual
+        Blend SrcAlpha OneMinusSrcAlpha
 
         Pass
         {
@@ -30,164 +44,116 @@ Shader "Hidden/WyrmAudio/AmbisonicVisualizer"
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.5
-            #include "UnityCG.cginc"
+            #include "AmbisonicVisualizer.cginc"
 
-            // must match HC.MAX_AMBISONIC_CHANNELS
-            #define MAX_CHANNELS 121
-
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float3 normal : NORMAL;
-            };
-
-            struct v2f
-            {
-                float4 pos : SV_POSITION;
-                float3 mappedColor : TEXCOORD0;
-                float intensity : TEXCOORD1;
-                float3 viewDir : TEXCOORD2;
-                float3 normal : TEXCOORD3;
-                float3 direction : TEXCOORD4;
-                float bandOpacity : TEXCOORD5;
-            };
-
-            // xyz: low, mid, high band coefficients in ACN order
-            float4 _Field[MAX_CHANNELS];
-            float _Order;
-
-            float _BaseRadius;
-            float _DeformScale;
-            float _Sensitivity;
             float _IdleOpacity;
+            float _PositiveOpacity;
+            float _NegativeOpacity;
+
             float _GridIntensity;
+            float _ContourSpacing;
+            float _ContourIntensity;
+            float _ContourFlow;
+            float _NodalIntensity;
+            float _HatchIntensity;
+
+            float4 _HeadForward;
 
             float4 _BaseColor;
             float4 _LowColor;
             float4 _MidColor;
             float4 _HighColor;
+            float4 _NegativeRimColor;
+            float4 _NodalColor;
 
-            // Same recurrence as SphericalHarmonics.Evaluate: orthonormal, ACN, no Condon-Shortley phase.
-            float4 EvaluateField(float3 direction)
+            struct v2f
             {
-                // Unity (+x right, +y up, +z forward) -> ambisonic (+x forward, +y left, +z up)
-                float x = direction.z;
-                float y = -direction.x;
-                float z = direction.y;
+                float4 pos : SV_POSITION;
+                float3 direction : TEXCOORD0;
+                float3 worldPos : TEXCOORD1;
+            };
 
-                int order = (int)_Order;
-                float4 sum = 0;
-                float sectoral = 0.2820947918;
-                float cosine = 1;
-                float sine = 0;
-
-                [loop]
-                for (int m = 0; m <= order; m++)
-                {
-                    if (m > 0)
-                    {
-                        float rotatedCosine = cosine * x - sine * y;
-                        sine = cosine * y + sine * x;
-                        cosine = rotatedCosine;
-                        sectoral *= m == 1 ? 1.7320508 : sqrt((2.0 * m + 1.0) / (2.0 * m));
-                    }
-
-                    float previous = 0;
-                    float current = sectoral;
-
-                    [loop]
-                    for (int l = m; l <= order; l++)
-                    {
-                        if (l == m + 1)
-                        {
-                            previous = current;
-                            current = sqrt(2.0 * m + 3.0) * z * previous;
-                        }
-                        else if (l > m + 1)
-                        {
-                            float l2 = l * l;
-                            float m2 = m * m;
-                            float a = sqrt((4.0 * l2 - 1.0) / (l2 - m2));
-                            float b = sqrt(((l - 1.0) * (l - 1.0) - m2) * (2.0 * l + 1.0) / ((2.0 * l - 3.0) * (l2 - m2)));
-                            float next = a * z * current - b * previous;
-                            previous = current;
-                            current = next;
-                        }
-
-                        int center = l * (l + 1);
-
-                        if (m == 0)
-                            sum += current * _Field[center];
-                        else
-                            sum += current * (cosine * _Field[center + m] + sine * _Field[center - m]);
-                    }
-                }
-
-                return sum;
-            }
-
-            v2f vert (appdata v)
+            v2f vert (float3 normal : NORMAL)
             {
                 v2f o;
 
-                float3 direction = normalize(v.normal);
-                float4 field = EvaluateField(direction) * _Sensitivity;
+                float3 direction = normalize(normal);
+                float3 position = SurfacePosition(direction, FieldLevel(EvaluateField(direction)));
 
-                if (any(isnan(field)) || any(isinf(field)))
-                    field = 0;
-
-                float3 bands = abs(field.xyz);
-                float totalBandEnergy = bands.x + bands.y + bands.z + 0.0001;
-
-                // only positive band contributions carry color: negative lobes render black
-                float3 positive = max(field.xyz, 0.0);
-                o.mappedColor = (positive.x * _LowColor.rgb + positive.y * _MidColor.rgb + positive.z * _HighColor.rgb) / totalBandEnergy;
-                o.bandOpacity = (bands.x * _LowColor.a + bands.y * _MidColor.a + bands.z * _HighColor.a) / totalBandEnergy;
-                o.intensity = lerp(dot(bands, 1.0 / 3.0), max(bands.x, max(bands.y, bands.z)), 0.5);
-
-                float4 position = float4(direction * (_BaseRadius + pow(o.intensity, 0.8) * _DeformScale), 1.0);
-
-                o.pos = UnityObjectToClipPos(position);
-                o.viewDir = normalize(WorldSpaceViewDir(position));
-                o.normal = UnityObjectToWorldNormal(v.normal);
+                o.pos = OverlayClipPosition(position);
                 o.direction = direction;
+                o.worldPos = mul(unity_ObjectToWorld, float4(position, 1.0)).xyz;
 
                 return o;
             }
 
+            // anti-aliased line at the integers of t
+            float Isoline(float t, float width)
+            {
+                float distance = abs(frac(t + 0.5) - 0.5) / max(fwidth(t), 1e-6);
+                return saturate(width - distance);
+            }
+
             fixed4 frag (v2f i) : SV_Target
             {
+                // the field is re-evaluated per pixel: lobes, sign and nodal lines stay exact between vertices
                 float3 direction = normalize(i.direction);
-                float2 sphereUV = float2(atan2(direction.z, direction.x) * (0.5 / UNITY_PI) + 0.5, acos(clamp(direction.y, -1.0, 1.0)) / UNITY_PI);
+                float4 field = EvaluateField(direction);
 
-                float audioGlow = saturate(i.intensity);
-                float3 baseColor = lerp(_BaseColor.rgb, i.mappedColor, audioGlow);
+                float3 bands = abs(field.xyz);
+                float magnitude = length(field.xyz);
+                float level = FieldLevel(field);
+                float presence = Presence(level);
 
-                float2 gridUV = frac(sphereUV * 24.0);
-                float horizontalLines = smoothstep(0.95, 1.0, gridUV.y);
-                float verticalLines = smoothstep(0.95, 1.0, gridUV.x);
+                // energy-weighted sign across bands: +1 all positive, -1 all negative
+                float negativity = saturate(-dot(field.xyz, bands) / max(dot(field.xyz, field.xyz), 1e-12));
 
-                float poleFade = smoothstep(0.02, 0.15, sphereUV.y) * smoothstep(0.98, 0.85, sphereUV.y);
-                verticalLines *= poleFade;
+                float3 positive = max(field.xyz, 0.0);
+                float3 bandColor = (positive.x * _LowColor.rgb + positive.y * _MidColor.rgb + positive.z * _HighColor.rgb) / max(bands.x + bands.y + bands.z, 1e-9);
 
-                float gridLine = saturate(horizontalLines + verticalLines);
-                gridLine *= _GridIntensity * (0.2 + audioGlow * 1.5);
+                float3 normal = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
+                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+                normal = dot(normal, viewDir) < 0.0 ? -normal : normal;
 
-                float pulse = sin(direction.y * 20.0 - _Time.y * 15.0) * 0.5 + 0.5;
-                float pulseGlow = pulse * audioGlow * 0.5;
+                float facing = saturate(dot(normal, viewDir));
+                float fresnel = pow(1.0 - facing, 3.0);
+                float diffuse = 0.35 + 0.65 * saturate(dot(normal, normalize(viewDir + float3(0.0, 0.7, 0.0))));
 
-                float NdotV = saturate(dot(normalize(i.normal), normalize(i.viewDir)));
-                float rimGlow = smoothstep(0.5, 1.0, 1.0 - NdotV) * (0.1 + audioGlow * 1.5);
+                // positive lobes glow in their band colors; negative lobes are obsidian with a lit rim and hatching
+                float3 positiveShade = bandColor * (diffuse * (0.3 + 0.9 * level) + 1.6 * fresnel);
+                float hatch = Isoline(dot(direction, float3(0.577, 0.577, 0.577)) * 36.0, 1.2);
+                float3 negativeShade = _NegativeRimColor.rgb * (1.8 * fresnel + 0.1 * diffuse + _HatchIntensity * hatch);
 
-                float3 finalColor = baseColor + (baseColor * gridLine) + (i.mappedColor * pulseGlow) + (i.mappedColor * rimGlow);
+                float3 color = lerp(positiveShade, negativeShade, negativity);
+                color = lerp(_BaseColor.rgb * diffuse, color, presence);
 
-                float effectiveOpacity = max(_IdleOpacity, i.bandOpacity * audioGlow);
+                float alpha = lerp(_IdleOpacity, lerp(_PositiveOpacity, _NegativeOpacity, negativity), presence);
 
-                float alpha = _IdleOpacity + (audioGlow * i.bandOpacity);
-                alpha += gridLine * effectiveOpacity;
-                alpha += rimGlow * effectiveOpacity;
+                // decibel contours drifting outward from the peak
+                float contour = Isoline(Decibels(magnitude) / _ContourSpacing + _Time.y * _ContourFlow, 1.0) * _ContourIntensity * presence;
+                color += contour * lerp(bandColor * 1.5 + 0.15, _NegativeRimColor.rgb, negativity);
+                alpha = max(alpha, contour);
 
-                return fixed4(finalColor, saturate(alpha));
+                // nodal cage: zero crossings of the broadband field
+                float signedField = field.x + field.y + field.z;
+                float nodal = saturate(1.5 - abs(signedField) / max(fwidth(signedField), 1e-12)) * _NodalIntensity * step(1e-9, _FieldPeak);
+                color = lerp(color, _NodalColor.rgb, nodal);
+                alpha = max(alpha, nodal);
+
+                // world latitude / longitude reference, faded at the poles
+                float2 sphereUV = float2(atan2(direction.z, direction.x) * (0.5 / UNITY_PI) + 0.5, acos(clamp(direction.y, -1.0, 1.0)) / UNITY_PI) * 24.0;
+                float poleFade = smoothstep(0.02, 0.15, sphereUV.y / 24.0) * smoothstep(0.98, 0.85, sphereUV.y / 24.0);
+                float grid = max(Isoline(sphereUV.y, 0.8), Isoline(sphereUV.x, 0.8) * poleFade) * _GridIntensity;
+                color += grid * lerp(_BaseColor.rgb * 3.0, bandColor, presence);
+                alpha = max(alpha, grid * 0.6);
+
+                // head-forward reticle
+                float angle = acos(clamp(dot(direction, _HeadForward.xyz), -1.0, 1.0));
+                float reticle = max(saturate(1.5 - abs(angle - 0.07) / max(fwidth(angle), 1e-6)), angle < 0.015 ? 1.0 : 0.0);
+                color = lerp(color, _NodalColor.rgb, reticle);
+                alpha = max(alpha, reticle);
+
+                return fixed4(color, saturate(alpha));
             }
             ENDCG
         }

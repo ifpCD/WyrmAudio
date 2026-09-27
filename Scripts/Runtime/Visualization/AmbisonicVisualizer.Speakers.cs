@@ -13,6 +13,7 @@ public sealed partial class AmbisonicVisualizer
     NativeArray<float3> _speakerDirections;
     NativeArray<float4> _speakerFeeds;
     NativeArray<float4> _energyVectors;
+    NativeReference<float4> _fieldPeak;
     float _speakerPeak;
 
     readonly Vector4[] _speakerUpload = new Vector4[VirtualSpeakerLayout.COUNT];
@@ -33,6 +34,7 @@ public sealed partial class AmbisonicVisualizer
         _speakerDirections = new(VirtualSpeakerLayout.Directions, Allocator.Persistent);
         _speakerFeeds = new(VirtualSpeakerLayout.COUNT, Allocator.Persistent);
         _energyVectors = new(ENERGY_VECTOR_COUNT, Allocator.Persistent);
+        _fieldPeak = new(Allocator.Persistent);
     }
 
     void DeallocateSpeakers()
@@ -40,21 +42,15 @@ public sealed partial class AmbisonicVisualizer
         _speakerDirections.TryDispose();
         _speakerFeeds.TryDispose();
         _energyVectors.TryDispose();
+        _fieldPeak.TryDispose();
     }
 
     bool EnsureSpeakerResources()
     {
         _speakerProperties ??= new MaterialPropertyBlock();
 
-        if (_speakerMaterial == null)
-        {
-            Shader shader = Shader.Find("Hidden/WyrmAudio/AmbisonicVirtualSpeakers");
-
-            if (shader == null)
-                return false;
-
-            _speakerMaterial = new Material(shader) { hideFlags = HideFlags.DontSave };
-        }
+        if (!EnsureMaterial(ref _speakerMaterial, "Hidden/WyrmAudio/AmbisonicVirtualSpeakers"))
+            return false;
 
         if (_speakerMesh == null)
             _speakerMesh = BuildSpeakerMesh();
@@ -72,6 +68,7 @@ public sealed partial class AmbisonicVisualizer
             Field = _field,
             SpeakerFeeds = _speakerFeeds,
             EnergyVectors = _energyVectors,
+            FieldPeak = _fieldPeak,
         }.Run();
 
         _speakerPeak = 0f;
@@ -97,6 +94,7 @@ public sealed partial class AmbisonicVisualizer
         _speakerProperties.SetColor(LOW_COLOR_ID, lowFreqColor);
         _speakerProperties.SetColor(MID_COLOR_ID, midFreqColor);
         _speakerProperties.SetColor(HIGH_COLOR_ID, highFreqColor);
+        _speakerProperties.SetColor(NEGATIVE_RIM_COLOR_ID, negativeRimColor);
 
         var headLocked = Matrix4x4.TRS(_listenerPosition, _listenerRotation, Vector3.one);
         Graphics.DrawMesh(_speakerMesh, headLocked, _speakerMaterial, gameObject.layer, null, 0, _speakerProperties);

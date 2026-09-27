@@ -75,7 +75,8 @@ internal unsafe struct AccumulateAmbisonicFieldJob : IJob
 
 // Phonon's sampling decoder at its head-locked virtual speakers: feed_k = 4pi/K * field(R s_k), exactly the weight each
 // speaker's HRTF receives in the order-N projection. Energy vectors: sum(feed^2 * s) / sum(feed^2) per band and broadband;
-// on the 21-design they are exact for every order up to 10.
+// on the 21-design they are exact for every order up to 10. FieldPeak: the loudest direction (xyz) and its |field| (w),
+// refined from the loudest speaker by pattern search so the decibel balloon is normalized to the true maximum.
 [BurstCompile(CompileSynchronously = true)]
 internal unsafe struct DecodeVirtualSpeakersJob : IJob
 {
@@ -94,6 +95,9 @@ internal unsafe struct DecodeVirtualSpeakersJob : IJob
     [WriteOnly]
     public NativeArray<float4> EnergyVectors;
 
+    [WriteOnly]
+    public NativeReference<float4> FieldPeak;
+
     public void Execute()
     {
         float* basis = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
@@ -107,6 +111,9 @@ internal unsafe struct DecodeVirtualSpeakersJob : IJob
         float3 broadbandVector = float3.zero;
         float4 energies = float4.zero;
 
+        float3 loudestDirection = new float3(0f, 0f, 1f);
+        float loudest = -1f;
+
         for (int speaker = 0; speaker < VirtualSpeakerLayout.COUNT; speaker++)
         {
             float3 direction = math.rotate(HeadRotation, SpeakerDirections[speaker]);
@@ -116,6 +123,14 @@ internal unsafe struct DecodeVirtualSpeakersJob : IJob
 
             for (int channel = 0; channel < channels; channel++)
                 feed += basis[channel] * field[channel];
+
+            float magnitude = math.length(feed.xyz);
+
+            if (magnitude > loudest)
+            {
+                loudest = magnitude;
+                loudestDirection = direction;
+            }
 
             feed *= quadrature;
             SpeakerFeeds[speaker] = feed;
@@ -134,6 +149,50 @@ internal unsafe struct DecodeVirtualSpeakersJob : IJob
         EnergyVectors[1] = EnergyVector(midVector, energies.y);
         EnergyVectors[2] = EnergyVector(highVector, energies.z);
         EnergyVectors[3] = EnergyVector(broadbandVector, energies.w);
+
+        FieldPeak.Value = RefinePeak(loudestDirection, loudest, field, channels, basis);
+    }
+
+    float4 RefinePeak(float3 direction, float magnitude, float4* field, int channels, float* basis)
+    {
+        float step = math.radians(6f);
+
+        for (int iteration = 0; iteration < 16; iteration++)
+        {
+            float3 tangent = math.normalize(math.cross(direction, math.abs(direction.y) < 0.9f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f)));
+            float3 bitangent = math.cross(direction, tangent);
+            bool moved = false;
+
+            for (int probe = 0; probe < 4; probe++)
+            {
+                float3 offset = (probe < 2 ? tangent : bitangent) * (probe % 2 == 0 ? step : -step);
+                float3 candidate = math.normalize(direction + offset);
+                float candidateMagnitude = Magnitude(candidate, field, channels, basis);
+
+                if (candidateMagnitude > magnitude)
+                {
+                    magnitude = candidateMagnitude;
+                    direction = candidate;
+                    moved = true;
+                }
+            }
+
+            if (!moved)
+                step *= 0.5f;
+        }
+
+        return new float4(direction, math.max(magnitude, 0f));
+    }
+
+    float Magnitude(float3 direction, float4* field, int channels, float* basis)
+    {
+        SphericalHarmonics.Evaluate(direction, Order, basis);
+        float4 value = float4.zero;
+
+        for (int channel = 0; channel < channels; channel++)
+            value += basis[channel] * field[channel];
+
+        return math.length(value.xyz);
     }
 
     static float4 EnergyVector(float3 weighted, float energy) => energy > 0f ? new float4(weighted / energy, energy) : float4.zero;
