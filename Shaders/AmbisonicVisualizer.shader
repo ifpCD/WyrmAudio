@@ -14,7 +14,6 @@ Shader "Hidden/WyrmAudio/AmbisonicVisualizer"
         [HDR] _LowColor ("Low Freq (Bass) Color", Color) = (1.0, 0.05, 0.0, 1.0)
         [HDR] _MidColor ("Mid Freq Color", Color) = (0.1, 1.0, 0.3, 1.0)
         [HDR] _HighColor ("High Freq (Treble) Color", Color) = (0.0, 0.8, 1.0, 1.0)
-        [HDR] _NegativeColor ("Negative Lobe Color", Color) = (0.55, 0.0, 1.0, 1.0)
     }
     SubShader
     {
@@ -67,7 +66,6 @@ Shader "Hidden/WyrmAudio/AmbisonicVisualizer"
             float4 _LowColor;
             float4 _MidColor;
             float4 _HighColor;
-            float4 _NegativeColor;
 
             // Same recurrence as SphericalHarmonics.Evaluate: orthonormal, ACN, no Condon-Shortley phase.
             float4 EvaluateField(float3 direction)
@@ -141,10 +139,9 @@ Shader "Hidden/WyrmAudio/AmbisonicVisualizer"
                 float3 bands = abs(field.xyz);
                 float totalBandEnergy = bands.x + bands.y + bands.z + 0.0001;
 
-                float3 bandColor = (bands.x * _LowColor.rgb + bands.y * _MidColor.rgb + bands.z * _HighColor.rgb) / totalBandEnergy;
-                float negativity = saturate(-(field.x + field.y + field.z) / totalBandEnergy);
-
-                o.mappedColor = lerp(bandColor, _NegativeColor.rgb, negativity);
+                // only positive band contributions carry color: negative lobes render black
+                float3 positive = max(field.xyz, 0.0);
+                o.mappedColor = (positive.x * _LowColor.rgb + positive.y * _MidColor.rgb + positive.z * _HighColor.rgb) / totalBandEnergy;
                 o.bandOpacity = (bands.x * _LowColor.a + bands.y * _MidColor.a + bands.z * _HighColor.a) / totalBandEnergy;
                 o.intensity = lerp(dot(bands, 1.0 / 3.0), max(bands.x, max(bands.y, bands.z)), 0.5);
 

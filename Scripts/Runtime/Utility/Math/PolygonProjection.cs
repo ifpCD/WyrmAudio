@@ -151,16 +151,7 @@ internal static unsafe class PolygonProjection
 
         for (int group = 0; group < GROUPS; group++)
         {
-            double4 x = directionsX[group];
-            double4 y = directionsY[group];
-            double4 z = directionsZ[group];
-
-            for (int order = 0; order < ORDER; order++)
-                boundary[order] = 0.0;
-
-            AccumulateArc(arc0, x, y, z, boundary);
-            AccumulateArc(arc1, x, y, z, boundary);
-            AccumulateArc(arc2, x, y, z, boundary);
+            AccumulateArcs(arc0, arc1, arc2, directionsX[group], directionsY[group], directionsZ[group], boundary);
 
             // (n + 1) tau_n = (n - 1) tau_(n-2) + sum over arcs of (w.normal) E_(n-1)
             double4 previous = 0.0;
@@ -169,7 +160,7 @@ internal static unsafe class PolygonProjection
 
             for (int order = 1; order <= ORDER; order++)
             {
-                double4 next = ((order - 1) * previous + boundary[order - 1]) / (order + 1);
+                double4 next = ((order - 1) * previous + boundary[order - 1]) * (1.0 / (order + 1));
                 moments[order * GROUPS + group] = next;
                 previous = current;
                 current = next;
@@ -177,34 +168,66 @@ internal static unsafe class PolygonProjection
         }
     }
 
-    // E_k = integral over the arc of (w.u)^k; with f = w.u and f' = g along the arc: k E_k = (k - 1) |w_plane|^2 E_(k-2) - [f^(k-1) g]
+    // E_k = integral over an arc of (w.u)^k; with f = w.u and f' = g along the arc: k E_k = (k - 1) |w_plane|^2 E_(k-2) - [f^(k-1) g].
+    // The three arcs advance in lockstep so their independent recurrences overlap instead of serializing on latency.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static void AccumulateArc(in Arc arc, double4 x, double4 y, double4 z, double4* boundary)
+    static void AccumulateArcs(in Arc arc0, in Arc arc1, in Arc arc2, double4 x, double4 y, double4 z, double4* boundary)
     {
-        double4 start = x * arc.Start.x + y * arc.Start.y + z * arc.Start.z;
-        double4 end = x * arc.End.x + y * arc.End.y + z * arc.End.z;
-        double4 tangent = x * arc.Tangent.x + y * arc.Tangent.y + z * arc.Tangent.z;
-        double4 normal = x * arc.Normal.x + y * arc.Normal.y + z * arc.Normal.z;
+        var state0 = new ArcRecurrence(arc0, x, y, z);
+        var state1 = new ArcRecurrence(arc1, x, y, z);
+        var state2 = new ArcRecurrence(arc2, x, y, z);
 
-        double4 planeSquared = start * start + tangent * tangent;
-        double4 endSlope = tangent * arc.Cosine - start * arc.Sine;
-
-        double4 previous = 0.0;
-        double4 current = arc.Angle;
-        double4 startPower = 1.0;
-        double4 endPower = 1.0;
-
-        boundary[0] += normal * current;
+        boundary[0] = state0.Normal * state0.Current + state1.Normal * state1.Current + state2.Normal * state2.Current;
 
         for (int order = 1; order < ORDER; order++)
         {
-            double4 next = ((order - 1) * planeSquared * previous - (endPower * endSlope - startPower * tangent)) / order;
-            boundary[order] += normal * next;
+            double reciprocal = 1.0 / order;
+            boundary[order] = state0.Advance(order, reciprocal) + state1.Advance(order, reciprocal) + state2.Advance(order, reciprocal);
+        }
+    }
 
-            previous = current;
-            current = next;
-            startPower *= start;
-            endPower *= end;
+    struct ArcRecurrence
+    {
+        public double4 Normal;
+        public double4 Current;
+
+        double4 _start;
+        double4 _end;
+        double4 _tangent;
+        double4 _planeSquared;
+        double4 _endSlope;
+        double4 _previous;
+        double4 _startPower;
+        double4 _endPower;
+
+        public ArcRecurrence(in Arc arc, double4 x, double4 y, double4 z)
+        {
+            _start = x * arc.Start.x + y * arc.Start.y + z * arc.Start.z;
+            _end = x * arc.End.x + y * arc.End.y + z * arc.End.z;
+            _tangent = x * arc.Tangent.x + y * arc.Tangent.y + z * arc.Tangent.z;
+            Normal = x * arc.Normal.x + y * arc.Normal.y + z * arc.Normal.z;
+
+            _planeSquared = _start * _start + _tangent * _tangent;
+            _endSlope = _tangent * arc.Cosine - _start * arc.Sine;
+
+            _previous = 0.0;
+            Current = arc.Angle;
+            _startPower = 1.0;
+            _endPower = 1.0;
+        }
+
+        // (w.normal) E_order
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public double4 Advance(int order, double reciprocal)
+        {
+            double4 next = ((order - 1) * _planeSquared * _previous - (_endPower * _endSlope - _startPower * _tangent)) * reciprocal;
+
+            _previous = Current;
+            Current = next;
+            _startPower *= _start;
+            _endPower *= _end;
+
+            return Normal * next;
         }
     }
 

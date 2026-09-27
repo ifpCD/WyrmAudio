@@ -11,14 +11,15 @@ public sealed partial class AmbisonicVisualizer
     NativeArray<float> _sourceWeights;
     NativeArray<float> _maxREWeights;
     NativeArray<float4> _field;
-    NativeReference<int> _fieldOrder;
+    NativeReference<int3> _fieldOrders;
+    int _contributingSources;
 
     readonly Vector4[] _fieldUpload = new Vector4[HC.MAX_AMBISONIC_CHANNELS];
 
     void AllocateField()
     {
         _field = new(HC.MAX_AMBISONIC_CHANNELS, Allocator.Persistent);
-        _fieldOrder = new(Allocator.Persistent);
+        _fieldOrders = new(Allocator.Persistent);
         _maxREWeights = new(WEIGHT_STRIDE * WEIGHT_STRIDE, Allocator.Persistent);
 
         // Phonon's decoder weighting: P_l(cos(137.9 deg / (order + 1.51)))
@@ -47,9 +48,10 @@ public sealed partial class AmbisonicVisualizer
         _sourceWeights.TryDispose();
         _maxREWeights.TryDispose();
         _field.TryDispose();
-        _fieldOrder.TryDispose();
+        _fieldOrders.TryDispose();
     }
 
+    // returns the highest band order present
     int AccumulateField()
     {
         int sourceCount = WyrmBaseSource.ActiveCount;
@@ -60,11 +62,18 @@ public sealed partial class AmbisonicVisualizer
             _sourceWeights = new(math.ceilpow2(sourceCount), Allocator.Persistent);
         }
 
+        _contributingSources = 0;
+
         for (int index = 0; index < sourceCount; index++)
         {
             WyrmBaseSource source = WyrmBaseSource.RegisteredInstances[index];
             bool included = source.UseAmbisonics && (targetMixerGroup == null || source.MixerGroup == targetMixerGroup);
-            _sourceWeights[index] = included ? (weightByVolume ? source.volume : 1f) : 0f;
+            float weight = included ? (weightByVolume ? source.volume : 1f) : 0f;
+
+            _sourceWeights[index] = weight;
+
+            if (weight > 0f)
+                _contributingSources++;
         }
 
         new AccumulateAmbisonicFieldJob
@@ -77,13 +86,13 @@ public sealed partial class AmbisonicVisualizer
             SourceBandOrders = WyrmBaseSource.TargetAmbisonicOrders,
             MaxREWeights = _maxREWeights,
             Field = _field,
-            FieldOrder = _fieldOrder,
+            FieldOrders = _fieldOrders,
         }.Run();
 
         for (int channel = 0; channel < HC.MAX_AMBISONIC_CHANNELS; channel++)
             _fieldUpload[channel] = _field[channel];
 
-        return _fieldOrder.Value;
+        return math.cmax(_fieldOrders.Value);
     }
 }
 #endif

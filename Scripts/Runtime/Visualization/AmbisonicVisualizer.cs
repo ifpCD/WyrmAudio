@@ -7,11 +7,13 @@ public enum AmbisonicVisualization : byte
     Rendered,
 }
 
-// Sum of every audible source's banded field around the listener, world-aligned. Rendered applies Phonon's per-band
-// max-rE decoder weighting; Encoded shows the raw coefficients, truncation ringing (negative lobes) included.
+// Sum of every audible source's banded field around the listener. The field sphere is world-aligned; the virtual speakers
+// are head-locked like Phonon's and fed by its sampling decoder. Rendered applies Phonon's per-band max-rE weighting,
+// Encoded shows the raw coefficients. Negative lobes and negative speaker feeds are black.
 [DefaultExecutionOrder(200)]
 public sealed partial class AmbisonicVisualizer : MonoBehaviour
 {
+    [Header("Field")]
     public AudioMixerGroup targetMixerGroup;
 
     public AmbisonicVisualization visualization = AmbisonicVisualization.Rendered;
@@ -35,6 +37,26 @@ public sealed partial class AmbisonicVisualizer : MonoBehaviour
     [Range(3, 6)]
     public int subdivisions = 5;
 
+    [Header("Virtual Speakers")]
+    public bool showVirtualSpeakers = true;
+
+    public float speakerRadius = 4.0f;
+
+    public float speakerSize = 0.12f;
+
+    [Range(12f, 72f)]
+    public float speakerRangeDecibels = 36f;
+
+    [Range(0f, 1f)]
+    public float speakerIdleOpacity = 0.15f;
+
+    [Header("Diagnostics")]
+    public bool showEnergyVectors = true;
+
+    [Range(0, 16)]
+    public int labeledSpeakers = 4;
+
+    [Header("Colors")]
     [ColorUsage(true, true)]
     public Color idleColor = new(0.02f, 0.1f, 0.3f, 1.0f);
 
@@ -47,14 +69,15 @@ public sealed partial class AmbisonicVisualizer : MonoBehaviour
     [ColorUsage(true, true)]
     public Color highFreqColor = new(0.0f, 0.8f, 1.0f, 1.0f);
 
-    [ColorUsage(true, true)]
-    public Color negativeLobeColor = new(0.55f, 0.0f, 1.0f, 1.0f);
-
 #if UNITY_EDITOR
     Mesh _sphere;
     int _sphereSubdivisions;
     Material _material;
     MaterialPropertyBlock _properties;
+
+    bool _hasFrame;
+    Vector3 _listenerPosition;
+    Quaternion _listenerRotation;
 
     static readonly int FIELD_ID = Shader.PropertyToID("_Field");
     static readonly int ORDER_ID = Shader.PropertyToID("_Order");
@@ -68,34 +91,58 @@ public sealed partial class AmbisonicVisualizer : MonoBehaviour
     static readonly int LOW_COLOR_ID = Shader.PropertyToID("_LowColor");
     static readonly int MID_COLOR_ID = Shader.PropertyToID("_MidColor");
     static readonly int HIGH_COLOR_ID = Shader.PropertyToID("_HighColor");
-    static readonly int NEGATIVE_COLOR_ID = Shader.PropertyToID("_NegativeColor");
 
-    void OnEnable() => AllocateField();
+    void OnEnable()
+    {
+        AllocateField();
+        AllocateSpeakers();
+    }
 
     void OnDisable()
     {
+        _hasFrame = false;
+
         DeallocateField();
+        DeallocateSpeakers();
 
         if (_material != null)
             DestroyImmediate(_material);
 
         if (_sphere != null)
             DestroyImmediate(_sphere);
+
+        if (_speakerMaterial != null)
+            DestroyImmediate(_speakerMaterial);
+
+        if (_speakerMesh != null)
+            DestroyImmediate(_speakerMesh);
     }
 
     void LateUpdate()
     {
+        _hasFrame = false;
+
         if (!Application.isPlaying || WyrmBaseSource.CompletelyInactive || WyrmAudioManager.Listener == null)
             return;
 
-        if (!EnsureResources())
+        if (!EnsureFieldResources() || !EnsureSpeakerResources())
             return;
 
+        _listenerPosition = WyrmListener.ListenerPosition.Value;
+        _listenerRotation = WyrmListener.ListenerRotation.Value;
+
         int order = AccumulateField();
-        Draw(order);
+        DecodeSpeakers(order, _listenerRotation);
+
+        DrawField(order);
+
+        if (showVirtualSpeakers)
+            DrawSpeakers();
+
+        _hasFrame = true;
     }
 
-    bool EnsureResources()
+    bool EnsureFieldResources()
     {
         _properties ??= new MaterialPropertyBlock();
 
@@ -121,7 +168,7 @@ public sealed partial class AmbisonicVisualizer : MonoBehaviour
         return true;
     }
 
-    void Draw(int order)
+    void DrawField(int order)
     {
         _properties.SetVectorArray(FIELD_ID, _fieldUpload);
         _properties.SetFloat(ORDER_ID, order);
@@ -135,9 +182,8 @@ public sealed partial class AmbisonicVisualizer : MonoBehaviour
         _properties.SetColor(LOW_COLOR_ID, lowFreqColor);
         _properties.SetColor(MID_COLOR_ID, midFreqColor);
         _properties.SetColor(HIGH_COLOR_ID, highFreqColor);
-        _properties.SetColor(NEGATIVE_COLOR_ID, negativeLobeColor);
 
-        Graphics.DrawMesh(_sphere, Matrix4x4.Translate(WyrmListener.ListenerPosition.Value), _material, gameObject.layer, null, 0, _properties);
+        Graphics.DrawMesh(_sphere, Matrix4x4.Translate(_listenerPosition), _material, gameObject.layer, null, 0, _properties);
     }
 #endif
 }
