@@ -34,7 +34,7 @@ public struct GenerateDiscardCommands : IJobParallelFor
     public void Execute(int maskIndex)
     {
         int count = MaskSampleCounts[maskIndex];
-        int storageStart = maskIndex * 64;
+        int storageStart = OcclusionSamples.Start(maskIndex);
         int denseStart = MaskRaycastOffsets[maskIndex];
 
         float4x4 maskLocalToWorld = MaskLocalToWorlds[maskIndex];
@@ -94,7 +94,7 @@ public struct GenerateOcclusionCommands : IJobParallelFor
     {
         int sampleCount = MaskSampleCounts[maskIndex];
 
-        int storageStart = maskIndex * 64;
+        int storageStart = OcclusionSamples.Start(maskIndex);
         int denseStart = MaskRaycastOffsets[maskIndex];
 
         float3 listenerWorldPos = ListenerPosition.Value;
@@ -151,7 +151,7 @@ public struct ResolveMaskOcclusionValueJob : IJobParallelFor
     {
         int sampleCount = MaskSampleCounts[maskIndex];
 
-        int storageStart = maskIndex * 64;
+        int storageStart = OcclusionSamples.Start(maskIndex);
         int denseStart = MaskRaycastOffsets[maskIndex];
 
         float totalWeight = 0f;

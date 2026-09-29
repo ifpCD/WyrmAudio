@@ -6,6 +6,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 
 // Field: xyz = low, mid, high coefficient sums per channel. FieldOrders: highest order present per band.
+// MaxREWeights: [order][degree], rows of AmbisonicVisualizer.WEIGHT_STRIDE.
 [BurstCompile(CompileSynchronously = true)]
 internal unsafe struct AccumulateAmbisonicFieldJob : IJob
 {
@@ -33,7 +34,6 @@ internal unsafe struct AccumulateAmbisonicFieldJob : IJob
         float4* field = (float4*)Field.GetUnsafePtr();
         UnsafeUtility.MemClear(field, HC.MAX_AMBISONIC_CHANNELS * sizeof(float4));
 
-        float* outputs = (float*)SourceOutputs.GetUnsafeReadOnlyPtr();
         float* maxREWeights = (float*)MaxREWeights.GetUnsafeReadOnlyPtr();
         int3 fieldOrders = int3.zero;
 
@@ -45,6 +45,7 @@ internal unsafe struct AccumulateAmbisonicFieldJob : IJob
                 continue;
 
             int3 orders = SourceBandOrders[source];
+            float* buffer = AmbisonicBuffer.GetReadOnly(SourceOutputs, source);
 
             for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
             {
@@ -56,8 +57,8 @@ internal unsafe struct AccumulateAmbisonicFieldJob : IJob
                 int order = orders[band];
                 fieldOrders[band] = math.max(fieldOrders[band], order);
 
-                float* coefficients = outputs + source * HC.AMBISONIC_BUFFER_LENGTH + band * HC.MAX_AMBISONIC_CHANNELS;
-                float* degreeWeights = maxREWeights + order * (HC.MAX_AMBISONIC_ORDER + 1);
+                float* coefficients = AmbisonicBuffer.GetBand(buffer, band);
+                float* degreeWeights = maxREWeights + order * AmbisonicVisualizer.WEIGHT_STRIDE;
 
                 for (int l = 0, channel = 0; l <= order; l++)
                 {

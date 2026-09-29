@@ -64,7 +64,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
 
         if (IsRegistered)
         {
-            int SoASampleIndex = (SoAIndex * HC.MAX_OCC_SAMPLES_PER_MASK) + sampleIndex;
+            int SoASampleIndex = OcclusionSamples.Start(SoAIndex) + sampleIndex;
             SampleLocalPositions[SoASampleIndex] = newLocalPosition;
         }
     }
@@ -75,7 +75,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
             return;
 
         MaskSampleCounts[SoAIndex] = _generatedSampleData.Count;
-        int chunkStartOffset = SoAIndex * HC.MAX_OCC_SAMPLES_PER_MASK;
+        int chunkStartOffset = OcclusionSamples.Start(SoAIndex);
 
         for (int i = 0; i < _generatedSampleData.Count; i++)
         {

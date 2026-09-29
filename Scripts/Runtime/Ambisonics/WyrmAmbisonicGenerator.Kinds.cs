@@ -45,8 +45,12 @@ public sealed partial class WyrmAmbisonicGenerator
             return;
         }
 
+        // no row will write this buffer: silence it rather than keep playing the previous kind's last field
         if (_attachedMesh == null)
+        {
+            AmbisonicBuffer.Clear(Outputs, SoAIndex);
             return;
+        }
 
         _meshRow ??= new MeshAmbisonics(this);
         _meshRow.Register();

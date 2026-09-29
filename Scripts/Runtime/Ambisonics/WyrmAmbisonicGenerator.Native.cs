@@ -1,5 +1,4 @@
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 public sealed partial class WyrmAmbisonicGenerator
@@ -18,7 +17,7 @@ public sealed partial class WyrmAmbisonicGenerator
         BandGains         = new(AllocatedCapacity, Allocator.Persistent);
         BandSpreads       = new(AllocatedCapacity, Allocator.Persistent);
         HorizontalSpreads = new(AllocatedCapacity, Allocator.Persistent);
-        Outputs           = new(AllocatedCapacity * HC.AMBISONIC_BUFFER_LENGTH, Allocator.Persistent);
+        Outputs           = AmbisonicBuffer.Allocate(AllocatedCapacity, Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
@@ -32,7 +31,7 @@ public sealed partial class WyrmAmbisonicGenerator
 
     protected override void LoadObjectToArrays()
     {
-        AmbisonicUtilities.Clear(Outputs, SoAIndex);
+        AmbisonicBuffer.Clear(Outputs, SoAIndex);
 
         SyncShaping();
     }
@@ -48,7 +47,7 @@ public sealed partial class WyrmAmbisonicGenerator
         BandSpreads[removedIndex]       = BandSpreads[lastIndex];
         HorizontalSpreads[removedIndex] = HorizontalSpreads[lastIndex];
 
-        AmbisonicUtilities.Copy(Outputs, lastIndex, Outputs, removedIndex);
+        AmbisonicBuffer.Copy(Outputs, lastIndex, Outputs, removedIndex);
     }
 
     // csharpier-ignore

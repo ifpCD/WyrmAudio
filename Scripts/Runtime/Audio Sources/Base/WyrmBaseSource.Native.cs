@@ -77,7 +77,7 @@ public partial class WyrmBaseSource
 
         TargetOcclusion01                              = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicEQ01s                           = new(AllocatedCapacity, Allocator.Persistent);
-        TargetAmbisonicOutputs                         = new(AllocatedCapacity * HC.AMBISONIC_BUFFER_LENGTH, Allocator.Persistent);
+        TargetAmbisonicOutputs                         = AmbisonicBuffer.Allocate(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicOrders                          = new(AllocatedCapacity, Allocator.Persistent);
 
         CurrentOcclusion01                             = new(AllocatedCapacity, Allocator.Persistent);

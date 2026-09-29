@@ -6,7 +6,8 @@ using UnityEngine;
 
 public sealed partial class AmbisonicVisualizer
 {
-    const int WEIGHT_STRIDE = HC.MAX_AMBISONIC_ORDER + 1;
+    // max-rE table row: one weight per degree, indexed [order * WEIGHT_STRIDE + l]
+    internal const int WEIGHT_STRIDE = HC.MAX_AMBISONIC_ORDER + 1;
 
     NativeArray<float> _sourceWeights;
     NativeArray<float> _maxREWeights;

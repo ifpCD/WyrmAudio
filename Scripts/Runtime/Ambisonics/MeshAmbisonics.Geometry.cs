@@ -8,6 +8,9 @@ internal sealed partial class MeshAmbisonics
 {
     const int TRIANGLES_PER_CHUNK = 64;
 
+    const int INITIAL_TRIANGLE_CAPACITY = 1024;
+    const int INITIAL_CHUNK_CAPACITY = 64;
+
     // the lists below can reallocate on registration, so it waits for the last scheduled projection
     internal static JobHandle Projection;
 
@@ -21,22 +24,22 @@ internal sealed partial class MeshAmbisonics
     internal static NativeList<int3> Chunks;
     internal static NativeArray<int> ChunkOffsets;
     internal static NativeArray<int> ChunkCounts;
-    internal static NativeList<double4> ChunkMoments;
+    internal static NativeList<double4> ChunkMoments; // one BandedMoments block per chunk
 
     static bool _chunksStale;
 
     // csharpier-ignore
     static void AllocateGeometry(int capacity)
     {
-        Triangles       = new(1024, Allocator.Persistent);
-        TriangleBands   = new(1024, Allocator.Persistent);
+        Triangles       = new(INITIAL_TRIANGLE_CAPACITY, Allocator.Persistent);
+        TriangleBands   = new(INITIAL_TRIANGLE_CAPACITY, Allocator.Persistent);
         TriangleOffsets = new(capacity, Allocator.Persistent);
         TriangleCounts  = new(capacity, Allocator.Persistent);
 
-        Chunks          = new(64, Allocator.Persistent);
+        Chunks          = new(INITIAL_CHUNK_CAPACITY, Allocator.Persistent);
         ChunkOffsets    = new(capacity, Allocator.Persistent);
         ChunkCounts     = new(capacity, Allocator.Persistent);
-        ChunkMoments    = new(64 * PolygonProjection.BANDED_MOMENTS, Allocator.Persistent);
+        ChunkMoments    = BandedMoments.Allocate(INITIAL_CHUNK_CAPACITY, Allocator.Persistent);
     }
 
     static void DeallocateGeometry()
@@ -114,6 +117,6 @@ internal sealed partial class MeshAmbisonics
             ChunkCounts[row] = Chunks.Length - ChunkOffsets[row];
         }
 
-        ChunkMoments.ResizeUninitialized(Chunks.Length * PolygonProjection.BANDED_MOMENTS);
+        BandedMoments.Resize(ChunkMoments, Chunks.Length);
     }
 }

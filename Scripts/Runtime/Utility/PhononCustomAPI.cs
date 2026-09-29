@@ -5,7 +5,7 @@ using Unity.Mathematics;
 // csharpier-ignore
 public static class WyrmPhononCustomAPI
 {
-    // bandOrders: numSources x HC.MAX_AMBISONIC_BANDS, bandCoeffs: numSources x HC.AMBISONIC_BUFFER_LENGTH
+    // bandOrders: numSources x HC.MAX_AMBISONIC_BANDS, bandCoeffs: one AmbisonicBuffer slot per source
     [DllImport("phonon")]
     public static extern unsafe void iplSourceSetAmbisonicFieldBatch(int numSources, IntPtr* sources, int3* bandOrders, float* bandCoeffs);
 

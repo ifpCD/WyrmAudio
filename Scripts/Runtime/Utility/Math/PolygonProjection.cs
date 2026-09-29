@@ -48,7 +48,7 @@ internal static unsafe class PolygonProjection
         }
     }
 
-    // bandMoments: BANDS x MOMENTS, layout [band][order][direction group]
+    // bandMoments: one BandedMoments block; within a band, [order][direction group]
     public static void AccumulateTriangle(
         double3 p0,
         double3 p1,
@@ -95,7 +95,7 @@ internal static unsafe class PolygonProjection
         for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
         {
             double weight = bandWeights[band];
-            double4* target = bandMoments + band * MOMENTS;
+            double4* target = BandedMoments.GetBand(bandMoments, band);
 
             for (int index = 0; index < MOMENTS; index++)
                 target[index] += weight * moments[index];
