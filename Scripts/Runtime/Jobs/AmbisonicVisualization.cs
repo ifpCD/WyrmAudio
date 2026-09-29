@@ -111,7 +111,7 @@ internal unsafe struct DecodeVirtualSpeakersJob : IJob
         float3 broadbandVector = float3.zero;
         float4 energies = float4.zero;
 
-        float3 loudestDirection = new float3(0f, 0f, 1f);
+        float3 loudestDirection = new(0f, 0f, 1f);
         float loudest = -1f;
 
         for (int speaker = 0; speaker < VirtualSpeakerLayout.COUNT; speaker++)
@@ -184,7 +184,7 @@ internal unsafe struct DecodeVirtualSpeakersJob : IJob
         return new float4(direction, math.max(magnitude, 0f));
     }
 
-    float Magnitude(float3 direction, float4* field, int channels, float* basis)
+    readonly float Magnitude(float3 direction, float4* field, int channels, float* basis)
     {
         SphericalHarmonics.Evaluate(direction, Order, basis);
         float4 value = float4.zero;

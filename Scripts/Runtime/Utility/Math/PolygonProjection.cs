@@ -73,9 +73,7 @@ internal static unsafe class PolygonProjection
 
         if (triple < 0.0)
         {
-            double3 swap = v1;
-            v1 = v2;
-            v2 = swap;
+            (v2, v1) = (v1, v2);
             triple = -triple;
         }
 

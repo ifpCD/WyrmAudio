@@ -99,9 +99,6 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         PhononSource = null;
     }
 
-    // void Update() => UpdatePhononSimulator();
-    // void LateUpdate() => UpdatePhononSimulator();
-
     // Candidate for custom batch api
     public void UpdatePhononSimulator()
     {

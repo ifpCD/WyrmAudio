@@ -9,7 +9,7 @@ public enum SimpleAmbisonicType : byte
 [NoAutoStaticsCleanup]
 internal sealed partial class SimpleAmbisonics : AmbiBase<SimpleAmbisonics>
 {
-    protected override int AllocatedCapacity => HC.MAX_AMBISONIC_CONTRIBUTORS;
+    protected override int AllocatedCapacity => HC.MAX_AMBISONIC_GENERATORS;
 
     readonly WyrmAmbisonicGenerator _generator;
 

@@ -6,7 +6,7 @@ using UnityEngine;
 [NoAutoStaticsCleanup]
 public sealed partial class WyrmAmbisonicGenerator : AmbiMonoBehaviour<WyrmAmbisonicGenerator>
 {
-    protected override int AllocatedCapacity => HC.MAX_AMBISONIC_CONTRIBUTORS;
+    protected override int AllocatedCapacity => HC.MAX_AMBISONIC_GENERATORS;
 
     [SerializeField]
     AmbisonicGeneratorType _type;

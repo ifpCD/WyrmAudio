@@ -12,12 +12,24 @@ public sealed partial class WyrmAmbisonicGenerator
 
     Mesh ProjectableMesh => _meshTarget != null ? _meshTarget.sharedMesh : null;
 
-    bool AttachmentIsStale =>
-        _attachedType != _type
-        || (
-            _type == AmbisonicGeneratorType.Mesh
-            && (_attachedMeshTarget != _meshTarget || _attachedMesh != ProjectableMesh || _attachedVertexColorBands != _meshVertexColorBands)
-        );
+    bool AttachmentIsStale => _attachedType != _type || IsMeshAttachmentStale();
+
+    bool IsMeshAttachmentStale()
+    {
+        if (_type != AmbisonicGeneratorType.Mesh)
+            return false;
+
+        if (_attachedMeshTarget != _meshTarget)
+            return true;
+
+        if (_attachedMesh != ProjectableMesh)
+            return true;
+
+        if (_attachedVertexColorBands != _meshVertexColorBands)
+            return true;
+
+        return false;
+    }
 
     void AttachKind()
     {

@@ -22,8 +22,8 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         PortalExtents           = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
         PortalRoomA             = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
         PortalRoomB             = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
-        PortalOpenness          = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
 
+        PortalOpenness          = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
         PortalClosenesses       = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
         PortalClosenessRadiuses = new(length: AllocatedCapacity, allocator: Allocator.Persistent);
 
@@ -36,8 +36,8 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         PortalExtents.TryDispose();
         PortalRoomA.TryDispose();
         PortalRoomB.TryDispose();
-        PortalOpenness.TryDispose();
 
+        PortalOpenness.TryDispose();
         PortalClosenesses.TryDispose();
         PortalClosenessRadiuses.TryDispose();
 
@@ -55,6 +55,7 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
         PortalOpenness[removedIndex]            = PortalOpenness[lastIndex];
         PortalClosenesses[removedIndex]         = PortalClosenesses[lastIndex];
         PortalClosenessRadiuses[removedIndex]   = PortalClosenessRadiuses[lastIndex];
+
         AmbisonicGeneratorHandles[removedIndex] = AmbisonicGeneratorHandles[lastIndex];
     }
 

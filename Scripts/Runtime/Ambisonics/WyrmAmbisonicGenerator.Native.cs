@@ -1,4 +1,5 @@
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 public sealed partial class WyrmAmbisonicGenerator
@@ -31,10 +32,7 @@ public sealed partial class WyrmAmbisonicGenerator
 
     protected override void LoadObjectToArrays()
     {
-        int offset = SoAIndex * HC.AMBISONIC_BUFFER_LENGTH;
-
-        for (int index = offset; index < offset + HC.AMBISONIC_BUFFER_LENGTH; index++)
-            Outputs[index] = 0f;
+        AmbisonicUtilities.Clear(Outputs, SoAIndex);
 
         SyncShaping();
     }
@@ -50,7 +48,7 @@ public sealed partial class WyrmAmbisonicGenerator
         BandSpreads[removedIndex]       = BandSpreads[lastIndex];
         HorizontalSpreads[removedIndex] = HorizontalSpreads[lastIndex];
 
-        NativeArray<float>.Copy(Outputs, lastIndex * HC.AMBISONIC_BUFFER_LENGTH, Outputs, removedIndex * HC.AMBISONIC_BUFFER_LENGTH, HC.AMBISONIC_BUFFER_LENGTH);
+        AmbisonicUtilities.Copy(Outputs, lastIndex, Outputs, removedIndex);
     }
 
     // csharpier-ignore
