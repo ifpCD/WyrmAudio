@@ -6,19 +6,19 @@ using Unity.Collections;
 internal static class OcclusionSamples
 {
     // room for every mask filling its whole slot
-    public static NativeArray<T> Allocate<T>(int masks, Allocator allocator)
+    public static NativeArray<T> Allocate<T>(int maskCount, Allocator allocator)
         where T : struct
     {
-        return new NativeArray<T>(masks * HC.MAX_OCC_SAMPLES_PER_MASK, allocator);
+        return new NativeArray<T>(maskCount * HC.MAX_OCC_SAMPLES_PER_MASK, allocator);
     }
 
     // index of the mask's first sample
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int Start(int mask) => mask * HC.MAX_OCC_SAMPLES_PER_MASK;
+    public static int Start(int maskIndex) => maskIndex * HC.MAX_OCC_SAMPLES_PER_MASK;
 
-    public static void Copy<T>(in NativeArray<T> src, int srcMask, in NativeArray<T> dst, int dstMask)
+    public static void Copy<T>(in NativeArray<T> src, int srcIndex, in NativeArray<T> dst, int dstIndex)
         where T : struct
     {
-        NativeArray<T>.Copy(src, Start(srcMask), dst, Start(dstMask), HC.MAX_OCC_SAMPLES_PER_MASK);
+        NativeArray<T>.Copy(src, Start(srcIndex), dst, Start(dstIndex), HC.MAX_OCC_SAMPLES_PER_MASK);
     }
 }

@@ -10,12 +10,12 @@ internal static unsafe class AmbisonicBuffer
     public static NativeArray<float> Allocate(int slots, Allocator allocator) => new(slots * HC.AMBISONIC_BUFFER_LENGTH, allocator);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float* Get(in NativeArray<float> buffers, int slot) => (float*)buffers.GetUnsafePtr() + slot * HC.AMBISONIC_BUFFER_LENGTH;
+    public static float* Get(in NativeArray<float> buffers, int index) => (float*)buffers.GetUnsafePtr() + index * HC.AMBISONIC_BUFFER_LENGTH;
 
     // for [ReadOnly] job fields: Get requires write access under the safety checks
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float* GetReadOnly(in NativeArray<float> buffers, int slot) =>
-        (float*)buffers.GetUnsafeReadOnlyPtr() + slot * HC.AMBISONIC_BUFFER_LENGTH;
+    public static float* GetReadOnly(in NativeArray<float> buffers, int index) =>
+        (float*)buffers.GetUnsafeReadOnlyPtr() + index * HC.AMBISONIC_BUFFER_LENGTH;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float* GetBand(float* buffer, int band) => buffer + band * HC.MAX_AMBISONIC_CHANNELS;
@@ -27,15 +27,15 @@ internal static unsafe class AmbisonicBuffer
     public static void ClearBand(float* band) => UnsafeUtility.MemClear(band, HC.MAX_AMBISONIC_CHANNELS * sizeof(float));
 
     // count consecutive slots, starting at slot
-    public static void Clear(in NativeArray<float> buffers, int slot, int count = 1)
+    public static void Clear(in NativeArray<float> buffers, int index, int count = 1)
     {
-        float* ptr = Get(buffers, slot);
+        float* ptr = Get(buffers, index);
         UnsafeUtility.MemClear(ptr, (long)count * HC.AMBISONIC_BUFFER_LENGTH * sizeof(float));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Copy(in NativeArray<float> src, int srcSlot, in NativeArray<float> dst, int dstSlot)
+    public static void Copy(in NativeArray<float> src, int srcIndex, in NativeArray<float> dst, int dstIndex)
     {
-        NativeArray<float>.Copy(src, srcSlot * HC.AMBISONIC_BUFFER_LENGTH, dst, dstSlot * HC.AMBISONIC_BUFFER_LENGTH, HC.AMBISONIC_BUFFER_LENGTH);
+        NativeArray<float>.Copy(src, srcIndex * HC.AMBISONIC_BUFFER_LENGTH, dst, dstIndex * HC.AMBISONIC_BUFFER_LENGTH, HC.AMBISONIC_BUFFER_LENGTH);
     }
 }
