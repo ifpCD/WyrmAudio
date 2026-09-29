@@ -1,47 +1,106 @@
-using SteamAudio;
-using Unity.Burst;
-using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine.Jobs;
 
 internal static class AmbisonicProcessor
 {
+    // csharpier-ignore
     public static JobHandle Schedule(JobHandle dependency)
     {
         if (WyrmBaseSource.CompletelyInactive || WyrmAudioManager.Listener == null)
             return dependency;
 
-        var simpleAmbisonics = new SimpleAmbisonicsGeneration
+        if (WyrmAmbisonicGenerator.CompletelyInactive)
         {
-            ListenerPosition = WyrmListener.ListenerPosition.Value,
-            Types = WyrmAmbisonicGenerator.Types,
+            return new ClearSourceAmbisonicsJob
+            {
+                SourceCount                = WyrmBaseSource.ActiveCount,
 
-            VirtualDirections = SimpleAmbisonics.VirtualDirections,
-            VirtualPositions = SimpleAmbisonics.VirtualPositions,
+                SourceOutputs              = WyrmBaseSource.TargetAmbisonicOutputs,
+                SourceBandOrders           = WyrmBaseSource.TargetAmbisonicOrders,
+            }.Schedule(dependency);
+        }
 
-            VerticalBlurs = SimpleAmbisonics.VerticalBlurs,
-            HorizontalBlurs = SimpleAmbisonics.HorizontalBlurs,
+        float3 listenerPosition = WyrmListener.ListenerPosition.Value;
+        JobHandle generation = dependency;
 
-            EQVolume01s = WyrmAmbisonicGenerator.EQVolume01s,
-
-            AmbisonicOutputsBuffer = WyrmAmbisonicGenerator.TargetAmbisonicOutputs,
-        };
-        JobHandle simpleAmbisonicsGenerationJob = simpleAmbisonics.Schedule(SimpleAmbisonics.ActiveCount, 16, dependency);
-
-        var loadAmbisonicOutputsToSources = new LoadAmbisonicOutputsToSources
+        if (!SimpleAmbisonics.CompletelyInactive)
         {
-            SourceToAmbisonicGeneratorHandles = WyrmBaseSource.AmbisonicGeneratorHandles,
-            AmbisonicGeneratorBuffers = WyrmAmbisonicGenerator.CurrentAmbisonicOutputs,
-            SourceAmbisonicBuffers = WyrmBaseSource.TargetAmbisonicOutputs,
-            GeneratorHandleToSoAIndex = WyrmAmbisonicGenerator.HandleToSoA,
-            GeneratorVersions = WyrmAmbisonicGenerator.HandleVersions,
-        };
-        JobHandle LoadAmbisonicOutputsToSourcesJob = loadAmbisonicOutputsToSources.Schedule(
-            WyrmBaseSource.ActiveCount,
-            16,
-            simpleAmbisonicsGenerationJob
-        );
+            generation = new EncodeSimpleAmbisonicsJob
+            {
+                ListenerPosition           = listenerPosition,
+                Types                      = SimpleAmbisonics.Types,
+                GeneratorHandles           = SimpleAmbisonics.GeneratorHandles,
 
-        return LoadAmbisonicOutputsToSourcesJob;
+                GeneratorHandleToSoA       = WyrmAmbisonicGenerator.HandleToSoA,
+                GeneratorBandOrders        = WyrmAmbisonicGenerator.BandOrders,
+                GeneratorBandGains         = WyrmAmbisonicGenerator.BandGains,
+                GeneratorBandSpreads       = WyrmAmbisonicGenerator.BandSpreads,
+                GeneratorHorizontalSpreads = WyrmAmbisonicGenerator.HorizontalSpreads,
+
+                GeneratorOutputs           = WyrmAmbisonicGenerator.Outputs,
+            }.ScheduleReadOnly(SimpleAmbisonics.Transforms, 16, dependency);
+        }
+
+        if (!MeshAmbisonics.CompletelyInactive)
+            generation = ScheduleMeshProjection(listenerPosition, dependency, generation);
+
+        return new LoadAmbisonicOutputsToSourcesJob
+        {
+            SourceGeneratorHandles         = WyrmBaseSource.AmbisonicGeneratorHandles,
+            SourceBandGains                = WyrmBaseSource.CurrentAmbisonicEQ01s,
+
+            GeneratorHandleToSoA           = WyrmAmbisonicGenerator.HandleToSoA,
+            GeneratorVersions              = WyrmAmbisonicGenerator.HandleVersions,
+            GeneratorBandOrders            = WyrmAmbisonicGenerator.BandOrders,
+            GeneratorOutputs               = WyrmAmbisonicGenerator.Outputs,
+
+            SourceOutputs                  = WyrmBaseSource.TargetAmbisonicOutputs,
+            SourceBandOrders               = WyrmBaseSource.TargetAmbisonicOrders,
+        }.Schedule(WyrmBaseSource.ActiveCount, 16, generation);
+    }
+
+    // Projection overlaps the simple encode; only the reduce shares the generator outputs with it.
+    // csharpier-ignore
+    static JobHandle ScheduleMeshProjection(float3 listenerPosition, JobHandle dependency, JobHandle outputsDependency)
+    {
+        MeshAmbisonics.RefreshChunks();
+
+        JobHandle targets = new ReadMeshTargetsJob
+        {
+            ListenerPosition           = listenerPosition,
+
+            LocalToAmbisonic           = MeshAmbisonics.LocalToAmbisonic,
+        }.ScheduleReadOnly(MeshAmbisonics.Targets, 8, dependency);
+
+        JobHandle chunks = new ProjectMeshChunksJob
+        {
+            Chunks                     = MeshAmbisonics.Chunks.AsArray(),
+            LocalToAmbisonic           = MeshAmbisonics.LocalToAmbisonic,
+            Triangles                  = MeshAmbisonics.Triangles.AsArray(),
+            TriangleBands              = MeshAmbisonics.TriangleBands.AsArray(),
+            DirectionsX                = MeshAmbisonics.MomentDirectionsX,
+            DirectionsY                = MeshAmbisonics.MomentDirectionsY,
+            DirectionsZ                = MeshAmbisonics.MomentDirectionsZ,
+
+            ChunkMoments               = MeshAmbisonics.ChunkMoments.AsArray(),
+        }.Schedule(MeshAmbisonics.Chunks.Length, 1, targets);
+
+        return MeshAmbisonics.Projection = new ReduceMeshMomentsJob
+        {
+            ChunkOffsets               = MeshAmbisonics.ChunkOffsets,
+            ChunkCounts                = MeshAmbisonics.ChunkCounts,
+            ChunkMoments               = MeshAmbisonics.ChunkMoments.AsArray(),
+            MomentToHarmonic           = MeshAmbisonics.MomentToHarmonic,
+            GeneratorHandles           = MeshAmbisonics.GeneratorHandles,
+
+            GeneratorHandleToSoA       = WyrmAmbisonicGenerator.HandleToSoA,
+            GeneratorBandOrders        = WyrmAmbisonicGenerator.BandOrders,
+            GeneratorBandGains         = WyrmAmbisonicGenerator.BandGains,
+            GeneratorBandSpreads       = WyrmAmbisonicGenerator.BandSpreads,
+            GeneratorHorizontalSpreads = WyrmAmbisonicGenerator.HorizontalSpreads,
+
+            GeneratorOutputs           = WyrmAmbisonicGenerator.Outputs,
+        }.Schedule(MeshAmbisonics.ActiveCount, 1, JobHandle.CombineDependencies(chunks, outputsDependency));
     }
 }

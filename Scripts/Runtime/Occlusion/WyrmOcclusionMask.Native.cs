@@ -7,8 +7,6 @@ public partial class WyrmOcclusionMask
 {
     protected override int AllocatedCapacity => HC.MAX_OCC_MASKS;
 
-    const int AllocatedSampleCapacity = HC.MAX_OCC_MASKS * HC.MAX_OCC_SAMPLES_PER_MASK;
-
     public static NativeArray<float> TargetOcclusionValue01s;
     public static NativeArray<float4x4> LocalToWorlds;
     public static TransformAccessArray MaskTransforms;
@@ -38,15 +36,16 @@ public partial class WyrmOcclusionMask
 
         MaskRaycastOffsets      = new(AllocatedCapacity, Allocator.Persistent);
 
-        SampleLocalPositions    = new(AllocatedSampleCapacity, Allocator.Persistent);
-        SampleWeights           = new(AllocatedSampleCapacity, Allocator.Persistent);
-        SampleIsDiscardable     = new(AllocatedSampleCapacity, Allocator.Persistent);
-        SampleWorldPositions    = new(AllocatedSampleCapacity, Allocator.Persistent);
-        SampleIsDiscarded       = new(AllocatedSampleCapacity, Allocator.Persistent);
-        SampleIsOccluded        = new(AllocatedSampleCapacity, Allocator.Persistent);
+        SampleLocalPositions    = OcclusionSamples.Allocate<float3>(AllocatedCapacity, Allocator.Persistent);
+        SampleWeights           = OcclusionSamples.Allocate<float>(AllocatedCapacity, Allocator.Persistent);
+        SampleIsDiscardable     = OcclusionSamples.Allocate<bool>(AllocatedCapacity, Allocator.Persistent);
+        SampleWorldPositions    = OcclusionSamples.Allocate<float3>(AllocatedCapacity, Allocator.Persistent);
+        SampleIsDiscarded       = OcclusionSamples.Allocate<bool>(AllocatedCapacity, Allocator.Persistent);
+        SampleIsOccluded        = OcclusionSamples.Allocate<bool>(AllocatedCapacity, Allocator.Persistent);
 
-        RaycastCommandBuffer    = new(AllocatedSampleCapacity, Allocator.Persistent);
-        RaycastResultBuffer     = new(AllocatedSampleCapacity, Allocator.Persistent);
+        // packed densely, but sized for every slot being full
+        RaycastCommandBuffer    = OcclusionSamples.Allocate<RaycastCommand>(AllocatedCapacity, Allocator.Persistent);
+        RaycastResultBuffer     = OcclusionSamples.Allocate<RaycastHit>(AllocatedCapacity, Allocator.Persistent);
     }
 
     protected override void DeallocateNative()
@@ -98,15 +97,11 @@ public partial class WyrmOcclusionMask
             LocalToWorlds[removedIndex]           = LocalToWorlds[lastIndex];
             MaskSampleCounts[removedIndex]        = MaskSampleCounts[lastIndex];
 
-            int dstOffset                         = removedIndex * HC.MAX_OCC_SAMPLES_PER_MASK;
-            int srcOffset                         = lastIndex * HC.MAX_OCC_SAMPLES_PER_MASK;
-            int chunkLength                       = HC.MAX_OCC_SAMPLES_PER_MASK;
-
-            NativeArray<float3>.Copy(SampleLocalPositions,  srcOffset, SampleLocalPositions,    dstOffset, chunkLength);
-            NativeArray<float>.Copy(SampleWeights,          srcOffset, SampleWeights,           dstOffset, chunkLength);
-            NativeArray<bool>.Copy(SampleIsDiscardable,     srcOffset, SampleIsDiscardable,     dstOffset, chunkLength);
-            NativeArray<bool>.Copy(SampleIsDiscarded,       srcOffset, SampleIsDiscarded,       dstOffset, chunkLength);
-            NativeArray<bool>.Copy(SampleIsOccluded,        srcOffset, SampleIsOccluded,        dstOffset, chunkLength);
+            OcclusionSamples.Copy(SampleLocalPositions, lastIndex, SampleLocalPositions, removedIndex);
+            OcclusionSamples.Copy(SampleWeights,        lastIndex, SampleWeights,        removedIndex);
+            OcclusionSamples.Copy(SampleIsDiscardable,  lastIndex, SampleIsDiscardable,  removedIndex);
+            OcclusionSamples.Copy(SampleIsDiscarded,    lastIndex, SampleIsDiscarded,    removedIndex);
+            OcclusionSamples.Copy(SampleIsOccluded,     lastIndex, SampleIsOccluded,     removedIndex);
         }
         MaskTransforms.RemoveAtSwapBack(removedIndex);
 

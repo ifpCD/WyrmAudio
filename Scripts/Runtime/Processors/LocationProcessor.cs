@@ -5,11 +5,16 @@ internal static class LocationProcessor
     public static JobHandle Schedule(JobHandle dependency)
     {
         int sourceCount = WyrmBaseSource.ActiveCount;
-        if (WyrmBaseSource.CompletelyInactive || WyrmRoomShape.CompletelyInactive || WyrmPortal.CompletelyInactive || WyrmAudioManager.Listener == null)
+        if (
+            WyrmBaseSource.CompletelyInactive
+            || WyrmRoomShape.CompletelyInactive
+            || WyrmPortal.CompletelyInactive
+            || WyrmAudioManager.Listener == null
+        )
             return dependency;
 
         // csharpier-ignore
-        var locateListener = new LocateListenerJob
+        var locateListenerHandle = new LocateListenerJob
         {
             ShapeWorldToLocal      = WyrmRoomShape.ShapeWorldToLocal,
             ShapeExtents           = WyrmRoomShape.ShapeExtents,
@@ -25,11 +30,10 @@ internal static class LocationProcessor
             ListenerPosition       = WyrmListener.ListenerPosition.Value,
 
             ListenerRoomIdentifier = WyrmListener.ListenerRoomIdentifier,
-        };
-        JobHandle listenerHandle = locateListener.Schedule(dependency);
+        }.Schedule(dependency);
 
         // csharpier-ignore
-        var locateSources = new LocateSourcesJob
+        var locateSourcesHandle = new LocateSourcesJob
         {
             ShapeWorldToLocal     = WyrmRoomShape.ShapeWorldToLocal,
             ShapeExtents          = WyrmRoomShape.ShapeExtents,
@@ -45,9 +49,8 @@ internal static class LocationProcessor
             SourcePositions       = WyrmBaseSource.Positions,
 
             SourceRoomIdentifiers = WyrmBaseSource.SourceRoomIDs,
-        };
-        JobHandle sourcesHandle = locateSources.Schedule(sourceCount, 16, dependency);
+        }.Schedule(sourceCount, 16, dependency);
 
-        return JobHandle.CombineDependencies(listenerHandle, sourcesHandle);
+        return JobHandle.CombineDependencies(locateListenerHandle, locateSourcesHandle);
     }
 }

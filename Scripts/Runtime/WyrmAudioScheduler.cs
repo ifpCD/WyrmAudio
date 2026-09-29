@@ -1,5 +1,4 @@
 using System;
-using SteamAudio;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -69,21 +68,18 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
     // csharpier-ignore
     static JobHandle ScheduleFrame()
     {
-        var gatherSourcePositions   = new ReadTransformDataJob
+        var gatherHandle   = new ReadTransformDataJob
         {
             Positions               = WyrmBaseSource.Positions,
             Rotations               = WyrmBaseSource.Rotations,
-            LocalToWorlds           = WyrmBaseSource.LocalToWorlds
-        };
-        JobHandle gatherHandle      = gatherSourcePositions.Schedule(WyrmBaseSource.PositionTransforms);
+        }.ScheduleReadOnly(WyrmBaseSource.PositionTransforms, 16);
 
-        // we use WyrmBaseSource.SourcePositions for every job - meaning we can append this to the finalizer handle
-        var applySourceTransforms   = new SetPositionsAndRotationsJob
+        // we use WyrmBaseSource.Positions for every job - meaning we don't have to depend on it until the finalizer
+        var transformsHandle   = new SetPositionsAndRotationsJob
         {
             Positions               = WyrmBaseSource.Positions,
             Rotations               = WyrmBaseSource.Rotations,
-        };
-        JobHandle transformsHandle  = applySourceTransforms.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
+        }.Schedule(WyrmBaseSource.SourceTransforms, gatherHandle);
 
         JobHandle locationHandle    = LocationProcessor.Schedule(gatherHandle);
 
@@ -117,18 +113,13 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
             }
         }
 
-        SteamAudioSettings steamAudioSettings = SteamAudioSettings.Singleton;
-        if (steamAudioSettings == null)
-            return;
-
         IntPtr* spatializerPtrs = (IntPtr*)WyrmBaseSource.SpatializerPointers.GetUnsafeReadOnlyPtr();
 
-        WyrmPhononCustomAPI.iplSourceSetCustomPathingBatch(
+        WyrmPhononCustomAPI.iplSourceSetAmbisonicFieldBatch(
             activeCount,
             spatializerPtrs,
-            (float*)WyrmBaseSource.CurrentAmbisonicEQ01s.GetUnsafeReadOnlyPtr(),
-            (float*)WyrmBaseSource.TargetAmbisonicOutputs.GetUnsafeReadOnlyPtr(),
-            steamAudioSettings.realTimeAmbisonicOrder
+            (int3*)WyrmBaseSource.TargetAmbisonicOrders.GetUnsafeReadOnlyPtr(),
+            (float*)WyrmBaseSource.TargetAmbisonicOutputs.GetUnsafeReadOnlyPtr()
         );
 
         WyrmPhononCustomAPI.iplSourceSetCustomDirectBatch(

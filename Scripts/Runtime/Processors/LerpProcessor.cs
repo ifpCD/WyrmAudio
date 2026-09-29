@@ -18,14 +18,13 @@ internal static class LerpProcessor
         int activeCount = WyrmBaseSource.ActiveCount;
 
         // csharpier-ignore
-        var lerpOcclusions = new ExponentialFloatLerpJob
+        var lerpOcclusionsHandle = new ExponentialFloatLerpJob
         {
             Targets               = WyrmBaseSource.TargetOcclusion01,
-            ExponentialLerpFactor = expLerpFactor,
+            SmoothingFactor = expLerpFactor,
 
             Currents              = WyrmBaseSource.CurrentOcclusion01,
-        };
-        JobHandle lerpOcclusionsHandle = lerpOcclusions.Schedule(activeCount, 16, dependency);
+        }.Schedule(activeCount, 16, dependency);
 
         return lerpOcclusionsHandle;
 

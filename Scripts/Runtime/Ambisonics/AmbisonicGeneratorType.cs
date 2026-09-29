@@ -1,8 +1,5 @@
-
-
-public enum AmbisonicGeneratorType
+public enum AmbisonicGeneratorType : byte
 {
     Simple,
     Mesh,
-    Custom
 }

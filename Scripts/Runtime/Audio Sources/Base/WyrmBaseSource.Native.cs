@@ -5,16 +5,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
-[Flags]
-public enum SourceSettings : byte
-{
-    None = 0,
-    UseTracking = 1 << 0,
-    UseOcclusion = 1 << 1,
-    UsePropagation = 1 << 2,
-    UseReflections = 1 << 3,
-}
-
 public partial class WyrmBaseSource
 {
     static int _maximumSourceCapacity;
@@ -28,7 +18,6 @@ public partial class WyrmBaseSource
 
     internal static NativeArray<float3> Positions;
     internal static NativeArray<quaternion> Rotations;
-    internal static NativeArray<float4x4> LocalToWorlds;
 
     internal static NativeArray<AmbiHandle> OcclusionMaskHandles;
     internal static NativeArray<AmbiHandle> AmbisonicGeneratorHandles;
@@ -41,6 +30,7 @@ public partial class WyrmBaseSource
     internal static NativeArray<float> TargetOcclusion01;
     internal static NativeArray<float3> TargetAmbisonicEQ01s;
     internal static NativeArray<float> TargetAmbisonicOutputs;
+    internal static NativeArray<int3> TargetAmbisonicOrders;
 
     // Stateful Outputs
     internal static NativeArray<float> CurrentOcclusion01;
@@ -77,7 +67,6 @@ public partial class WyrmBaseSource
 
         Positions                                      = new(AllocatedCapacity, Allocator.Persistent);
         Rotations                                      = new(AllocatedCapacity, Allocator.Persistent);
-        LocalToWorlds                                  = new(AllocatedCapacity, Allocator.Persistent);
 
         SpatializerPointers                            = new(AllocatedCapacity, Allocator.Persistent);
 
@@ -88,7 +77,8 @@ public partial class WyrmBaseSource
 
         TargetOcclusion01                              = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicEQ01s                           = new(AllocatedCapacity, Allocator.Persistent);
-        TargetAmbisonicOutputs                         = new(AllocatedCapacity * HC.AMBISONIC_BUFFER_LENGTH, Allocator.Persistent);
+        TargetAmbisonicOutputs                         = AmbisonicBuffer.Allocate(AllocatedCapacity, Allocator.Persistent);
+        TargetAmbisonicOrders                          = new(AllocatedCapacity, Allocator.Persistent);
 
         CurrentOcclusion01                             = new(AllocatedCapacity, Allocator.Persistent);
         CurrentAmbisonicEQ01s                          = new(AllocatedCapacity, Allocator.Persistent);
@@ -103,17 +93,18 @@ public partial class WyrmBaseSource
 
         Positions.TryDispose();
         Rotations.TryDispose();
-        LocalToWorlds.TryDispose();
 
         SpatializerPointers.TryDispose();
 
         SourceRoomIDs.TryDispose();
 
         OcclusionMaskHandles.TryDispose();
+        AmbisonicGeneratorHandles.TryDispose();
 
         TargetOcclusion01.TryDispose();
         TargetAmbisonicEQ01s.TryDispose();
         TargetAmbisonicOutputs.TryDispose();
+        TargetAmbisonicOrders.TryDispose();
 
         CurrentOcclusion01.TryDispose();
         CurrentAmbisonicEQ01s.TryDispose();
@@ -138,7 +129,7 @@ public partial class WyrmBaseSource
         CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
         OcclusionMaskHandles[SoAIndex]                    = OcclusionMaskHandle;
-        AmbisonicGeneratorHandles[SoAIndex]                 = AmbisonicGenerator.Handle;
+        AmbisonicGeneratorHandles[SoAIndex]               = AmbisonicGeneratorHandle;
 
         if (this is WyrmPhononSource phononSource && phononSource.PhononSource != null)
             SpatializerPointers[SoAIndex]                 = phononSource.PhononSource.Get();
@@ -158,8 +149,8 @@ public partial class WyrmBaseSource
             CurrentOcclusion01[removedIndex]           = CurrentOcclusion01[lastIndex];
             CurrentAmbisonicEQ01s[removedIndex]        = CurrentAmbisonicEQ01s[lastIndex];
 
-            OcclusionMaskHandles[removedIndex] = OcclusionMaskHandles[lastIndex];
-            AmbisonicGeneratorHandles[removedIndex] = AmbisonicGeneratorHandles[lastIndex];
+            OcclusionMaskHandles[removedIndex]         = OcclusionMaskHandles[lastIndex];
+            AmbisonicGeneratorHandles[removedIndex]    = AmbisonicGeneratorHandles[lastIndex];
         }
 
         SourceTransforms.RemoveAtSwapBack(removedIndex);

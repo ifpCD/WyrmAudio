@@ -1,7 +1,7 @@
 using System;
 using Unity.Mathematics;
-using UnityEngine;
 using Unity.Scripting.LifecycleManagement;
+using UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider))]
@@ -56,4 +56,42 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
                 PortalOpenness[SoAIndex] = value;
         }
     }
+
+    public float _portalClosenessRadius = 5f;
+
+    [Range(1f, 5f)]
+    public float PortalClosenessRadius
+    {
+        get => _portalClosenessRadius;
+        set
+        {
+            if (_portalClosenessRadius == value)
+                return;
+
+            _portalClosenessRadius = value;
+
+            if (IsRegistered)
+                PortalClosenessRadiuses[SoAIndex] = value;
+        }
+    }
+
+    [SerializeField]
+    WyrmAmbisonicGenerator _ambisonicGenerator;
+
+    public WyrmAmbisonicGenerator AmbisonicGenerator
+    {
+        get => _ambisonicGenerator;
+        set
+        {
+            if (_ambisonicGenerator == value)
+                return;
+
+            _ambisonicGenerator = value;
+
+            if (IsRegistered)
+                AmbisonicGeneratorHandles[SoAIndex] = AmbisonicGeneratorHandle;
+        }
+    }
+
+    internal AmbiHandle AmbisonicGeneratorHandle => (_ambisonicGenerator != null) ? AmbisonicGenerator.Handle : AmbiHandle.Null;
 }

@@ -28,7 +28,7 @@ public partial class WyrmOcclusionMask : AmbiMonoBehaviour<WyrmOcclusionMask>
         }
 
         var localToWorldNoRotation = Matrix4x4.TRS(tPosition, Quaternion.identity, tLossyScale);
-        int chunkStartOffset = SoAIndex * HC.MAX_OCC_SAMPLES_PER_MASK;
+        int chunkStartOffset = OcclusionSamples.Start(SoAIndex);
 
         for (int i = 0; i < _generatedSampleData.Count; i++)
         {
