@@ -57,16 +57,18 @@ internal sealed partial class MeshAmbisonics
         _chunksStale = false;
     }
 
-    // Registration-time only; the mesh must be Read/Write enabled in players.
+    // Registration-time only
     void CacheTriangles(Mesh mesh, bool vertexColorBands)
     {
         using Mesh.MeshDataArray meshData = Mesh.AcquireReadOnlyMeshData(mesh);
         int offset = Triangles.Length;
 
+        bool hasVertexColors = vertexColorBands && mesh.HasVertexAttribute(VertexAttribute.Color);
+
         new CacheMeshTrianglesJob
         {
             Source = meshData[0],
-            VertexColorBands = vertexColorBands && mesh.HasVertexAttribute(VertexAttribute.Color),
+            VertexColorBands = hasVertexColors,
             Triangles = Triangles,
             TriangleBands = TriangleBands,
         }.Run();

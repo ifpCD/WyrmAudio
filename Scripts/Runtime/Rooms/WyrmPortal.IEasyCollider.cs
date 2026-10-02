@@ -14,9 +14,9 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
     string header;
 
 #if WYRMAUDIO_VISUALIZATION_ENABLED
-    void OnDrawGizmosSelected() => DrawPortal(true);
+    void OnDrawGizmosSelected() => DrawPortal(selected: true);
 
-    void OnDrawGizmos() => DrawPortal(false);
+    void OnDrawGizmos() => DrawPortal(selected: false);
 #endif
 
     void DrawPortal(bool selected)

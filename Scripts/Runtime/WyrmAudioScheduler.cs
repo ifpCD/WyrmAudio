@@ -85,9 +85,13 @@ public sealed partial class WyrmAudioScheduler : MonoBehaviour
 
         JobHandle occlusionHandle   = OcclusionProcessor.Schedule(gatherHandle);
 
-        JobHandle ambisonicHandle   = AmbisonicProcessor.Schedule(locationHandle);
+        JobHandle ambisonicHandle   = AmbisonicProcessor.Schedule(gatherHandle);
 
-        JobHandle effectsDependency = JobHandle.CombineDependencies(locationHandle, occlusionHandle, ambisonicHandle);
+        JobHandle submodulesHandle = JobHandle.CombineDependencies(locationHandle, occlusionHandle, ambisonicHandle);
+
+        JobHandle sourceHandle      = SourceProcessor.Schedule(submodulesHandle);
+
+        JobHandle effectsDependency = JobHandle.CombineDependencies(locationHandle, sourceHandle);
 
         // JobHandle effectsHandle     = EffectsMixingProcessor.Schedule(effectsDependency);
 

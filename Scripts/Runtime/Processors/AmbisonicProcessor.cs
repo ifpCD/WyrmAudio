@@ -45,19 +45,7 @@ internal static class AmbisonicProcessor
         if (!MeshAmbisonics.CompletelyInactive)
             generation = ScheduleMeshProjection(listenerPosition, dependency, generation);
 
-        return new LoadAmbisonicOutputsToSourcesJob
-        {
-            SourceGeneratorHandles         = WyrmBaseSource.AmbisonicGeneratorHandles,
-            SourceBandGains                = WyrmBaseSource.CurrentAmbisonicEQ01s,
-
-            GeneratorHandleToSoA           = WyrmAmbisonicGenerator.HandleToSoA,
-            GeneratorVersions              = WyrmAmbisonicGenerator.HandleVersions,
-            GeneratorBandOrders            = WyrmAmbisonicGenerator.BandOrders,
-            GeneratorOutputs               = WyrmAmbisonicGenerator.Outputs,
-
-            SourceOutputs                  = WyrmBaseSource.TargetAmbisonicOutputs,
-            SourceBandOrders               = WyrmBaseSource.TargetAmbisonicOrders,
-        }.Schedule(WyrmBaseSource.ActiveCount, 16, generation);
+        return generation;
     }
 
     // Projection overlaps the simple encode; only the reduce shares the generator outputs with it.
@@ -86,7 +74,7 @@ internal static class AmbisonicProcessor
             ChunkMoments               = MeshAmbisonics.ChunkMoments.AsArray(),
         }.Schedule(MeshAmbisonics.Chunks.Length, 1, targets);
 
-        return MeshAmbisonics.Projection = new ReduceMeshMomentsJob
+        JobHandle reduceMeshMoments = new ReduceMeshMomentsJob
         {
             ChunkOffsets               = MeshAmbisonics.ChunkOffsets,
             ChunkCounts                = MeshAmbisonics.ChunkCounts,
@@ -102,5 +90,9 @@ internal static class AmbisonicProcessor
 
             GeneratorOutputs           = WyrmAmbisonicGenerator.Outputs,
         }.Schedule(MeshAmbisonics.ActiveCount, 1, JobHandle.CombineDependencies(chunks, outputsDependency));
+
+        MeshAmbisonics.Projection = reduceMeshMoments;
+
+        return reduceMeshMoments;
     }
 }

@@ -235,8 +235,10 @@ internal struct CacheMeshTrianglesJob : IJob
 
     public void Execute()
     {
-        var vertices = new NativeArray<Vector3>(Source.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-        var colors = new NativeArray<Color>(VertexColorBands ? Source.vertexCount : 0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+        NativeArray<Vector3> vertices = new(Source.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+        int vertexCount = Source.vertexCount;
+        NativeArray<Color> colors = new(VertexColorBands ? vertexCount : 0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
         Source.GetVertices(vertices);
 
