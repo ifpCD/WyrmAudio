@@ -25,6 +25,7 @@ internal sealed partial class MeshAmbisonics
     internal static NativeArray<int> ChunkOffsets;
     internal static NativeArray<int> ChunkCounts;
     internal static NativeList<double4> ChunkMoments; // one BandedMoments block per chunk
+    internal static NativeList<double3> ChunkMasses; // per band solid angle, before propagation
 
     static bool _chunksStale;
 
@@ -40,6 +41,7 @@ internal sealed partial class MeshAmbisonics
         ChunkOffsets    = new(capacity, Allocator.Persistent);
         ChunkCounts     = new(capacity, Allocator.Persistent);
         ChunkMoments    = BandedMoments.Allocate(INITIAL_CHUNK_CAPACITY, Allocator.Persistent);
+        ChunkMasses     = new(INITIAL_CHUNK_CAPACITY, Allocator.Persistent);
     }
 
     static void DeallocateGeometry()
@@ -53,6 +55,7 @@ internal sealed partial class MeshAmbisonics
         ChunkOffsets.TryDispose();
         ChunkCounts.TryDispose();
         ChunkMoments.Dispose();
+        ChunkMasses.Dispose();
 
         _chunksStale = false;
     }
@@ -120,5 +123,6 @@ internal sealed partial class MeshAmbisonics
         }
 
         BandedMoments.Resize(ChunkMoments, Chunks.Length);
+        ChunkMasses.ResizeUninitialized(Chunks.Length);
     }
 }

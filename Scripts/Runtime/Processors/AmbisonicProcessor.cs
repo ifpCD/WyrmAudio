@@ -37,6 +37,7 @@ internal static class AmbisonicProcessor
                 GeneratorBandGains         = WyrmAmbisonicGenerator.BandGains,
                 GeneratorBandSpreads       = WyrmAmbisonicGenerator.BandSpreads,
                 GeneratorHorizontalSpreads = WyrmAmbisonicGenerator.HorizontalSpreads,
+                GeneratorPropagations      = WyrmAmbisonicGenerator.Propagations,
 
                 GeneratorOutputs           = WyrmAmbisonicGenerator.Outputs,
             }.ScheduleReadOnly(SimpleAmbisonics.Transforms, 16, dependency);
@@ -67,11 +68,16 @@ internal static class AmbisonicProcessor
             LocalToAmbisonic           = MeshAmbisonics.LocalToAmbisonic,
             Triangles                  = MeshAmbisonics.Triangles.AsArray(),
             TriangleBands              = MeshAmbisonics.TriangleBands.AsArray(),
+            GeneratorHandles           = MeshAmbisonics.GeneratorHandles,
             DirectionsX                = MeshAmbisonics.MomentDirectionsX,
             DirectionsY                = MeshAmbisonics.MomentDirectionsY,
             DirectionsZ                = MeshAmbisonics.MomentDirectionsZ,
 
+            GeneratorHandleToSoA       = WyrmAmbisonicGenerator.HandleToSoA,
+            GeneratorPropagations      = WyrmAmbisonicGenerator.Propagations,
+
             ChunkMoments               = MeshAmbisonics.ChunkMoments.AsArray(),
+            ChunkMasses                = MeshAmbisonics.ChunkMasses.AsArray(),
         }.Schedule(MeshAmbisonics.Chunks.Length, 1, targets);
 
         JobHandle reduceMeshMoments = new ReduceMeshMomentsJob
@@ -79,6 +85,7 @@ internal static class AmbisonicProcessor
             ChunkOffsets               = MeshAmbisonics.ChunkOffsets,
             ChunkCounts                = MeshAmbisonics.ChunkCounts,
             ChunkMoments               = MeshAmbisonics.ChunkMoments.AsArray(),
+            ChunkMasses                = MeshAmbisonics.ChunkMasses.AsArray(),
             MomentToHarmonic           = MeshAmbisonics.MomentToHarmonic,
             GeneratorHandles           = MeshAmbisonics.GeneratorHandles,
 

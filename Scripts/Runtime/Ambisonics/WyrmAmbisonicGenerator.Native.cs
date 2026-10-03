@@ -7,6 +7,7 @@ public sealed partial class WyrmAmbisonicGenerator
     internal static NativeArray<float3> BandGains;
     internal static NativeArray<float3> BandSpreads;
     internal static NativeArray<float> HorizontalSpreads;
+    internal static NativeArray<DirectPropagation> Propagations;
 
     internal static NativeArray<float> Outputs;
 
@@ -17,6 +18,7 @@ public sealed partial class WyrmAmbisonicGenerator
         BandGains         = new(AllocatedCapacity, Allocator.Persistent);
         BandSpreads       = new(AllocatedCapacity, Allocator.Persistent);
         HorizontalSpreads = new(AllocatedCapacity, Allocator.Persistent);
+        Propagations      = new(AllocatedCapacity, Allocator.Persistent);
         Outputs           = AmbisonicBuffer.Allocate(AllocatedCapacity, Allocator.Persistent);
     }
 
@@ -26,6 +28,7 @@ public sealed partial class WyrmAmbisonicGenerator
         BandGains.TryDispose();
         BandSpreads.TryDispose();
         HorizontalSpreads.TryDispose();
+        Propagations.TryDispose();
         Outputs.TryDispose();
     }
 
@@ -46,6 +49,7 @@ public sealed partial class WyrmAmbisonicGenerator
         BandGains[removedIndex]         = BandGains[lastIndex];
         BandSpreads[removedIndex]       = BandSpreads[lastIndex];
         HorizontalSpreads[removedIndex] = HorizontalSpreads[lastIndex];
+        Propagations[removedIndex]      = Propagations[lastIndex];
 
         AmbisonicBuffer.Copy(Outputs, lastIndex, Outputs, removedIndex);
     }
@@ -60,5 +64,6 @@ public sealed partial class WyrmAmbisonicGenerator
         BandGains[SoAIndex]         = BandGain;
         BandSpreads[SoAIndex]       = BandSpreadRadians;
         HorizontalSpreads[SoAIndex] = math.radians(_horizontalSpreadDegrees);
+        Propagations[SoAIndex]      = Propagation;
     }
 }

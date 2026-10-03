@@ -33,15 +33,18 @@ internal unsafe struct EncodeSimpleAmbisonicsJob : IJobParallelForTransform
     [ReadOnly]
     public NativeArray<float> GeneratorHorizontalSpreads;
 
+    [ReadOnly]
+    public NativeArray<DirectPropagation> GeneratorPropagations;
+
     [WriteOnly, NativeDisableParallelForRestriction]
     public NativeArray<float> GeneratorOutputs;
 
     public void Execute(int index, TransformAccess transform)
     {
-        float3 arrival =
-            Types[index] == (byte)SimpleAmbisonicType.Positional
-                ? (float3)transform.position - ListenerPosition
-                : math.rotate((quaternion)transform.rotation, new float3(0f, 0f, 1f));
+        bool positional = Types[index] == (byte)SimpleAmbisonicType.Positional;
+        float3 arrival = positional
+            ? (float3)transform.position - ListenerPosition
+            : math.rotate((quaternion)transform.rotation, new float3(0f, 0f, 1f));
 
         int generator = GeneratorHandleToSoA[GeneratorHandles[index].Index];
         int3 orders = GeneratorBandOrders[generator];
@@ -54,6 +57,9 @@ internal unsafe struct EncodeSimpleAmbisonicsJob : IJobParallelForTransform
         float3 gains = GeneratorBandGains[generator];
         float3 spreads = GeneratorBandSpreads[generator];
         float horizontalSpread = GeneratorHorizontalSpreads[generator];
+
+        if (positional)
+            gains *= GeneratorPropagations[generator].Evaluate(math.length(arrival));
 
         for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
             SphericalHarmonics.Shape(basis, orders[band], gains[band], spreads[band], horizontalSpread, AmbisonicBuffer.GetBand(target, band));
@@ -91,6 +97,9 @@ internal unsafe struct ProjectMeshChunksJob : IJobParallelFor
     public NativeArray<float3> TriangleBands;
 
     [ReadOnly]
+    public NativeArray<AmbiHandle> GeneratorHandles;
+
+    [ReadOnly]
     public NativeArray<double4> DirectionsX;
 
     [ReadOnly]
@@ -99,16 +108,27 @@ internal unsafe struct ProjectMeshChunksJob : IJobParallelFor
     [ReadOnly]
     public NativeArray<double4> DirectionsZ;
 
+    [ReadOnly]
+    public NativeArray<int> GeneratorHandleToSoA;
+
+    [ReadOnly]
+    public NativeArray<DirectPropagation> GeneratorPropagations;
+
     [NativeDisableParallelForRestriction]
     public NativeArray<double4> ChunkMoments;
+
+    [WriteOnly]
+    public NativeArray<double3> ChunkMasses;
 
     public void Execute(int index)
     {
         int3 chunk = Chunks[index];
         float4x4 localToAmbisonic = LocalToAmbisonic[chunk.x];
+        DirectPropagation propagation = GeneratorPropagations[GeneratorHandleToSoA[GeneratorHandles[chunk.x].Index]];
 
         double4* moments = BandedMoments.Get(ChunkMoments, index);
         BandedMoments.Clear(moments);
+        double3 mass = 0.0;
 
         double4* scratch = stackalloc double4[PolygonProjection.SCRATCH];
         double4* directionsX = (double4*)DirectionsX.GetUnsafeReadOnlyPtr();
@@ -119,18 +139,28 @@ internal unsafe struct ProjectMeshChunksJob : IJobParallelFor
         {
             float3x3 vertices = Triangles[triangle];
 
-            PolygonProjection.AccumulateTriangle(
+            PolygonProjection.ProjectTriangle(
                 math.transform(localToAmbisonic, vertices.c0),
                 math.transform(localToAmbisonic, vertices.c1),
                 math.transform(localToAmbisonic, vertices.c2),
-                TriangleBands[triangle],
                 directionsX,
                 directionsY,
                 directionsZ,
                 scratch,
-                moments
+                out double solidAngle,
+                out double distance
             );
+
+            if (solidAngle == 0.0)
+                continue;
+
+            float3 bands = TriangleBands[triangle];
+            mass += solidAngle * (double3)bands;
+
+            PolygonProjection.Accumulate(scratch, bands * propagation.Evaluate((float)distance), moments);
         }
+
+        ChunkMasses[index] = mass;
     }
 }
 
@@ -145,6 +175,9 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
 
     [ReadOnly]
     public NativeArray<double4> ChunkMoments;
+
+    [ReadOnly]
+    public NativeArray<double3> ChunkMasses;
 
     [ReadOnly]
     public NativeArray<double4> MomentToHarmonic;
@@ -174,6 +207,7 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
     {
         double4* total = stackalloc double4[PolygonProjection.BANDED_MOMENTS];
         BandedMoments.Clear(total);
+        double3 mass = 0.0;
 
         int firstChunk = ChunkOffsets[row];
 
@@ -183,6 +217,8 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
 
             for (int index = 0; index < PolygonProjection.BANDED_MOMENTS; index++)
                 total[index] += chunkMoments[index];
+
+            mass += ChunkMasses[chunk];
         }
 
         int generator = GeneratorHandleToSoA[GeneratorHandles[row].Index];
@@ -202,16 +238,16 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
             float* bandTarget = AmbisonicBuffer.GetBand(target, band);
             int channels = SphericalHarmonics.ChannelCount(orders[band]);
 
-            PolygonProjection.Resolve(BandedMoments.GetBand(total, band), momentToHarmonic, channels, harmonics);
-
-            if (harmonics[0] <= 0.0)
+            if (mass[band] <= 0.0)
             {
                 AmbisonicBuffer.ClearBand(bandTarget);
                 continue;
             }
 
-            // unit-mass direction distribution: c00 == Y00, identical energy scale to a point source
-            double normalization = SphericalHarmonics.Y00 / harmonics[0];
+            PolygonProjection.Resolve(BandedMoments.GetBand(total, band), momentToHarmonic, channels, harmonics);
+
+            // per unit solid angle: c00 == Y00 * mean propagation gain, identical energy scale to a point source
+            double normalization = 1.0 / mass[band];
 
             for (int channel = 0; channel < channels; channel++)
                 distribution[channel] = (float)(harmonics[channel] * normalization);

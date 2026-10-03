@@ -48,19 +48,23 @@ internal static unsafe class PolygonProjection
         }
     }
 
-    // bandMoments: one BandedMoments block; within a band, [order][direction group]
-    public static void AccumulateTriangle(
+    // Moments land in scratch[0, MOMENTS); returns the solid angle, 0 when the listener touches or grazes the triangle. distance is
+    // the harmonic mean ray distance over that solid angle, exact for 1/r: the plane is hit at r = h / (n.u), so it is h omega / n.Phi
+    // with Phi the vector solid angle (tau_1(w) = w.Phi).
+    public static void ProjectTriangle(
         double3 p0,
         double3 p1,
         double3 p2,
-        double3 bandWeights,
         double4* directionsX,
         double4* directionsY,
         double4* directionsZ,
         double4* scratch,
-        double4* bandMoments
+        out double solidAngle,
+        out double distance
     )
     {
+        solidAngle = 0.0;
+        distance = 0.0;
         double3 lengths = new(math.length(p0), math.length(p1), math.length(p2));
 
         if (math.cmin(lengths) < 1e-6)
@@ -81,17 +85,33 @@ internal static unsafe class PolygonProjection
         if (triple < 1e-14)
             return;
 
-        double solidAngle = 2.0 * math.atan2(triple, 1.0 + math.dot(v0, v1) + math.dot(v1, v2) + math.dot(v2, v0));
+        solidAngle = 2.0 * math.atan2(triple, 1.0 + math.dot(v0, v1) + math.dot(v1, v2) + math.dot(v2, v0));
         double3 centroid = math.normalize(v0 + v1 + v2);
         double spread = math.cmax(new double3(math.distancesq(v0, centroid), math.distancesq(v1, centroid), math.distancesq(v2, centroid)));
-
-        double4* moments = scratch;
+        double3 vectorSolidAngle;
 
         if (spread * (ORDER * ORDER) < POINT_RULE_SPREAD)
-            PointMoments(centroid, solidAngle, directionsX, directionsY, directionsZ, moments);
+        {
+            PointMoments(centroid, solidAngle, directionsX, directionsY, directionsZ, scratch);
+            vectorSolidAngle = solidAngle * centroid;
+        }
         else
-            ArcMoments(v0, v1, v2, solidAngle, directionsX, directionsY, directionsZ, scratch + MOMENTS, moments);
+        {
+            Arc arc0 = new(v0, v1);
+            Arc arc1 = new(v1, v2);
+            Arc arc2 = new(v2, v0);
 
+            ArcMoments(arc0, arc1, arc2, solidAngle, directionsX, directionsY, directionsZ, scratch + MOMENTS, scratch);
+            vectorSolidAngle = 0.5 * (arc0.Angle * arc0.Normal + arc1.Angle * arc1.Normal + arc2.Angle * arc2.Normal);
+        }
+
+        double3 normal = math.cross(p1 - p0, p2 - p0);
+        distance = math.dot(normal, p0) * solidAngle / math.dot(normal, vectorSolidAngle);
+    }
+
+    // bandMoments: one BandedMoments block; within a band, [order][direction group]
+    public static void Accumulate(double4* moments, double3 bandWeights, double4* bandMoments)
+    {
         for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
         {
             double weight = bandWeights[band];
@@ -132,9 +152,9 @@ internal static unsafe class PolygonProjection
     }
 
     static void ArcMoments(
-        double3 v0,
-        double3 v1,
-        double3 v2,
+        in Arc arc0,
+        in Arc arc1,
+        in Arc arc2,
         double solidAngle,
         double4* directionsX,
         double4* directionsY,
@@ -143,10 +163,6 @@ internal static unsafe class PolygonProjection
         double4* moments
     )
     {
-        Arc arc0 = new(v0, v1);
-        Arc arc1 = new(v1, v2);
-        Arc arc2 = new(v2, v0);
-
         for (int group = 0; group < GROUPS; group++)
         {
             AccumulateArcs(arc0, arc1, arc2, directionsX[group], directionsY[group], directionsZ[group], boundary);
