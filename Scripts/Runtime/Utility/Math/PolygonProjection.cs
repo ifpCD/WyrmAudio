@@ -48,7 +48,7 @@ internal static unsafe class PolygonProjection
         }
     }
 
-    // Moments land in scratch[0, MOMENTS); returns the solid angle, 0 when the listener touches or grazes the triangle. distance is
+    // Moments land in scratch[0, MOMENTS); solidAngle is 0 when the listener touches or grazes the triangle. distance is
     // the harmonic mean ray distance over that solid angle, exact for 1/r: the plane is hit at r = h / (n.u), so it is h omega / n.Phi
     // with Phi the vector solid angle (tau_1(w) = w.Phi).
     public static void ProjectTriangle(

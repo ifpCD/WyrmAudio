@@ -41,25 +41,34 @@ internal unsafe struct EncodeSimpleAmbisonicsJob : IJobParallelForTransform
 
     public void Execute(int index, TransformAccess transform)
     {
-        bool positional = Types[index] == (byte)SimpleAmbisonicType.Positional;
-        float3 arrival = positional
-            ? (float3)transform.position - ListenerPosition
-            : math.rotate((quaternion)transform.rotation, new float3(0f, 0f, 1f));
+        AmbiHandle handle = GeneratorHandles[index];
+        int generatorIdx = GeneratorHandleToSoA[handle.Index];
 
-        int generator = GeneratorHandleToSoA[GeneratorHandles[index].Index];
-        int3 orders = GeneratorBandOrders[generator];
+        float3 gains = GeneratorBandGains[generatorIdx];
+
+        if (Types[index] == (byte)SimpleAmbisonicType.Directional)
+        {
+            float3 forward = math.rotate((quaternion)transform.rotation, new float3(0f, 0f, 1f));
+            Encode(generatorIdx, forward, gains);
+            return;
+        }
+
+        float3 arrival = (float3)transform.position - ListenerPosition;
+        DirectPropagation propagation = GeneratorPropagations[generatorIdx];
+
+        Encode(generatorIdx, arrival, gains * propagation.Evaluate(math.length(arrival)));
+    }
+
+    void Encode(int generatorIdx, float3 arrival, float3 gains)
+    {
+        int3 orders = GeneratorBandOrders[generatorIdx];
+        float3 spreads = GeneratorBandSpreads[generatorIdx];
+        float horizontalSpread = GeneratorHorizontalSpreads[generatorIdx];
 
         float* basis = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
         SphericalHarmonics.EvaluateArrival(arrival, math.cmax(orders), basis);
 
-        float* target = AmbisonicBuffer.Get(GeneratorOutputs, generator);
-
-        float3 gains = GeneratorBandGains[generator];
-        float3 spreads = GeneratorBandSpreads[generator];
-        float horizontalSpread = GeneratorHorizontalSpreads[generator];
-
-        if (positional)
-            gains *= GeneratorPropagations[generator].Evaluate(math.length(arrival));
+        float* target = AmbisonicBuffer.Get(GeneratorOutputs, generatorIdx);
 
         for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
             SphericalHarmonics.Shape(basis, orders[band], gains[band], spreads[band], horizontalSpread, AmbisonicBuffer.GetBand(target, band));
@@ -123,33 +132,28 @@ internal unsafe struct ProjectMeshChunksJob : IJobParallelFor
     public void Execute(int index)
     {
         int3 chunk = Chunks[index];
-        float4x4 localToAmbisonic = LocalToAmbisonic[chunk.x];
-        DirectPropagation propagation = GeneratorPropagations[GeneratorHandleToSoA[GeneratorHandles[chunk.x].Index]];
+
+        AmbiHandle handle = GeneratorHandles[chunk.x];
+        int generatorIdx = GeneratorHandleToSoA[handle.Index];
+
+        DirectPropagation propagation = GeneratorPropagations[generatorIdx];
 
         double4* moments = BandedMoments.Get(ChunkMoments, index);
         BandedMoments.Clear(moments);
-        double3 mass = 0.0;
 
+        ChunkMasses[index] = ProjectTriangles(chunk, propagation, moments);
+    }
+
+    // accumulates the propagated moments; returns the per band solid angle before propagation
+    double3 ProjectTriangles(int3 chunk, DirectPropagation propagation, double4* moments)
+    {
+        float4x4 localToAmbisonic = LocalToAmbisonic[chunk.x];
         double4* scratch = stackalloc double4[PolygonProjection.SCRATCH];
-        double4* directionsX = (double4*)DirectionsX.GetUnsafeReadOnlyPtr();
-        double4* directionsY = (double4*)DirectionsY.GetUnsafeReadOnlyPtr();
-        double4* directionsZ = (double4*)DirectionsZ.GetUnsafeReadOnlyPtr();
+        double3 mass = 0.0;
 
         for (int triangle = chunk.y; triangle < chunk.y + chunk.z; triangle++)
         {
-            float3x3 vertices = Triangles[triangle];
-
-            PolygonProjection.ProjectTriangle(
-                math.transform(localToAmbisonic, vertices.c0),
-                math.transform(localToAmbisonic, vertices.c1),
-                math.transform(localToAmbisonic, vertices.c2),
-                directionsX,
-                directionsY,
-                directionsZ,
-                scratch,
-                out double solidAngle,
-                out double distance
-            );
+            ProjectTriangle(triangle, localToAmbisonic, scratch, out double solidAngle, out double distance);
 
             if (solidAngle == 0.0)
                 continue;
@@ -160,7 +164,24 @@ internal unsafe struct ProjectMeshChunksJob : IJobParallelFor
             PolygonProjection.Accumulate(scratch, bands * propagation.Evaluate((float)distance), moments);
         }
 
-        ChunkMasses[index] = mass;
+        return mass;
+    }
+
+    void ProjectTriangle(int triangle, float4x4 localToAmbisonic, double4* scratch, out double solidAngle, out double distance)
+    {
+        float3x3 vertices = Triangles[triangle];
+
+        PolygonProjection.ProjectTriangle(
+            math.transform(localToAmbisonic, vertices.c0),
+            math.transform(localToAmbisonic, vertices.c1),
+            math.transform(localToAmbisonic, vertices.c2),
+            (double4*)DirectionsX.GetUnsafeReadOnlyPtr(),
+            (double4*)DirectionsY.GetUnsafeReadOnlyPtr(),
+            (double4*)DirectionsZ.GetUnsafeReadOnlyPtr(),
+            scratch,
+            out solidAngle,
+            out distance
+        );
     }
 }
 
@@ -203,57 +224,76 @@ internal unsafe struct ReduceMeshMomentsJob : IJobParallelFor
     [WriteOnly, NativeDisableParallelForRestriction]
     public NativeArray<float> GeneratorOutputs;
 
-    public void Execute(int row)
+    public void Execute(int rowIdx)
     {
-        double4* total = stackalloc double4[PolygonProjection.BANDED_MOMENTS];
-        BandedMoments.Clear(total);
-        double3 mass = 0.0;
+        double4* moments = stackalloc double4[PolygonProjection.BANDED_MOMENTS];
+        double3 mass = SumChunks(rowIdx, moments);
 
-        int firstChunk = ChunkOffsets[row];
+        AmbiHandle handle = GeneratorHandles[rowIdx];
+        int generatorIdx = GeneratorHandleToSoA[handle.Index];
 
-        for (int chunk = firstChunk; chunk < firstChunk + ChunkCounts[row]; chunk++)
-        {
-            double4* chunkMoments = BandedMoments.GetReadOnly(ChunkMoments, chunk);
-
-            for (int index = 0; index < PolygonProjection.BANDED_MOMENTS; index++)
-                total[index] += chunkMoments[index];
-
-            mass += ChunkMasses[chunk];
-        }
-
-        int generator = GeneratorHandleToSoA[GeneratorHandles[row].Index];
-        float* target = AmbisonicBuffer.Get(GeneratorOutputs, generator);
-
-        double4* momentToHarmonic = (double4*)MomentToHarmonic.GetUnsafeReadOnlyPtr();
-        double* harmonics = stackalloc double[HC.MAX_AMBISONIC_CHANNELS];
-        float* distribution = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
-
-        int3 orders = GeneratorBandOrders[generator];
-        float3 gains = GeneratorBandGains[generator];
-        float3 spreads = GeneratorBandSpreads[generator];
-        float horizontalSpread = GeneratorHorizontalSpreads[generator];
+        float* target = AmbisonicBuffer.Get(GeneratorOutputs, generatorIdx);
 
         for (int band = 0; band < HC.MAX_AMBISONIC_BANDS; band++)
         {
             float* bandTarget = AmbisonicBuffer.GetBand(target, band);
-            int channels = SphericalHarmonics.ChannelCount(orders[band]);
 
-            if (mass[band] <= 0.0)
+            if (mass[band] > 0.0)
             {
-                AmbisonicBuffer.ClearBand(bandTarget);
-                continue;
+                double4* bandMoments = BandedMoments.GetBand(moments, band);
+                ShapeBand(generatorIdx, band, bandMoments, mass[band], bandTarget);
             }
-
-            PolygonProjection.Resolve(BandedMoments.GetBand(total, band), momentToHarmonic, channels, harmonics);
-
-            // per unit solid angle: c00 == Y00 * mean propagation gain, identical energy scale to a point source
-            double normalization = 1.0 / mass[band];
-
-            for (int channel = 0; channel < channels; channel++)
-                distribution[channel] = (float)(harmonics[channel] * normalization);
-
-            SphericalHarmonics.Shape(distribution, orders[band], gains[band], spreads[band], horizontalSpread, bandTarget);
+            else
+                AmbisonicBuffer.ClearBand(bandTarget);
         }
+    }
+
+    // returns the per band solid angle before propagation
+    double3 SumChunks(int rowIdx, double4* moments)
+    {
+        BandedMoments.Clear(moments);
+        double3 mass = 0.0;
+
+        int firstChunk = ChunkOffsets[rowIdx];
+
+        for (int chunk = firstChunk; chunk < firstChunk + ChunkCounts[rowIdx]; chunk++)
+        {
+            double4* chunkMoments = BandedMoments.GetReadOnly(ChunkMoments, chunk);
+
+            for (int index = 0; index < PolygonProjection.BANDED_MOMENTS; index++)
+                moments[index] += chunkMoments[index];
+
+            mass += ChunkMasses[chunk];
+        }
+
+        return mass;
+    }
+
+    void ShapeBand(int generatorIdx, int band, double4* bandMoments, double bandMass, float* bandTarget)
+    {
+        int3 orders = GeneratorBandOrders[generatorIdx];
+        float3 gains = GeneratorBandGains[generatorIdx];
+        float3 spreads = GeneratorBandSpreads[generatorIdx];
+        float horizontalSpread = GeneratorHorizontalSpreads[generatorIdx];
+
+        float* distribution = stackalloc float[HC.MAX_AMBISONIC_CHANNELS];
+        Distribution(bandMoments, bandMass, SphericalHarmonics.ChannelCount(orders[band]), distribution);
+
+        SphericalHarmonics.Shape(distribution, orders[band], gains[band], spreads[band], horizontalSpread, bandTarget);
+    }
+
+    // per unit solid angle: c00 == Y00 * mean propagation gain, identical energy scale to a point source
+    void Distribution(double4* bandMoments, double bandMass, int channels, float* distribution)
+    {
+        double* harmonics = stackalloc double[HC.MAX_AMBISONIC_CHANNELS];
+        double4* momentToHarmonic = (double4*)MomentToHarmonic.GetUnsafeReadOnlyPtr();
+
+        PolygonProjection.Resolve(bandMoments, momentToHarmonic, channels, harmonics);
+
+        double normalization = 1.0 / bandMass;
+
+        for (int channel = 0; channel < channels; channel++)
+            distribution[channel] = (float)(harmonics[channel] * normalization);
     }
 }
 
@@ -272,9 +312,7 @@ internal struct CacheMeshTrianglesJob : IJob
     public void Execute()
     {
         NativeArray<Vector3> vertices = new(Source.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-
-        int vertexCount = Source.vertexCount;
-        NativeArray<Color> colors = new(VertexColorBands ? vertexCount : 0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+        NativeArray<Color> colors = new(VertexColorBands ? Source.vertexCount : 0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
         Source.GetVertices(vertices);
 
@@ -285,21 +323,24 @@ internal struct CacheMeshTrianglesJob : IJob
         {
             SubMeshDescriptor descriptor = Source.GetSubMesh(submesh);
 
-            if (descriptor.topology != MeshTopology.Triangles)
-                continue;
+            if (descriptor.topology == MeshTopology.Triangles)
+                CacheSubmesh(submesh, descriptor.indexCount, vertices, colors);
+        }
+    }
 
-            var indices = new NativeArray<int>(descriptor.indexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            Source.GetIndices(indices, submesh);
+    void CacheSubmesh(int submesh, int indexCount, NativeArray<Vector3> vertices, NativeArray<Color> colors)
+    {
+        var indices = new NativeArray<int>(indexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+        Source.GetIndices(indices, submesh);
 
-            for (int corner = 0; corner + 2 < indices.Length; corner += 3)
-            {
-                int a = indices[corner];
-                int b = indices[corner + 1];
-                int c = indices[corner + 2];
+        for (int corner = 0; corner + 2 < indices.Length; corner += 3)
+        {
+            int a = indices[corner];
+            int b = indices[corner + 1];
+            int c = indices[corner + 2];
 
-                Triangles.Add(new float3x3((float3)vertices[a], (float3)vertices[b], (float3)vertices[c]));
-                TriangleBands.Add(VertexColorBands ? (Bands(colors[a]) + Bands(colors[b]) + Bands(colors[c])) / 3f : new float3(1f));
-            }
+            Triangles.Add(new float3x3((float3)vertices[a], (float3)vertices[b], (float3)vertices[c]));
+            TriangleBands.Add(VertexColorBands ? (Bands(colors[a]) + Bands(colors[b]) + Bands(colors[c])) / 3f : new float3(1f));
         }
     }
 
