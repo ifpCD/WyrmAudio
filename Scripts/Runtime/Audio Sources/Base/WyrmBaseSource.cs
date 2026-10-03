@@ -20,20 +20,6 @@ public partial class WyrmBaseSource : AmbiMonoBehaviour<WyrmBaseSource>, IWyrmSo
 
     public AudioMixerGroup MixerGroup => ASource.outputAudioMixerGroup;
 
-    [Header("Spatial Features")]
-    
-    [field: SerializeField]
-    public virtual bool UseDirect { get; set; } = false;
-
-    [field: SerializeField]
-    public virtual bool UseReflections { get; set; } = false;
-
-    [field: SerializeField]
-    public virtual bool UseAmbisonics { get; set; } = true;
-
-    [field: SerializeField]
-    public virtual bool UseOcclusion { get; set; } = true;
-
     internal void Initialize(WyrmMixerPool pool)
     {
         Pool = pool;

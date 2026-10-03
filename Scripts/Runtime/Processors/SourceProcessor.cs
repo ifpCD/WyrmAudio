@@ -29,13 +29,12 @@ internal static class SourceProcessor
         var applyHandle = new ApplyMaskOcclusionToSourceJob
         {
             SourceMaskHandles    = WyrmBaseSource.OcclusionMaskHandles,
-            UseOcclusions        = WyrmBaseSource.UseOcclusions,
 
             MaskHandleToSoA      = WyrmOcclusionMask.HandleToSoA,
             MaskVersions         = WyrmOcclusionMask.HandleVersions,
-            MaskTargetOcclusions = WyrmOcclusionMask.TargetOcclusionValue01s,
+            MaskTargetOcclusions = WyrmOcclusionMask.TargetOcclusion01s,
 
-            TargetOcclusion01    = WyrmBaseSource.TargetOcclusion01,
+            TargetOcclusion01    = WyrmBaseSource.TargetOcclusion01s,
         }.Schedule(WyrmBaseSource.ActiveCount, 32, dependency);
 
         JobHandle finalizerHandle = JobHandle.CombineDependencies(loadAmbisonicOutputsToSourcesHandle, applyHandle);

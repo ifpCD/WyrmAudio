@@ -8,18 +8,6 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
 
     internal Source PhononSource { get; private set; }
 
-    public override float OcclusionValue
-    {
-        set
-        {
-            if (_occlusionValue == value)
-                return;
-
-            _occlusionValue = value;
-            SetSpatialValue(OCCLUSION, value);
-        }
-    }
-
     void SetSpatialValue(int index, float value) => ASource.SetSpatializerFloat(index, value);
 
     protected override void Awake()
@@ -99,7 +87,6 @@ public sealed partial class WyrmPhononSource : WyrmBaseSource
         PhononSource = null;
     }
 
-    // Candidate for custom batch api
     public void UpdatePhononSimulator()
     {
         if (PhononSource == null)

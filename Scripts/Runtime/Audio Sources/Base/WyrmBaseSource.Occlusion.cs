@@ -28,6 +28,7 @@ public partial class WyrmBaseSource
         {
             if (_occlusionMask == value)
                 return;
+
             _occlusionMask = value;
 
             if (IsRegistered)

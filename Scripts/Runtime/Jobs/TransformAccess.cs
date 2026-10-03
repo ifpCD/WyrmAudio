@@ -13,14 +13,10 @@ internal struct ReadTransformDataJob : IJobParallelForTransform
     [WriteOnly]
     public NativeArray<quaternion> Rotations;
 
-    // [WriteOnly]
-    // public NativeArray<float4x4> LocalToWorlds;
-
     public void Execute(int index, TransformAccess transform)
     {
         Positions[index] = transform.position;
         Rotations[index] = transform.rotation;
-        // LocalToWorlds[index] = transform.localToWorldMatrix;
     }
 }
 

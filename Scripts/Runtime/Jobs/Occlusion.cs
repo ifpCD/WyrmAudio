@@ -178,38 +178,3 @@ public struct ResolveMaskOcclusionValueJob : IJobParallelFor
         MaskTargetOcclusions[maskIndex] = totalWeight > 0f ? math.saturate(occludedWeight / totalWeight) : 1f;
     }
 }
-
-[BurstCompile]
-public struct ApplyMaskOcclusionToSourceJob : IJobParallelFor
-{
-    [ReadOnly]
-    public NativeArray<AmbiHandle> SourceMaskHandles;
-
-    [ReadOnly]
-    public NativeArray<bool> UseOcclusions;
-
-    [ReadOnly]
-    public NativeArray<int> MaskHandleToSoA;
-
-    [ReadOnly]
-    public NativeArray<int> MaskVersions;
-
-    [ReadOnly]
-    public NativeArray<float> MaskTargetOcclusions;
-
-    public NativeArray<float> TargetOcclusion01;
-
-    public void Execute(int sourceIndex)
-    {
-        AmbiHandle handle = SourceMaskHandles[sourceIndex];
-
-        if (!UseOcclusions[sourceIndex] || handle.IsNull || MaskVersions[handle.Index] != handle.Version)
-        {
-            TargetOcclusion01[sourceIndex] = 0f;
-            return;
-        }
-
-        int maskSoAIndex = MaskHandleToSoA[handle.Index];
-        TargetOcclusion01[sourceIndex] = 1f - MaskTargetOcclusions[maskSoAIndex];
-    }
-}

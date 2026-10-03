@@ -7,7 +7,7 @@ public partial class WyrmOcclusionMask
 {
     protected override int AllocatedCapacity => HC.MAX_OCC_MASKS;
 
-    public static NativeArray<float> TargetOcclusionValue01s;
+    public static NativeArray<float> TargetOcclusion01s;
     public static NativeArray<float4x4> LocalToWorlds;
     public static TransformAccessArray MaskTransforms;
 
@@ -29,7 +29,7 @@ public partial class WyrmOcclusionMask
     // csharpier-ignore
     protected override void AllocateNative()
     {
-        TargetOcclusionValue01s = new(AllocatedCapacity, Allocator.Persistent);
+        TargetOcclusion01s = new(AllocatedCapacity, Allocator.Persistent);
         LocalToWorlds           = new(AllocatedCapacity, Allocator.Persistent);
         MaskTransforms          = new(AllocatedCapacity);
         MaskSampleCounts        = new(AllocatedCapacity, Allocator.Persistent);
@@ -50,7 +50,7 @@ public partial class WyrmOcclusionMask
 
     protected override void DeallocateNative()
     {
-        TargetOcclusionValue01s.TryDispose();
+        TargetOcclusion01s.TryDispose();
         LocalToWorlds.TryDispose();
         MaskTransforms.TryDispose();
         MaskSampleCounts.TryDispose();
@@ -80,7 +80,7 @@ public partial class WyrmOcclusionMask
 
     protected override void LoadObjectToArrays()
     {
-        TargetOcclusionValue01s[SoAIndex] = 0f;
+        TargetOcclusion01s[SoAIndex] = 0f;
         LocalToWorlds[SoAIndex] = transform.localToWorldMatrix;
         MaskTransforms.Add(transform);
         SyncAllSamplesToNative();
@@ -93,7 +93,7 @@ public partial class WyrmOcclusionMask
     {
         if (removedIndex != lastIndex)
         {
-            TargetOcclusionValue01s[removedIndex] = TargetOcclusionValue01s[lastIndex];
+            TargetOcclusion01s[removedIndex] = TargetOcclusion01s[lastIndex];
             LocalToWorlds[removedIndex]           = LocalToWorlds[lastIndex];
             MaskSampleCounts[removedIndex]        = MaskSampleCounts[lastIndex];
 

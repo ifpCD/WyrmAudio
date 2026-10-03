@@ -48,7 +48,7 @@ internal static class LocationProcessor
 
             SourcePositions       = WyrmBaseSource.Positions,
 
-            SourceRoomIdentifiers = WyrmBaseSource.SourceRoomIDs,
+            SourceRoomIdentifiers = WyrmBaseSource.RoomIDs,
         }.Schedule(sourceCount, 16, dependency);
 
         return JobHandle.CombineDependencies(locateListenerHandle, locateSourcesHandle);

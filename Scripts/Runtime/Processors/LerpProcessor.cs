@@ -20,7 +20,7 @@ internal static class LerpProcessor
         // csharpier-ignore
         var lerpOcclusionsHandle = new ExponentialFloatLerpJob
         {
-            Targets               = WyrmBaseSource.TargetOcclusion01,
+            Targets               = WyrmBaseSource.TargetOcclusion01s,
             SmoothingFactor = expLerpFactor,
 
             Currents              = WyrmBaseSource.CurrentOcclusion01,

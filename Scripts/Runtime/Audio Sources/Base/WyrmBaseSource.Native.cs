@@ -11,8 +11,6 @@ public partial class WyrmBaseSource
 
     internal double PlaybackEndTime { get; private set; } = double.NegativeInfinity;
 
-    internal static NativeArray<bool> UseOcclusions;
-
     internal static TransformAccessArray SourceTransforms;
     internal static TransformAccessArray PositionTransforms;
 
@@ -25,9 +23,9 @@ public partial class WyrmBaseSource
     internal static NativeArray<IntPtr> SpatializerPointers; // For Phonon
 
     // Scratch Buffers
-    internal static NativeArray<int> SourceRoomIDs;
+    internal static NativeArray<int> RoomIDs;
 
-    internal static NativeArray<float> TargetOcclusion01;
+    internal static NativeArray<float> TargetOcclusion01s;
     internal static NativeArray<float3> TargetAmbisonicEQ01s;
     internal static NativeArray<float> TargetAmbisonicOutputs;
     internal static NativeArray<int3> TargetAmbisonicOrders;
@@ -60,8 +58,6 @@ public partial class WyrmBaseSource
     // csharpier-ignore
     protected sealed override void AllocateNative()
     {
-        UseOcclusions                                  = new(AllocatedCapacity, Allocator.Persistent);
-
         SourceTransforms                               = new(AllocatedCapacity);
         PositionTransforms                             = new(AllocatedCapacity);
 
@@ -70,12 +66,12 @@ public partial class WyrmBaseSource
 
         SpatializerPointers                            = new(AllocatedCapacity, Allocator.Persistent);
 
-        SourceRoomIDs                                  = new(AllocatedCapacity, Allocator.Persistent);
+        RoomIDs                                        = new(AllocatedCapacity, Allocator.Persistent);
 
         OcclusionMaskHandles                           = new(AllocatedCapacity, Allocator.Persistent);
         AmbisonicGeneratorHandles                      = new(AllocatedCapacity, Allocator.Persistent);
 
-        TargetOcclusion01                              = new(AllocatedCapacity, Allocator.Persistent);
+        TargetOcclusion01s                             = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicEQ01s                           = new(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicOutputs                         = AmbisonicBuffer.Allocate(AllocatedCapacity, Allocator.Persistent);
         TargetAmbisonicOrders                          = new(AllocatedCapacity, Allocator.Persistent);
@@ -86,8 +82,6 @@ public partial class WyrmBaseSource
 
     protected sealed override void DeallocateNative()
     {
-        UseOcclusions.TryDispose();
-
         SourceTransforms.TryDispose();
         PositionTransforms.TryDispose();
 
@@ -96,12 +90,12 @@ public partial class WyrmBaseSource
 
         SpatializerPointers.TryDispose();
 
-        SourceRoomIDs.TryDispose();
+        RoomIDs.TryDispose();
 
         OcclusionMaskHandles.TryDispose();
         AmbisonicGeneratorHandles.TryDispose();
 
-        TargetOcclusion01.TryDispose();
+        TargetOcclusion01s.TryDispose();
         TargetAmbisonicEQ01s.TryDispose();
         TargetAmbisonicOutputs.TryDispose();
         TargetAmbisonicOrders.TryDispose();
@@ -123,8 +117,6 @@ public partial class WyrmBaseSource
         if (!IsRegistered)
             return;
 
-        UseOcclusions[SoAIndex]                           = UseOcclusion;
-
         CurrentOcclusion01[SoAIndex]                      = 0f;
         CurrentAmbisonicEQ01s[SoAIndex]                   = 1f;
 
@@ -142,8 +134,6 @@ public partial class WyrmBaseSource
     {
         if (removedIndex != lastIndex)
         {
-            UseOcclusions[removedIndex]                = UseOcclusions[lastIndex];
-
             SpatializerPointers[removedIndex]          = SpatializerPointers[lastIndex];
 
             CurrentOcclusion01[removedIndex]           = CurrentOcclusion01[lastIndex];

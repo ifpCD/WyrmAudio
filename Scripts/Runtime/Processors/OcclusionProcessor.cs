@@ -74,7 +74,7 @@ internal static class OcclusionProcessor
             SampleIsDiscarded    = WyrmOcclusionMask.SampleIsDiscarded,
             SampleWeights        = WyrmOcclusionMask.SampleWeights,
 
-            MaskTargetOcclusions = WyrmOcclusionMask.TargetOcclusionValue01s,
+            MaskTargetOcclusions = WyrmOcclusionMask.TargetOcclusion01s,
             SampleIsOccluded     = WyrmOcclusionMask.SampleIsOccluded,
         }.Schedule(maskActiveCount, 16, occlusionResultHandle);
 

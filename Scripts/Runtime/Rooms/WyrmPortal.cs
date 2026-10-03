@@ -74,24 +74,4 @@ public sealed partial class WyrmPortal : AmbiMonoBehaviour<WyrmPortal>, IEasyCol
                 PortalClosenessRadiuses[SoAIndex] = value;
         }
     }
-
-    [SerializeField]
-    WyrmAmbisonicGenerator _ambisonicGenerator;
-
-    public WyrmAmbisonicGenerator AmbisonicGenerator
-    {
-        get => _ambisonicGenerator;
-        set
-        {
-            if (_ambisonicGenerator == value)
-                return;
-
-            _ambisonicGenerator = value;
-
-            if (IsRegistered)
-                AmbisonicGeneratorHandles[SoAIndex] = AmbisonicGeneratorHandle;
-        }
-    }
-
-    internal AmbiHandle AmbisonicGeneratorHandle => (_ambisonicGenerator != null) ? AmbisonicGenerator.Handle : AmbiHandle.Null;
 }
